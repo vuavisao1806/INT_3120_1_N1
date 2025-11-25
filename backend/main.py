@@ -130,7 +130,7 @@ def register(body: RegisterRequest):
 
 
 # ==================================================
-#              Thay đổi thông tin cá nhân
+#              THAY ĐỔI THÔNG TIN CÁ NHÂN
 # ==================================================
 
 class UpdateUserByUserIdRequest(BaseModel):
@@ -196,6 +196,35 @@ def login(body: GetUserByUserIdRequest):
 
 
 
+# ==================================================
+#              TẠO MỘT GHIM MỚI
+# ==================================================
 
 
+class InsertPinRequest(BaseModel):
+    latitude: float
+    longitude: float
+    
+class InsertPinSuccess(BaseModel):
+    insert_pin_success: bool = True
+
+@app.post("/pins/insert")
+def register(body: InsertPinRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Check username exists
+            cur.execute(
+                """
+                INSERT INTO pins (latitude, longitude)
+                VALUES (%s, %s)
+                """,
+                (body.latitude,body.longitude)
+            )
+            
+        conn.commit()
+        return InsertPinSuccess()
+
+    finally:
+        conn.close()
 
