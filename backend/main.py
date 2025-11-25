@@ -41,7 +41,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-@app.post("/login")
+@app.post("/users/login")
 def login(body: LoginRequest):
     conn = get_connection()
     try:
@@ -88,7 +88,7 @@ class RegisterSuccess(BaseModel):
     register_success: bool = True
 
 
-@app.post("/register")
+@app.post("/users/register")
 def register(body: RegisterRequest):
     conn = get_connection()
     try:
@@ -127,3 +127,75 @@ def register(body: RegisterRequest):
 
     finally:
         conn.close()
+
+
+# ==================================================
+#              Thay đổi thông tin cá nhân
+# ==================================================
+
+class UpdateUserByUserIdRequest(BaseModel):
+    user_id: str
+    quotes: str
+    avatar_url: str
+    contact_info: str
+    
+class UpdateUserByUserIdSuccess(BaseModel):
+    update_user_by_user_id_success: bool = True
+
+@app.post("/users/update")
+def register(body: UpdateUserByUserIdRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+
+            # Check username exists
+            cur.execute(
+                """
+                UPDATE users
+                SET
+                    quotes = %s ,
+                    avatar_url = %s,
+                    contact_info = %s
+                WHERE user_id = %s
+                """,
+                (body.quotes,body.avatar_url, body.contact_info, body.user_id)
+            )
+            
+        conn.commit()
+        return UpdateUserByUserIdSuccess()
+
+    finally:
+        conn.close()
+        
+class GetUserByUserIdRequest(BaseModel):
+    user_id: str
+class GetUserByUserIdInvalid(BaseModel):
+    get_user_by_user_id_invalid: bool = True
+
+@app.post("/users/get")
+def login(body: GetUserByUserIdRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM users WHERE user_id = %s;",
+                (body.user_id,)
+            )
+            user = cur.fetchone()
+
+        if user is None:
+            return GetUserByUserIdInvalid()
+
+        # Xóa password khi trả về
+        user.pop("password", None)
+
+        return user
+
+    finally:
+        conn.close()
+
+
+
+
+
+
