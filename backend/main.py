@@ -227,4 +227,41 @@ def register(body: InsertPinRequest):
 
     finally:
         conn.close()
+        
+# ==================================================
+#              TẠO MỘT POST
+# ==================================================
+
+
+class InsertPostRequest(BaseModel):
+    pin_id: int
+    user_id: int
+    title: str
+    body: str
+    image_url: str
+    status: str
+    
+    
+class InsertPostSuccess(BaseModel):
+    insert_post_success: bool = True
+
+@app.post("/posts/insert")
+def register(body: InsertPostRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Check username exists
+            cur.execute(
+                """
+                INSERT INTO posts (pin_id, user_id, title, body, image_url, status)
+                VALUES (%s, %s,%s,%s,%s,%s)
+                """,
+                (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status)
+            )
+            
+        conn.commit()
+        return InsertPostSuccess()
+
+    finally:
+        conn.close()
 
