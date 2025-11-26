@@ -8,4 +8,5 @@ data class Post (
     val imageUrl: String,
     val reactCount: Number,
     val commentCount: Number,
+    val tags: List<String> = emptyList()
 )

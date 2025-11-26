@@ -8,10 +8,11 @@ object PostMock {
             postId = "1",
             pinId = "pin_01",
             title = "View đẹp ở Đà Lạt",
-            body = "Một góc chill ở Đà Lạt với mây trời bồng bềnh.",
+            body = "Một góc chill ở Đà Lạt với mây trời bồng bềnh. Dòng này được thêm vào để test xem thêm.Dòng này được thêm vào để test xem thêm.Dòng này được thêm vào để test xem thêm.Dòng này được thêm vào để test xem thêm.Dòng này được thêm vào để test xem thêm.",
             imageUrl = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-            reactCount = 7,
-            commentCount = 3,
+            reactCount = 7654885,
+            commentCount = 369849,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "2",
@@ -19,8 +20,9 @@ object PostMock {
             title = "Hà Nội mùa thu",
             body = "Hồ Gươm sáng sớm, lá vàng rơi đẹp không tả.",
             imageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-            reactCount = 7,
-            commentCount = 3,
+            reactCount = 76548,
+            commentCount = 4663,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "3",
@@ -30,6 +32,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1494972308805-463bc619d34e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
 
         ),
         Post(
@@ -40,6 +43,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "1",
@@ -49,6 +53,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "2",
@@ -58,6 +63,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "3",
@@ -67,6 +73,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1494972308805-463bc619d34e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
 
             ),
         Post(
@@ -77,6 +84,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "1",
@@ -86,6 +94,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "2",
@@ -95,6 +104,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         ),
         Post(
             postId = "3",
@@ -104,6 +114,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1494972308805-463bc619d34e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
 
             ),
         Post(
@@ -114,6 +125,7 @@ object PostMock {
             imageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
             reactCount = 7,
             commentCount = 3,
+            tags = listOf("Nature", "Sunset", "Beach", "Photography"),
         )
     )
 }
