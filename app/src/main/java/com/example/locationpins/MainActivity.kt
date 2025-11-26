@@ -8,18 +8,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.locationpins.data.model.PostMock
-import com.example.locationpins.ui.component.GridPostPreview
-import com.example.locationpins.ui.component.PostPreviewForNewsFeed
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
-import com.example.locationpins.ui.theme.LocationPinsTheme
+import com.example.locationpins.ui.theme.LocationSocialTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LocationPinsTheme {
+            LocationSocialTheme {
                 NewsFeedScreen(
 
                 )
@@ -39,7 +36,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    LocationPinsTheme {
+    LocationSocialTheme {
         Greeting("Android")
     }
 }
