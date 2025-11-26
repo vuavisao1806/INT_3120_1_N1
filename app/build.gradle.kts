@@ -40,6 +40,11 @@ android {
 }
 
 dependencies {
+    // Mapbox
+    implementation("com.mapbox.maps:android:11.16.6")
+    implementation("com.mapbox.extension:maps-compose:11.16.6")
+    implementation("com.mapbox.search:mapbox-search-android:2.16.6")
+    implementation("com.mapbox.search:mapbox-search-android-ui:2.16.6")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

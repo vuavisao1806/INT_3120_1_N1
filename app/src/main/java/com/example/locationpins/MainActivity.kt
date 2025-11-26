@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.theme.LocationSocialTheme
 
@@ -17,9 +18,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LocationSocialTheme {
-                NewsFeedScreen(
-
-                )
+                MapScreen()
             }
         }
     }
