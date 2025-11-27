@@ -36,13 +36,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.min
@@ -55,7 +55,7 @@ fun CameraCaptureScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     var previewSize by remember { mutableStateOf(IntSize.Zero) }
     var overlaySquareSize by remember { mutableFloatStateOf(0f) }
@@ -127,6 +127,32 @@ fun CameraCaptureScreen(
             overlaySquareSize = squareSize
             overlaySquareLeft = (screenWidth - squareSize) / 2
             overlaySquareTop = (screenHeight - squareSize) / 2
+
+            // Vẽ màu đen mờ cho vùng ngoài khung vuông
+            // Phần trên
+            drawRect(
+                color = Color.Black.copy(alpha = 0.7f),
+                topLeft = Offset(0f, 0f),
+                size = Size(screenWidth, overlaySquareTop)
+            )
+            // Phần dưới
+            drawRect(
+                color = Color.Black.copy(alpha = 0.7f),
+                topLeft = Offset(0f, overlaySquareTop + squareSize),
+                size = Size(screenWidth, screenHeight - overlaySquareTop - squareSize)
+            )
+            // Phần trái
+            drawRect(
+                color = Color.Black.copy(alpha = 0.7f),
+                topLeft = Offset(0f, overlaySquareTop),
+                size = Size(overlaySquareLeft, squareSize)
+            )
+            // Phần phải
+            drawRect(
+                color = Color.Black.copy(alpha = 0.7f),
+                topLeft = Offset(overlaySquareLeft + squareSize, overlaySquareTop),
+                size = Size(screenWidth - overlaySquareLeft - squareSize, squareSize)
+            )
 
             // Vẽ viền trắng cho khung vuông
             drawRoundRect(
@@ -210,7 +236,7 @@ fun CameraCaptureScreen(
                                         )
                                     }
 
-                                    // === FIX CHÍNH: Tính toán crop cho FIT_CENTER ===
+
                                     val bitmapWidth = bitmap.width.toFloat()
                                     val bitmapHeight = bitmap.height.toFloat()
                                     val bitmapAspect = bitmapWidth / bitmapHeight
@@ -219,29 +245,27 @@ fun CameraCaptureScreen(
                                     val previewHeight = previewSize.height.toFloat()
                                     val previewAspect = previewWidth / previewHeight
 
-                                    // Với FIT_CENTER: bitmap được scale để fit vào preview
-                                    // Tính kích thước bitmap sau khi scale trong preview
                                     val (scaledBitmapWidth, scaledBitmapHeight) = if (bitmapAspect > previewAspect) {
-                                        // Bitmap rộng hơn -> fit theo width, có letterbox trên/dưới
+
                                         previewWidth to (previewWidth / bitmapAspect)
                                     } else {
-                                        // Bitmap cao hơn -> fit theo height, có letterbox trái/phải
+
                                         (previewHeight * bitmapAspect) to previewHeight
                                     }
 
-                                    // Offset của bitmap trong preview (vùng letterbox)
+
                                     val previewOffsetX = (previewWidth - scaledBitmapWidth) / 2
                                     val previewOffsetY = (previewHeight - scaledBitmapHeight) / 2
 
-                                    // Tỷ lệ từ preview coordinate sang bitmap coordinate
+
                                     val scale = bitmapWidth / scaledBitmapWidth
 
-                                    // Chuyển đổi overlay coordinate sang bitmap coordinate
+
                                     val cropX = ((overlaySquareLeft - previewOffsetX) * scale).roundToInt()
                                     val cropY = ((overlaySquareTop - previewOffsetY) * scale).roundToInt()
                                     val cropSize = (overlaySquareSize * scale).roundToInt()
 
-                                    // Đảm bảo không vượt biên
+
                                     val x = cropX.coerceIn(0, bitmap.width - 1)
                                     val y = cropY.coerceIn(0, bitmap.height - 1)
                                     val size = cropSize.coerceAtMost(
@@ -261,7 +285,6 @@ fun CameraCaptureScreen(
                                         bitmap, x, y, size, size
                                     )
 
-                                    // Lưu ảnh vuông
                                     val squareFile = File(
                                         context.cacheDir,
                                         "captured_square_${System.currentTimeMillis()}.jpg"
@@ -294,7 +317,7 @@ fun CameraCaptureScreen(
                 )
             }
 
-            // Nút đổi camera (bên phải nút chụp)
+
             IconButton(
                 onClick = {
                     lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {

@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.ui.component.GridPostPreview
 import com.example.locationpins.ui.component.PostPreviewForNewsFeed
+import com.example.locationpins.ui.screen.camera.DemoCameraScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.theme.LocationPinsTheme
 
@@ -20,9 +21,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LocationPinsTheme {
-                NewsFeedScreen(
-
-                )
+                DemoCameraScreen()
             }
         }
     }
