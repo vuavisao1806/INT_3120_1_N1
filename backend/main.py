@@ -195,7 +195,6 @@ def login(body: GetUserByUserIdRequest):
         conn.close()
 
 
-
 # ==================================================
 #              TẠO MỘT GHIM MỚI
 # ==================================================
@@ -227,6 +226,33 @@ def register(body: InsertPinRequest):
 
     finally:
         conn.close()
+        
+# ==================================================
+#              LẤY DANH SÁCH GHIM THEO USER_ID
+# ==================================================
+
+class GetPinListByUserIdRequest(BaseModel):
+    user_id: int
+
+@app.post("/pins/get/user-id")
+def get_pins_by_user_id(body: GetPinListByUserIdRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT pins.*
+                FROM pins
+                INNER JOIN user_pins ON pins.pin_id = user_pins.pin_id
+                WHERE user_pins.user_id = %s;
+                """,
+                (body.user_id,)  
+            )
+            pins = cur.fetchall()   
+        return pins
+    finally:
+        conn.close()
+
         
 # ==================================================
 #              TẠO MỘT POST
