@@ -77,15 +77,19 @@ fun MapScreen() {
             mapViewportState = mapViewportState,
         ) {
             // ========== UI của MAP ==========
-            MapEffect(uiState.currentStyleUri) { mapView ->
-                mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri) {
-                    mapView.location.updateSettings {
-                        enabled = true
-                        locationPuck = createDefault2DPuck(withBearing = true)
-                        puckBearingEnabled = true
-                        puckBearing = PuckBearing.COURSE
-                    }
+            // ========== Khởi tạo location component chỉ 1 lần ==========
+            MapEffect(Unit) { mapView ->
+                mapView.location.updateSettings {
+                    enabled = true
+                    locationPuck = createDefault2DPuck(withBearing = true)
+                    puckBearingEnabled = true
+                    puckBearing = PuckBearing.COURSE
                 }
+            }
+
+            // ========== Load style riêng biệt, không ảnh hưởng location ==========
+            MapEffect(uiState.currentStyleUri) { mapView ->
+                mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri)
             }
         }
         // ========== SEARCH BOX + SUGGESTIONS ==========
@@ -129,6 +133,7 @@ fun MapScreen() {
         // ========== UI việc search ==========
     }
 }
+
 @Composable
 private fun MapSearchBar(
     query: String,
@@ -238,6 +243,7 @@ private fun SuggestionList(
         }
     }
 }
+
 @Composable
 private fun SuggestionItem(
     suggestion: SearchSuggestion,
@@ -288,6 +294,7 @@ private fun SuggestionItem(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapStyleBottomSheet(
