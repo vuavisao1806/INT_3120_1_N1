@@ -37,7 +37,6 @@ import com.example.locationpins.utils.formatCount
 import kotlin.math.max
 
 
-
 @Composable
 fun PostPreviewForGrid(
     post: Post,
