@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,15 +32,16 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.MapViewportState
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
+import com.mapbox.maps.extension.compose.annotation.rememberIconImage
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import com.mapbox.search.SearchEngine
-import com.mapbox.search.SearchSelectionCallback
-import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import kotlinx.coroutines.launch
+import com.example.locationpins.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +92,26 @@ fun MapScreen() {
             // ========== Load style riêng biệt, không ảnh hưởng location ==========
             MapEffect(uiState.currentStyleUri) { mapView ->
                 mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri)
+            }
+
+            // ========== Load style riêng biệt, không ảnh hưởng location ==========
+            val markerIcon = rememberIconImage(
+                key = R.drawable.ic_marker,
+                painter = painterResource(id = R.drawable.ic_marker)
+            )
+
+            uiState.pinList.forEach { marker ->
+                PointAnnotation(
+                    point = Point.fromLngLat(marker.longitude, marker.latitude),
+                    onClick = {
+                        true
+                        // TODO: sau này khi nhấn vào sẽ ra list bài viết ở ghim đó
+                    }
+                ) {
+                    iconImage = markerIcon
+                    iconAnchor = IconAnchor.BOTTOM
+                    iconSize = 0.5
+                }
             }
         }
         // ========== SEARCH BOX + SUGGESTIONS ==========

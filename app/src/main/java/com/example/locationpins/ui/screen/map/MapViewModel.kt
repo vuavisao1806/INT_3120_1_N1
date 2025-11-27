@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.map
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,15 +15,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.example.locationpins.R
+import com.example.locationpins.data.repository.PinRepository
 import com.mapbox.geojson.Point
 import com.mapbox.search.ApiType
 import com.mapbox.search.SearchSelectionCallback
 import com.mapbox.search.result.SearchResult
 
 class MapViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val pinRepo: PinRepository = PinRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState
@@ -35,6 +36,11 @@ class MapViewModel(
         )
     }
     private var searchJob: Job? = null
+
+
+    init {
+        loadPins(1) // đoạn này là mock userId=1, sau app phải lưu userId hiện tại lại
+    }
 
     fun onShowBottomSheet() {
         _uiState.value = _uiState.value.copy(showBottomSheet = true)
@@ -243,6 +249,20 @@ class MapViewModel(
         _uiState.value = _uiState.value.copy(
             cameraCoordinate = null
         )
+    }
+
+    fun loadPins(userId: Int) {
+        viewModelScope.launch {
+            try {
+                val pins = pinRepo.getPinsByUserId(userId)
+                Log.d("MapViewModel", "Loaded ${pins.size} pins for userId=$userId")
+                _uiState.value = _uiState.value.copy(
+                    pinList = pins
+                )
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Error loading pins for userId=$userId", e)
+            }
+        }
     }
 }
 

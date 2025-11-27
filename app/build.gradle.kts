@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -73,5 +74,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
+    // Retrofit core
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    // Kotlinx Serialization JSON
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    // Converter chính thức của Retrofit cho kotlinx.serialization
+    implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
+    // OkHttp + logging
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
