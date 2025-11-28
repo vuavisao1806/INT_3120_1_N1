@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.map
 
 import android.Manifest
+import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -45,10 +46,12 @@ import com.example.locationpins.R
 import com.mapbox.maps.extension.compose.DisposableMapEffect
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.layers.generated.fillLayer
+import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.getSource
 import com.mapbox.turf.TurfConstants
@@ -66,7 +69,7 @@ fun MapScreen() {
     val mapViewportState = rememberMapViewportState {
         setCameraOptions {
             zoom(14.0)
-            center(Point.fromLngLat(106.660172, 10.762622))
+            center(Point.fromLngLat(105.0, 21.0))
             pitch(0.0)
         }
     }
@@ -161,23 +164,57 @@ fun MapScreen() {
                 mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri)
             }
 
-            // ========== Load style riêng biệt, không ảnh hưởng location ==========
-            val markerIcon = rememberIconImage(
-                key = R.drawable.ic_marker,
-                painter = painterResource(id = R.drawable.ic_marker)
-            )
+            MapEffect(uiState.pinList) { mapView ->
+                val pins = uiState.pinList
+                if (pins.isEmpty()) return@MapEffect
 
-            uiState.pinList.forEach { marker ->
-                PointAnnotation(
-                    point = Point.fromLngLat(marker.longitude, marker.latitude),
-                    onClick = {
-                        true
-                        // TODO: sau này khi nhấn vào sẽ ra list bài viết ở ghim đó
+                val mapboxMap = mapView.getMapboxMap()
+                val context = mapView.context
+
+                mapboxMap.getStyle { style ->
+                    val sourceId = "pins-source"
+                    val layerId = "pins-layer"
+                    val imageId = "pin-icon"
+
+                    // 1. Chuẩn bị FeatureCollection từ danh sách pin
+                    val features = pins.map { pin ->
+                        Feature.fromGeometry(
+                            Point.fromLngLat(pin.longitude, pin.latitude)
+                        )
                     }
-                ) {
-                    iconImage = markerIcon
-                    iconAnchor = IconAnchor.BOTTOM
-                    iconSize = 0.2
+                    val featureCollection = FeatureCollection.fromFeatures(features)
+
+                    // 2. Đảm bảo icon đã được add vào style
+                    val bitmap = BitmapFactory.decodeResource(
+                        context.resources,
+                        R.drawable.ic_marker
+                    )
+                    style.addImage(imageId, bitmap)
+
+                    // 3. Tạo hoặc cập nhật GeoJsonSource
+                    val existingSource =
+                        style.getSource(sourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+
+                    if (existingSource == null) {
+                        // Chưa có source: tạo mới + layer mới
+                        style.addSource(
+                            geoJsonSource(sourceId) {
+                                featureCollection(featureCollection)
+                            }
+                        )
+
+                        style.addLayer(
+                            symbolLayer(layerId, sourceId) {
+                                iconImage(imageId)
+                                iconAllowOverlap(true)
+                                iconAnchor(IconAnchor.BOTTOM)
+                                iconSize(0.1)
+                            }
+                        )
+                    } else {
+                        // Đã có source: chỉ cập nhật lại dữ liệu
+                        existingSource.featureCollection(featureCollection)
+                    }
                 }
             }
         }
