@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.map
 
 import android.Manifest
+import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,15 +33,30 @@ import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.MapViewportState
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.generated.PointAnnotation
+import com.mapbox.maps.extension.compose.annotation.rememberIconImage
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
-import com.mapbox.search.SearchEngine
-import com.mapbox.search.SearchSelectionCallback
-import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import kotlinx.coroutines.launch
+import com.example.locationpins.R
+import com.mapbox.maps.extension.compose.DisposableMapEffect
+import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.Polygon
+import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.extension.style.layers.generated.fillLayer
+import com.mapbox.maps.extension.style.layers.generated.symbolLayer
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.getSource
+import com.mapbox.turf.TurfConstants
+import com.mapbox.turf.TurfTransformation
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +69,7 @@ fun MapScreen() {
     val mapViewportState = rememberMapViewportState {
         setCameraOptions {
             zoom(14.0)
-            center(Point.fromLngLat(106.660172, 10.762622))
+            center(Point.fromLngLat(105.0, 21.0))
             pitch(0.0)
         }
     }
@@ -78,12 +95,67 @@ fun MapScreen() {
         ) {
             // ========== UI của MAP ==========
             // ========== Khởi tạo location component chỉ 1 lần ==========
-            MapEffect(Unit) { mapView ->
-                mapView.location.updateSettings {
+            DisposableMapEffect(Unit) { mapView ->
+                val locationComponent = mapView.location
+
+                locationComponent.updateSettings {
                     enabled = true
                     locationPuck = createDefault2DPuck(withBearing = true)
                     puckBearingEnabled = true
                     puckBearing = PuckBearing.COURSE
+                }
+
+                // Tạo 1 listener để lắng nghe vị trí user và báo cho ViewModel
+                val listener = OnIndicatorPositionChangedListener { point ->
+                    viewModel.onUserLocationChanged(point)
+                }
+                //Đăng ký listener ở trên vào LocationComponent
+                locationComponent.addOnIndicatorPositionChangedListener(listener)
+                //Hủy đăng kí listener khi effect bị hủy
+                onDispose {
+                    locationComponent.removeOnIndicatorPositionChangedListener(listener)
+                }
+            }
+            val allowedCenter: Point? = uiState.userLocation
+            val allowedRadiusMeters = 1000.0
+
+            MapEffect(allowedCenter) { mapView ->
+                val center = allowedCenter ?: return@MapEffect
+                val mapboxMap = mapView.getMapboxMap()
+
+                mapboxMap.getStyle { style ->
+                    val sourceId = "allowed-area-source"
+                    val layerId = "allowed-area-layer"
+
+                    // 1. Tạo polygon hình tròn quanh center, bán kính theo mét
+                    val polygon: Polygon = TurfTransformation.circle(
+                        center,
+                        allowedRadiusMeters,
+                        64,                       // số cạnh (càng lớn càng tròn)
+                        TurfConstants.UNIT_METERS
+                    )
+
+                    val feature = Feature.fromGeometry(polygon)
+
+                    val existingSource = style.getSource(sourceId)
+                    if (existingSource == null) {
+                        style.addSource(
+                            geoJsonSource(sourceId) {
+                                feature(feature)
+                            }
+                        )
+                        // Nơi để edit màu
+                        style.addLayer(
+                            fillLayer(layerId, sourceId) {
+                                fillColor("#5675FF")
+                                fillOpacity(0.3)
+                                fillOutlineColor("#5675FF")
+                            }
+                        )
+                    } else {
+                        (existingSource as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource)
+                            ?.feature(feature)
+                    }
                 }
             }
 
@@ -91,6 +163,97 @@ fun MapScreen() {
             MapEffect(uiState.currentStyleUri) { mapView ->
                 mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri)
             }
+            MapEffect(uiState.redPinList to uiState.greenPinList) { mapView ->
+                val redPins = uiState.redPinList
+                val greenPins = uiState.greenPinList
+
+                if (redPins.isEmpty() && greenPins.isEmpty()) return@MapEffect
+
+                val mapboxMap = mapView.getMapboxMap()
+                val context = mapView.context
+
+                mapboxMap.getStyle { style ->
+                    // 1. Chuẩn bị FeatureCollection cho từng loại
+                    val redFeatures = redPins.map { pin ->
+                        Feature.fromGeometry(
+                            Point.fromLngLat(pin.longitude, pin.latitude)
+                        )
+                    }
+                    val greenFeatures = greenPins.map { pin ->
+                        Feature.fromGeometry(
+                            Point.fromLngLat(pin.longitude, pin.latitude)
+                        )
+                    }
+
+                    val redFC = FeatureCollection.fromFeatures(redFeatures)
+                    val greenFC = FeatureCollection.fromFeatures(greenFeatures)
+
+                    // 2. Icon đỏ & xanh (2 ảnh riêng)
+                    val redBitmap = BitmapFactory.decodeResource(
+                        context.resources,
+                        R.drawable.pin_red
+                    )
+                    val greenBitmap = BitmapFactory.decodeResource(
+                        context.resources,
+                        R.drawable.pin_green
+                    )
+
+                    style.addImage("pin-red", redBitmap)
+                    style.addImage("pin-green", greenBitmap)
+
+                    // 3. Source + layer cho RED PINS
+                    val redSourceId = "red-pins-source"
+                    val redLayerId = "red-pins-layer"
+
+                    val existingRedSource =
+                        style.getSource(redSourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+
+                    if (existingRedSource == null) {
+                        style.addSource(
+                            geoJsonSource(redSourceId) {
+                                featureCollection(redFC)
+                            }
+                        )
+                        style.addLayer(
+                            symbolLayer(redLayerId, redSourceId) {
+                                iconImage("pin-red")
+                                iconAllowOverlap(true)
+                                iconAnchor(IconAnchor.BOTTOM)
+                                iconSize(0.1)
+                            }
+                        )
+                    } else {
+                        existingRedSource.featureCollection(redFC)
+                    }
+
+                    // 4. Source + layer cho GREEN PINS
+                    val greenSourceId = "green-pins-source"
+                    val greenLayerId = "green-pins-layer"
+
+                    val existingGreenSource =
+                        style.getSource(greenSourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+
+                    if (existingGreenSource == null) {
+                        style.addSource(
+                            geoJsonSource(greenSourceId) {
+                                featureCollection(greenFC)
+                            }
+                        )
+                        style.addLayer(
+                            symbolLayer(greenLayerId, greenSourceId) {
+                                iconImage("pin-green")
+                                iconAllowOverlap(true)
+                                iconAnchor(IconAnchor.BOTTOM)
+                                iconSize(0.1)
+                            }
+                        )
+                    } else {
+                        existingGreenSource.featureCollection(greenFC)
+                    }
+                }
+            }
+
+
         }
         // ========== SEARCH BOX + SUGGESTIONS ==========
         Column(

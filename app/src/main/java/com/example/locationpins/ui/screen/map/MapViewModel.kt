@@ -1,9 +1,12 @@
 package com.example.locationpins.ui.screen.map
 
 import android.app.Application
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
 import com.mapbox.search.SearchOptions
@@ -14,15 +17,19 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.example.locationpins.R
+import com.example.locationpins.data.repository.PinRepository
 import com.mapbox.geojson.Point
 import com.mapbox.search.ApiType
 import com.mapbox.search.SearchSelectionCallback
 import com.mapbox.search.result.SearchResult
 
 class MapViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val pinRepo: PinRepository = PinRepository()
+) : ViewModel() {
+    companion object {
+        private const val TAG = "MapViewModel"
+        private const val RADIUS_METERS =  1000.0   // ví dụ 1km
+    }
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState
@@ -35,6 +42,11 @@ class MapViewModel(
         )
     }
     private var searchJob: Job? = null
+
+
+    init {
+        loadPins(1) // đoạn này là mock userId=1, sau app phải lưu userId hiện tại lại
+    }
 
     fun onShowBottomSheet() {
         _uiState.value = _uiState.value.copy(showBottomSheet = true)
@@ -172,6 +184,9 @@ class MapViewModel(
         }
     }
 
+
+
+
     fun onClearQuery() {
         _uiState.value = _uiState.value.copy(
             query = "",
@@ -244,5 +259,59 @@ class MapViewModel(
             cameraCoordinate = null
         )
     }
+
+    fun loadPins(userId: Int) {
+        viewModelScope.launch {
+            try {
+                // 1. Lấy pin mà user sở hữu (sẽ là list đỏ)
+                val ownedPins = pinRepo.getPinsByUserId(userId)
+                Log.d(TAG, "Loaded ${ownedPins.size} owned pins for userId=$userId")
+
+                // 2. Lấy vị trí hiện tại của user từ uiState
+                val location = _uiState.value.userLocation
+
+                // 3. Nếu đã biết vị trí → gọi API lấy pins trong bán kính,
+                //    còn nếu chưa biết thì tạm coi là không có pin xanh.
+                val radiusPins: List<PinDto> = if (true){
+
+                    val result = pinRepo.getPinsInRadius(
+                        centerLat = 21.0086345288,
+                        centerLng = 105.782360384,
+                        radiusMeters = RADIUS_METERS
+                    )
+                    Log.d(TAG, "Loaded ${result.size} radius pins around user location")
+                    result
+                } else {
+                    Log.d(TAG, "User location is null, skip loading radius pins")
+                    emptyList()
+                }
+
+                // 4. Phân loại: đỏ / xanh
+
+                // tập id pin mà user sở hữu
+                val ownedIds = ownedPins.map { it.pinId }.toSet()
+
+                // green = pin trong bán kính nhưng KHÔNG thuộc owned
+                val greenOnly = radiusPins.filter { it.pinId !in ownedIds }
+
+                // 5. Cập nhật uiState với 2 list MỚI
+                _uiState.value = _uiState.value.copy(
+                    redPinList = ownedPins,
+                    greenPinList = greenOnly
+                )
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading pins for userId=$userId", e)
+            }
+        }
+    }
+
+
+    fun onUserLocationChanged(point: Point) {
+        _uiState.value = _uiState.value.copy(
+            userLocation = point
+        )
+    }
+
 }
 

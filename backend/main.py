@@ -195,7 +195,6 @@ def login(body: GetUserByUserIdRequest):
         conn.close()
 
 
-
 # ==================================================
 #              TẠO MỘT GHIM MỚI
 # ==================================================
@@ -227,6 +226,33 @@ def register(body: InsertPinRequest):
 
     finally:
         conn.close()
+        
+# ==================================================
+#              LẤY DANH SÁCH GHIM THEO USER_ID
+# ==================================================
+
+class GetPinListByUserIdRequest(BaseModel):
+    user_id: int
+
+@app.post("/pins/get/user-id")
+def get_pins_by_user_id(body: GetPinListByUserIdRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT pins.*
+                FROM pins
+                INNER JOIN user_pins ON pins.pin_id = user_pins.pin_id
+                WHERE user_pins.user_id = %s;
+                """,
+                (body.user_id,)  
+            )
+            pins = cur.fetchall()   
+        return pins
+    finally:
+        conn.close()
+
         
 # ==================================================
 #              TẠO MỘT POST
@@ -264,4 +290,49 @@ def register(body: InsertPostRequest):
 
     finally:
         conn.close()
+        
+        
+# ==================================================
+#       LẤY DANH SÁCH GHIM TRONG VÙNG BÁN KÍNH
+# ==================================================  
+
+class GetPinsInRadiusRequest(BaseModel):
+    center_lat: float
+    center_lng: float
+    radius_meters: float
+
+
+@app.post("/pins/get/in-radius")
+def get_pins_in_radius(body: GetPinsInRadiusRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Haversine: tính khoảng cách giữa (center_lat, center_lng) và (p.latitude, p.longitude)
+            # 6371000: bán kính Trái Đất ~ 6,371km (đơn vị mét)
+            cur.execute(
+                """
+                SELECT *
+                FROM pins p
+                WHERE (
+                    6371000 * acos(
+                        cos(radians(%s)) * cos(radians(p.latitude::double precision)) *
+                        cos(radians(p.longitude::double precision) - radians(%s)) +
+                        sin(radians(%s)) * sin(radians(p.latitude::double precision))
+                    )
+                  ) <= %s;
+                """,
+                (
+                    body.center_lat,        # %s thứ 2: lat tâm
+                    body.center_lng,        # %s thứ 3: lng tâm
+                    body.center_lat,        # %s thứ 4: lat tâm
+                    body.radius_meters      # %s thứ 5: bán kính (m)
+                )
+            )
+
+            pins = cur.fetchall()
+            return pins
+    finally:
+        conn.close()
+
+
 
