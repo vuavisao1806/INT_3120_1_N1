@@ -290,4 +290,53 @@ def register(body: InsertPostRequest):
 
     finally:
         conn.close()
+        
+        
+# ==================================================
+#       LẤY DANH SÁCH GHIM TRONG VÙNG BÁN KÍNH
+# ==================================================  
+
+class GetPinsInRadiusRequest(BaseModel):
+    user_id: int
+    center_lat: float
+    center_lng: float
+    radius_meters: float
+
+
+@app.post("/pins/get/in-radius")
+def get_pins_in_radius(body: GetPinsInRadiusRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Haversine: tính khoảng cách giữa (center_lat, center_lng) và (p.latitude, p.longitude)
+            # 6371000: bán kính Trái Đất ~ 6,371km (đơn vị mét)
+            cur.execute(
+                """
+                SELECT p.*
+                FROM pins p
+                INNER JOIN user_pins up ON p.pin_id = up.pin_id
+                WHERE up.user_id = %s
+                  AND (
+                    6371000 * acos(
+                        cos(radians(%s)) * cos(radians(p.latitude::double precision)) *
+                        cos(radians(p.longitude::double precision) - radians(%s)) +
+                        sin(radians(%s)) * sin(radians(p.latitude::double precision))
+                    )
+                  ) <= %s;
+                """,
+                (
+                    body.user_id,
+                    body.center_lat,        # %s thứ 2: lat tâm
+                    body.center_lng,        # %s thứ 3: lng tâm
+                    body.center_lat,        # %s thứ 4: lat tâm
+                    body.radius_meters      # %s thứ 5: bán kính (m)
+                )
+            )
+
+            pins = cur.fetchall()
+            return pins
+    finally:
+        conn.close()
+
+
 
