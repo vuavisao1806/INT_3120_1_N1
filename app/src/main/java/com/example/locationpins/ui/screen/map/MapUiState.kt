@@ -13,5 +13,7 @@ data class MapUiState(
     val showBottomSheet: Boolean = false,
     // cái này không phải là địa chỉ camera mọi lúc. mà nó chỉ đại diện cho địa chỉ sau khi chọn 1 địa điểm lúc search thôi.
     val cameraCoordinate: Point? = null,
-    val pinList: List<PinDto> =  emptyList()
+    val pinList: List<PinDto> =  emptyList(),
+    // vị trí hiện tại của user (từ GPS / Mapbox)
+    val userLocation: Point? = null,
 )

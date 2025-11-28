@@ -264,5 +264,12 @@ class MapViewModel(
             }
         }
     }
+
+    fun onUserLocationChanged(point: Point) {
+        _uiState.value = _uiState.value.copy(
+            userLocation = point
+        )
+    }
+
 }
 

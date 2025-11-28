@@ -42,6 +42,18 @@ import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
 import com.mapbox.search.result.SearchSuggestion
 import kotlinx.coroutines.launch
 import com.example.locationpins.R
+import com.mapbox.maps.extension.compose.DisposableMapEffect
+import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.Polygon
+import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.extension.style.layers.generated.fillLayer
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.getSource
+import com.mapbox.turf.TurfConstants
+import com.mapbox.turf.TurfTransformation
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,12 +92,67 @@ fun MapScreen() {
         ) {
             // ========== UI của MAP ==========
             // ========== Khởi tạo location component chỉ 1 lần ==========
-            MapEffect(Unit) { mapView ->
-                mapView.location.updateSettings {
+            DisposableMapEffect(Unit) { mapView ->
+                val locationComponent = mapView.location
+
+                locationComponent.updateSettings {
                     enabled = true
                     locationPuck = createDefault2DPuck(withBearing = true)
                     puckBearingEnabled = true
                     puckBearing = PuckBearing.COURSE
+                }
+
+                // Tạo 1 listener để lắng nghe vị trí user và báo cho ViewModel
+                val listener = OnIndicatorPositionChangedListener { point ->
+                    viewModel.onUserLocationChanged(point)
+                }
+                //Đăng ký listener ở trên vào LocationComponent
+                locationComponent.addOnIndicatorPositionChangedListener(listener)
+                //Hủy đăng kí listener khi effect bị hủy
+                onDispose {
+                    locationComponent.removeOnIndicatorPositionChangedListener(listener)
+                }
+            }
+            val allowedCenter: Point? = uiState.userLocation
+            val allowedRadiusMeters = 5000.0
+
+            MapEffect(allowedCenter) { mapView ->
+                val center = allowedCenter ?: return@MapEffect
+                val mapboxMap = mapView.getMapboxMap()
+
+                mapboxMap.getStyle { style ->
+                    val sourceId = "allowed-area-source"
+                    val layerId = "allowed-area-layer"
+
+                    // 1. Tạo polygon hình tròn quanh center, bán kính theo mét
+                    val polygon: Polygon = TurfTransformation.circle(
+                        center,
+                        allowedRadiusMeters,
+                        64,                       // số cạnh (càng lớn càng tròn)
+                        TurfConstants.UNIT_METERS
+                    )
+
+                    val feature = Feature.fromGeometry(polygon)
+
+                    val existingSource = style.getSource(sourceId)
+                    if (existingSource == null) {
+                        style.addSource(
+                            geoJsonSource(sourceId) {
+                                feature(feature)
+                            }
+                        )
+                        // Nơi để edit màu
+                        style.addLayer(
+                            fillLayer(layerId, sourceId) {
+                                fillColor("#5675FF")
+                                fillOpacity(0.3)
+                                fillOutlineColor("#5675FF")
+                            }
+                        )
+                    } else {
+                        (existingSource as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource)
+                            ?.feature(feature)
+                    }
                 }
             }
 
@@ -110,7 +177,7 @@ fun MapScreen() {
                 ) {
                     iconImage = markerIcon
                     iconAnchor = IconAnchor.BOTTOM
-                    iconSize = 0.5
+                    iconSize = 0.2
                 }
             }
         }
