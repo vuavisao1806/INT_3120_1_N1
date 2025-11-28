@@ -297,7 +297,6 @@ def register(body: InsertPostRequest):
 # ==================================================  
 
 class GetPinsInRadiusRequest(BaseModel):
-    user_id: int
     center_lat: float
     center_lng: float
     radius_meters: float
@@ -312,11 +311,9 @@ def get_pins_in_radius(body: GetPinsInRadiusRequest):
             # 6371000: bán kính Trái Đất ~ 6,371km (đơn vị mét)
             cur.execute(
                 """
-                SELECT p.*
+                SELECT *
                 FROM pins p
-                INNER JOIN user_pins up ON p.pin_id = up.pin_id
-                WHERE up.user_id = %s
-                  AND (
+                WHERE (
                     6371000 * acos(
                         cos(radians(%s)) * cos(radians(p.latitude::double precision)) *
                         cos(radians(p.longitude::double precision) - radians(%s)) +
@@ -325,7 +322,6 @@ def get_pins_in_radius(body: GetPinsInRadiusRequest):
                   ) <= %s;
                 """,
                 (
-                    body.user_id,
                     body.center_lat,        # %s thứ 2: lat tâm
                     body.center_lng,        # %s thứ 3: lng tâm
                     body.center_lat,        # %s thứ 4: lat tâm

@@ -10,6 +10,16 @@ data class GetPinListByUserIdRequest(
 )
 
 @Serializable
+data class GetPinListInRadiusRequest(
+    @SerialName("center_lat")
+    val centerLat: Double,
+    @SerialName("center_lng")
+    val centerLng: Double,
+    @SerialName("radius_meters")
+    val radiusMeters: Double
+)
+
+@Serializable
 data class PinDto(
     @SerialName("pin_id")
     val pinId: Int,
@@ -18,3 +28,4 @@ data class PinDto(
     @SerialName("created_at")
     val createdAt: String
 )
+

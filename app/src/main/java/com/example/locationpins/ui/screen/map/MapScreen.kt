@@ -117,7 +117,7 @@ fun MapScreen() {
                 }
             }
             val allowedCenter: Point? = uiState.userLocation
-            val allowedRadiusMeters = 5000.0
+            val allowedRadiusMeters = 1000.0
 
             MapEffect(allowedCenter) { mapView ->
                 val center = allowedCenter ?: return@MapEffect
@@ -163,60 +163,97 @@ fun MapScreen() {
             MapEffect(uiState.currentStyleUri) { mapView ->
                 mapView.getMapboxMap().loadStyleUri(uiState.currentStyleUri)
             }
+            MapEffect(uiState.redPinList to uiState.greenPinList) { mapView ->
+                val redPins = uiState.redPinList
+                val greenPins = uiState.greenPinList
 
-            MapEffect(uiState.pinList) { mapView ->
-                val pins = uiState.pinList
-                if (pins.isEmpty()) return@MapEffect
+                if (redPins.isEmpty() && greenPins.isEmpty()) return@MapEffect
 
                 val mapboxMap = mapView.getMapboxMap()
                 val context = mapView.context
 
                 mapboxMap.getStyle { style ->
-                    val sourceId = "pins-source"
-                    val layerId = "pins-layer"
-                    val imageId = "pin-icon"
-
-                    // 1. Chuẩn bị FeatureCollection từ danh sách pin
-                    val features = pins.map { pin ->
+                    // 1. Chuẩn bị FeatureCollection cho từng loại
+                    val redFeatures = redPins.map { pin ->
                         Feature.fromGeometry(
                             Point.fromLngLat(pin.longitude, pin.latitude)
                         )
                     }
-                    val featureCollection = FeatureCollection.fromFeatures(features)
+                    val greenFeatures = greenPins.map { pin ->
+                        Feature.fromGeometry(
+                            Point.fromLngLat(pin.longitude, pin.latitude)
+                        )
+                    }
 
-                    // 2. Đảm bảo icon đã được add vào style
-                    val bitmap = BitmapFactory.decodeResource(
+                    val redFC = FeatureCollection.fromFeatures(redFeatures)
+                    val greenFC = FeatureCollection.fromFeatures(greenFeatures)
+
+                    // 2. Icon đỏ & xanh (2 ảnh riêng)
+                    val redBitmap = BitmapFactory.decodeResource(
                         context.resources,
-                        R.drawable.ic_marker
+                        R.drawable.pin_red
                     )
-                    style.addImage(imageId, bitmap)
+                    val greenBitmap = BitmapFactory.decodeResource(
+                        context.resources,
+                        R.drawable.pin_green
+                    )
 
-                    // 3. Tạo hoặc cập nhật GeoJsonSource
-                    val existingSource =
-                        style.getSource(sourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+                    style.addImage("pin-red", redBitmap)
+                    style.addImage("pin-green", greenBitmap)
 
-                    if (existingSource == null) {
-                        // Chưa có source: tạo mới + layer mới
+                    // 3. Source + layer cho RED PINS
+                    val redSourceId = "red-pins-source"
+                    val redLayerId = "red-pins-layer"
+
+                    val existingRedSource =
+                        style.getSource(redSourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+
+                    if (existingRedSource == null) {
                         style.addSource(
-                            geoJsonSource(sourceId) {
-                                featureCollection(featureCollection)
+                            geoJsonSource(redSourceId) {
+                                featureCollection(redFC)
                             }
                         )
-
                         style.addLayer(
-                            symbolLayer(layerId, sourceId) {
-                                iconImage(imageId)
+                            symbolLayer(redLayerId, redSourceId) {
+                                iconImage("pin-red")
                                 iconAllowOverlap(true)
                                 iconAnchor(IconAnchor.BOTTOM)
                                 iconSize(0.1)
                             }
                         )
                     } else {
-                        // Đã có source: chỉ cập nhật lại dữ liệu
-                        existingSource.featureCollection(featureCollection)
+                        existingRedSource.featureCollection(redFC)
+                    }
+
+                    // 4. Source + layer cho GREEN PINS
+                    val greenSourceId = "green-pins-source"
+                    val greenLayerId = "green-pins-layer"
+
+                    val existingGreenSource =
+                        style.getSource(greenSourceId) as? com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
+
+                    if (existingGreenSource == null) {
+                        style.addSource(
+                            geoJsonSource(greenSourceId) {
+                                featureCollection(greenFC)
+                            }
+                        )
+                        style.addLayer(
+                            symbolLayer(greenLayerId, greenSourceId) {
+                                iconImage("pin-green")
+                                iconAllowOverlap(true)
+                                iconAnchor(IconAnchor.BOTTOM)
+                                iconSize(0.1)
+                            }
+                        )
+                    } else {
+                        existingGreenSource.featureCollection(greenFC)
                     }
                 }
             }
+
+
         }
         // ========== SEARCH BOX + SUGGESTIONS ==========
         Column(
