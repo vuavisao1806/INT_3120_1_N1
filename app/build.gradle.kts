@@ -67,6 +67,9 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    //For newsfeed dynamic loading
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
