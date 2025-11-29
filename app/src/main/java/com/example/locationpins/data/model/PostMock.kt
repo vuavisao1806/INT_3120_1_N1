@@ -155,6 +155,126 @@ object PostMock {
             commentCount = 2103,
             tags = listOf("Mộc Châu", "Đồi chè", "Check-in", "Love")
         ),
+        Post(
+            postId = "1",
+            pinId = "pin_01",
+            title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
+            body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
+            imageUrl = "https://images.unsplash.com/photo-1738627760098-51b0df6f2ac9?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Thay mới: Cầu Vàng Đà Nẵng thực tế
+            reactCount = 12485,
+            commentCount = 892,
+            tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
+        ),
+        Post(
+            postId = "2",
+            pinId = "pin_02",
+            title = "Phở bò Hà Nội sáng sớm",
+            body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
+            imageUrl = "https://images.unsplash.com/photo-1631709497146-a239ef373cf1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Giữ: Núi tuyết (gợi Hà Nội se lạnh)
+            reactCount = 8932,
+            commentCount = 567,
+            tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
+        ),
+        Post(
+            postId = "3",
+            pinId = "pin_03",
+            title = "Vịnh Hạ Long từ flycam",
+            body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
+            imageUrl = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&ixlib=rb-4.0.3",  // Thay mới: Vịnh Hạ Long drone view
+            reactCount = 25671,
+            commentCount = 1340,
+            tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
+        ),
+        Post(
+            postId = "1",
+            pinId = "pin_01",
+            title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
+            body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
+            imageUrl = "https://images.unsplash.com/photo-1738627760098-51b0df6f2ac9?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Thay mới: Cầu Vàng Đà Nẵng thực tế
+            reactCount = 12485,
+            commentCount = 892,
+            tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
+        ),
+        Post(
+            postId = "2",
+            pinId = "pin_02",
+            title = "Phở bò Hà Nội sáng sớm",
+            body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
+            imageUrl = "https://images.unsplash.com/photo-1631709497146-a239ef373cf1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Giữ: Núi tuyết (gợi Hà Nội se lạnh)
+            reactCount = 8932,
+            commentCount = 567,
+            tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
+        ),
+        Post(
+            postId = "3",
+            pinId = "pin_03",
+            title = "Vịnh Hạ Long từ flycam",
+            body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
+            imageUrl = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&ixlib=rb-4.0.3",  // Thay mới: Vịnh Hạ Long drone view
+            reactCount = 25671,
+            commentCount = 1340,
+            tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
+        ),
+        Post(
+            postId = "1",
+            pinId = "pin_01",
+            title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
+            body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
+            imageUrl = "https://images.unsplash.com/photo-1738627760098-51b0df6f2ac9?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Thay mới: Cầu Vàng Đà Nẵng thực tế
+            reactCount = 12485,
+            commentCount = 892,
+            tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
+        ),
+        Post(
+            postId = "2",
+            pinId = "pin_02",
+            title = "Phở bò Hà Nội sáng sớm",
+            body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
+            imageUrl = "https://images.unsplash.com/photo-1631709497146-a239ef373cf1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Giữ: Núi tuyết (gợi Hà Nội se lạnh)
+            reactCount = 8932,
+            commentCount = 567,
+            tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
+        ),
+        Post(
+            postId = "3",
+            pinId = "pin_03",
+            title = "Vịnh Hạ Long từ flycam",
+            body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
+            imageUrl = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&ixlib=rb-4.0.3",  // Thay mới: Vịnh Hạ Long drone view
+            reactCount = 25671,
+            commentCount = 1340,
+            tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
+        ),
+        Post(
+            postId = "1",
+            pinId = "pin_01",
+            title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
+            body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
+            imageUrl = "https://images.unsplash.com/photo-1738627760098-51b0df6f2ac9?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Thay mới: Cầu Vàng Đà Nẵng thực tế
+            reactCount = 12485,
+            commentCount = 892,
+            tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
+        ),
+        Post(
+            postId = "2",
+            pinId = "pin_02",
+            title = "Phở bò Hà Nội sáng sớm",
+            body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
+            imageUrl = "https://images.unsplash.com/photo-1631709497146-a239ef373cf1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",  // Giữ: Núi tuyết (gợi Hà Nội se lạnh)
+            reactCount = 8932,
+            commentCount = 567,
+            tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
+        ),
+        Post(
+            postId = "3",
+            pinId = "pin_03",
+            title = "Vịnh Hạ Long từ flycam",
+            body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
+            imageUrl = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&ixlib=rb-4.0.3",  // Thay mới: Vịnh Hạ Long drone view
+            reactCount = 25671,
+            commentCount = 1340,
+            tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
+        ),
 
     )
 }

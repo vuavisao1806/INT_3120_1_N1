@@ -48,11 +48,12 @@ import com.example.locationpins.utils.formatCount
 fun PostPreviewForNewsFeed(
     post: Post,
     modifier: Modifier = Modifier,
-    onPostClick: () -> Unit = {},
-    onReactClick: () -> Unit = {},
-    onCommentClick: () -> Unit = {},
-    onTagClick: (String) -> Unit = {}
+    onPostPress: () -> Unit = {},
+    onReactPress: () -> Unit = {},
+    onCommentPress: () -> Unit = {},
+    onTagPress: (String) -> Unit = {}
 ) {
+    //Bài viết dài có đang ở trạng thái mở rộng (hiển thị tất cả hay không)
     var isExpanded by remember { mutableStateOf(false) }
     val maxCollapsedLines = 3
     val cardShape = RoundedCornerShape(12.dp)
@@ -60,7 +61,7 @@ fun PostPreviewForNewsFeed(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onPostClick() },
+            .clickable { onPostPress() },
         shape = cardShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -132,7 +133,7 @@ fun PostPreviewForNewsFeed(
                         post.tags.forEach { tag ->
                             TagChip(
                                 tag = tag,
-                                onClick = { onTagClick(tag) }
+                                onClick = { onTagPress(tag) }
                             )
                         }
                     }
@@ -158,7 +159,7 @@ fun PostPreviewForNewsFeed(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onReactClick() }
+                        .clickable { onReactPress() }
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -182,7 +183,7 @@ fun PostPreviewForNewsFeed(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onCommentClick() }
+                        .clickable { onCommentPress() }
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -212,6 +213,6 @@ fun PostPreviewForNewsFeedPreview() {
     PostPreviewForNewsFeed(
         post = PostMock.samplePosts.first(),
         modifier = Modifier.padding(8.dp),
-        onTagClick = { tag -> println("Clicked tag: $tag") }
+        onTagPress = { tag -> println("Clicked tag: $tag") }
     )
 }
