@@ -335,4 +335,296 @@ def get_pins_in_radius(body: GetPinsInRadiusRequest):
         conn.close()
 
 
+# ==================================================
+#       Tương tác comment với bài viết
+# ==================================================  
 
+class CreateCommentRequest(BaseModel):
+    post_id: int
+    user_id: int
+    content: str
+
+@app.post("/posts/comment")
+def create_comment(body: CreateCommentRequest):
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # 1. Insert comment
+                cur.execute(
+                    """
+                    INSERT INTO comments (post_id, user_id, content)
+                    VALUES (%s, %s, %s)
+                    RETURNING comment_id, created_at;
+                    """,
+                    (body.post_id, body.user_id, body.content)
+                )
+                comment = cur.fetchone()
+
+                # 2. Update comment_count
+                cur.execute(
+                    """
+                    UPDATE posts
+                    SET comment_count = comment_count + 1
+                    WHERE post_id = %s;
+                    """,
+                    (body.post_id,)
+                )
+
+                # 3. Update users_tags for all tags of that post
+                cur.execute(
+                    """
+                    INSERT INTO users_tags (user_id, tag_id, cnt)
+                    SELECT %s AS user_id, pt.tag_id, 1
+                    FROM post_tags pt
+                    WHERE pt.post_id = %s
+                    ON CONFLICT (user_id, tag_id)
+                    DO UPDATE SET cnt = users_tags.cnt + 1;
+                    """,
+                    (body.user_id, body.post_id)
+                )
+    finally:
+        conn.close()
+
+# ==================================================
+#       Tương tác thả tim với bài viết
+# ================================================== 
+
+class ReactionRequest(BaseModel):
+    post_id: int
+    user_id: int
+
+@app.post("/posts/react")
+def react_post(body: ReactionRequest):
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # 1. Insert reaction nếu chưa có
+                cur.execute(
+                    """
+                    INSERT INTO reactions (post_id, user_id)
+                    VALUES (%s, %s)
+                    ON CONFLICT (post_id, user_id) DO NOTHING;
+                    """,
+                    (body.post_id, body.user_id)
+                )
+
+                # Nếu không insert được (đã tim rồi) thì không cần cộng nữa
+                if cur.rowcount == 0:
+                    return {"status": "already_reacted"}
+
+                # 2. Tăng reaction_count
+                cur.execute(
+                    """
+                    UPDATE posts
+                    SET reaction_count = reaction_count + 1
+                    WHERE post_id = %s;
+                    """,
+                    (body.post_id,)
+                )
+
+                # 3. Update users_tags cho tất cả tag của post
+                cur.execute(
+                    """
+                    INSERT INTO users_tags (user_id, tag_id, cnt)
+                    SELECT %s AS user_id, pt.tag_id, 1
+                    FROM post_tags pt
+                    WHERE pt.post_id = %s
+                    ON CONFLICT (user_id, tag_id)
+                    DO UPDATE SET cnt = users_tags.cnt + 1;
+                    """,
+                    (body.user_id, body.post_id)
+                )
+    finally:
+        conn.close()
+# ==================================================
+#       Tương tác hủy thả tim với bài viết
+# ================================================== 
+
+class CancelReactionRequest(BaseModel):
+    post_id: int
+    user_id: int
+@app.post("/posts/react/cancel")
+def cancel_react_post(body: CancelReactionRequest):
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # 1. Xóa reaction (nếu có)
+                cur.execute(
+                    """
+                    DELETE FROM reactions
+                    WHERE post_id = %s AND user_id = %s;
+                    """,
+                    (body.post_id, body.user_id)
+                )
+
+                # Nếu không xóa được dòng nào thì thôi, không làm gì thêm
+                if cur.rowcount == 0:
+                    return
+
+                # 2. Giảm reaction_count của post (nếu có cột này)
+                cur.execute(
+                    """
+                    UPDATE posts
+                    SET reaction_count = GREATEST(reaction_count - 1, 0)
+                    WHERE post_id = %s;
+                    """,
+                    (body.post_id,)
+                )
+
+                # 3. Giảm cnt trong users_tags cho các tag của post đó
+                #    (1 lần hủy tim => trừ 1 điểm cho mỗi tag)
+                cur.execute(
+                    """
+                    UPDATE users_tags ut
+                    SET cnt = GREATEST(ut.cnt - 1, 0)
+                    FROM post_tags pt
+                    WHERE ut.user_id = %s
+                      AND ut.tag_id = pt.tag_id
+                      AND pt.post_id = %s;
+                    """,
+                    (body.user_id, body.post_id)
+                )
+
+                # (optional) Nếu muốn xóa luôn những dòng cnt <= 0:
+                # cur.execute(
+                #     "DELETE FROM users_tags WHERE user_id = %s AND cnt <= 0;",
+                #     (body.user_id,)
+                # )
+
+        # tạm thời không trả về gì
+        return
+    finally:
+        conn.close()
+
+
+# ==================================================
+#       Tương tác hủy comment với bài viết
+# ==================================================  
+
+class CancelCommentRequest(BaseModel):
+    comment_id: int
+    user_id: int
+@app.post("/posts/comment/cancel")
+def cancel_comment(body: CancelCommentRequest):
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # 1. Lấy post_id của comment để còn update posts + users_tags
+                cur.execute(
+                    """
+                    SELECT post_id
+                    FROM comments
+                    WHERE comment_id = %s AND user_id = %s;
+                    """,
+                    (body.comment_id, body.user_id)
+                )
+                row = cur.fetchone()
+
+                # Không tìm thấy comment (hoặc không thuộc user này) thì thôi
+                if row is None:
+                    return
+
+                post_id = row[0]
+
+                # 2. Xóa comment
+                cur.execute(
+                    """
+                    DELETE FROM comments
+                    WHERE comment_id = %s AND user_id = %s;
+                    """,
+                    (body.comment_id, body.user_id)
+                )
+
+                if cur.rowcount == 0:
+                    # Về lý thuyết không xảy ra vì vừa SELECT, nhưng cứ check cho chắc
+                    return
+
+                # 3. Giảm comment_count của post (nếu có cột này)
+                cur.execute(
+                    """
+                    UPDATE posts
+                    SET comment_count = GREATEST(comment_count - 1, 0)
+                    WHERE post_id = %s;
+                    """,
+                    (post_id,)
+                )
+
+                # 4. Giảm cnt trong users_tags cho các tag của post đó
+                #    (mỗi lần hủy 1 comment => trừ 1 điểm cho mỗi tag)
+                cur.execute(
+                    """
+                    UPDATE users_tags ut
+                    SET cnt = GREATEST(ut.cnt - 1, 0)
+                    FROM post_tags pt
+                    WHERE ut.user_id = %s
+                      AND ut.tag_id = pt.tag_id
+                      AND pt.post_id = %s;
+                    """,
+                    (body.user_id, post_id)
+                )
+
+                # (optional) Xóa dòng users_tags nếu cnt <= 0
+                # cur.execute(
+                #     "DELETE FROM users_tags WHERE user_id = %s AND cnt <= 0;",
+                #     (body.user_id,)
+                # )
+
+        # tạm thời không trả về gì
+        return
+    finally:
+        conn.close()
+
+
+# ==================================================
+#       Lấy 1 post theo post_id 
+# ================================================== 
+
+class GetPostRequest(BaseModel):
+    post_id: int
+    
+@app.post("/posts/get")
+def get_post(body: GetPostRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM posts
+                WHERE post_id = %s;
+                """,
+                (body.post_id,)
+            )
+            row = cur.fetchone()
+
+            return row
+    finally:
+        conn.close()
+# ==================================================
+#       Lấy danh sách comment của 1 bài viết (dùng body)
+# ================================================== 
+class GetPostCommentsRequest(BaseModel):
+    post_id: int
+
+@app.post("/posts/get/comments")
+def get_comments_of_post(body: GetPostCommentsRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM comments
+                WHERE post_id = %s
+                ORDER BY created_at ASC;
+                """,
+                (body.post_id,)
+            )
+            comments = cur.fetchall()
+            return comments
+    finally:
+        conn.close()
