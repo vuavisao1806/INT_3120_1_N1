@@ -585,28 +585,33 @@ def cancel_comment(body: CancelCommentRequest):
 
 class GetPostRequest(BaseModel):
     post_id: int
-    
+
 @app.post("/posts/get")
 def get_post(body: GetPostRequest):
     conn = get_connection()
     try:
-        with conn.cursor() as cur:
+        # dùng RealDictCursor để trả về dạng dict -> FastAPI tự convert sang JSON đẹp
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT *
-                FROM posts
-                WHERE post_id = %s;
+                SELECT 
+                    p.*, 
+                    u.user_name,
+                    u.avatar_url
+                FROM posts p
+                JOIN users u ON u.user_id = p.user_id
+                WHERE p.post_id = %s;
                 """,
                 (body.post_id,)
             )
             row = cur.fetchone()
-
             return row
     finally:
         conn.close()
+
 # ==================================================
-#       Lấy danh sách comment của 1 bài viết (dùng body)
-# ================================================== 
+#       Lấy danh sách comment của 1 bài viết (JOIN users)
+# ==================================================
 class GetPostCommentsRequest(BaseModel):
     post_id: int
 
@@ -614,17 +619,49 @@ class GetPostCommentsRequest(BaseModel):
 def get_comments_of_post(body: GetPostCommentsRequest):
     conn = get_connection()
     try:
-        with conn.cursor() as cur:
+        # dùng RealDictCursor để trả về dict thay vì tuple
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT *
-                FROM comments
-                WHERE post_id = %s
-                ORDER BY created_at ASC;
+                SELECT 
+                    c.comment_id,
+                    c.post_id,
+                    c.user_id,
+                    c.content,
+                    c.created_at,
+                    u.user_name,      
+                    u.avatar_url   
+                FROM comments c
+                JOIN users u ON u.user_id = c.user_id
+                WHERE c.post_id = %s
+                ORDER BY c.created_at ASC;
                 """,
                 (body.post_id,)
             )
             comments = cur.fetchall()
             return comments
+    finally:
+        conn.close()
+
+
+class GetPostTagsRequest(BaseModel):
+    post_id: int
+
+@app.post("/posts/get/tags")
+def get_post_tags(body: GetPostTagsRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT t.tag_id, t.name
+                FROM post_tags pt
+                JOIN tags t ON t.tag_id = pt.tag_id
+                WHERE pt.post_id = %s
+                ORDER BY t.name;
+                """,
+                (body.post_id,)
+            )
+            return cur.fetchall()
     finally:
         conn.close()

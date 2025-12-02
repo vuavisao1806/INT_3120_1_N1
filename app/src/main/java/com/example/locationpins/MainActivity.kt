@@ -12,6 +12,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.locationpins.ui.screen.camera.DemoCameraScreen
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
+import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
 import com.example.locationpins.ui.theme.LocationSocialTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +21,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LocationSocialTheme {
-                MapScreen()
+                PostDetailScreen()
             }
         }
     }
