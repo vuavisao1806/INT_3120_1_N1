@@ -1,7 +1,10 @@
-from fastapi import APIRouter
+import os
+from fastapi import APIRouter, File, UploadFile
 from connection import get_connection
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
+import uuid
+from supabase import create_client, Client
 
 router = APIRouter(
     prefix="/posts",
@@ -515,3 +518,71 @@ def get_preview_pins(body: GetPostByPinIdRequest):
             return pins
     finally:
         conn.close()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+BUCKET_NAME = os.getenv("SUPABASE_BUCKET", "posts")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("SUPABASE_URL hoặc SUPABASE_KEY chưa được cấu hình trong .env")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+router = APIRouter(prefix="/images", tags=["images"])
+
+
+@router.post("/upload")
+async def upload_image(file: UploadFile = File(...)):
+    """
+    Upload ảnh lên Supabase Storage và trả về 1 public URL duy nhất
+    """
+
+    # 1. Check loại file
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)",
+        )
+
+    # 2. Đọc nội dung file
+    contents = await file.read()
+
+    # 3. Giới hạn dung lượng 5MB
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="File quá lớn (tối đa 5MB)",
+        )
+
+    # 4. Tạo tên file unique trong bucket
+    ext = file.filename.split(".")[-1]
+    unique_name = f"{uuid.uuid4()}.{ext}"
+    file_path = f"posts/{unique_name}"  # folder 'posts/' trong bucket
+
+    # 5. Upload lên Supabase Storage
+    try:
+        result = supabase.storage.from_(BUCKET_NAME).upload(
+            path=file_path,
+            file=contents,
+            file_options={
+                "content-type": file.content_type,
+                "cache-control": "3600",
+                "upsert": "false",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload thất bại: {e}")
+
+    # Nếu SDK trả về object có 'error'
+    if isinstance(result, dict) and result.get("error"):
+        raise HTTPException(status_code=500, detail=f"Upload thất bại: {result['error']}")
+
+    # 6. Lấy public URL (bucket phải là public hoặc có policy cho phép)
+    public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(file_path)
+
+    return {
+        "success": True,
+        "url": public_url,   # URL duy nhất bạn cần
+        "path": file_path,   # nếu muốn lưu DB sau này
+    }
