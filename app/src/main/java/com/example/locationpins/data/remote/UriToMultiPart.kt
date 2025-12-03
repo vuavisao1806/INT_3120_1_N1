@@ -23,7 +23,7 @@ fun uriToMultipart(
         inputStream.copyTo(output)
     }
 
-    val mimeType = contentResolver.getType(uri) ?: "image/*"
+    val mimeType = contentResolver.getType(uri) ?: "image/jpg"
     val requestBody = tempFile.asRequestBody(mimeType.toMediaTypeOrNull())
 
     return MultipartBody.Part.createFormData(

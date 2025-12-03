@@ -85,7 +85,7 @@ interface ApiService {
     ): List<PostDto>
 
     @Multipart
-    @POST("/images/upload")
+    @POST("/posts/upload-image")
     suspend fun uploadImage(
         @Part file: MultipartBody.Part
     ): UploadImageResponse
