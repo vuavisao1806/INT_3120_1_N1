@@ -29,7 +29,7 @@ enum class TopLevelDestination(
     val baseRoute: String = route,
 ) {
     NEWFEED(
-        iconTextId = R.string.app_name,
+        iconTextId = R.string.bottom_nav_newfeed_title,
         titleTextId = R.string.top_bar_newfeed_title,
         selectedIcon = LocationSocialIcons.Newfeed,
         unselectedIcon = LocationSocialIcons.NewfeedBorder,
