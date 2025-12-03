@@ -17,10 +17,13 @@ import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
+import okhttp3.MultipartBody
 
 
 import retrofit2.http.Body
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 
 interface ApiService {
 
@@ -77,5 +80,18 @@ interface ApiService {
     suspend fun getNewsfeed(
         @Body body: GetNewsfeedRequest
     ): List<PostDto>
+
+    @Multipart
+    @POST("/images/upload")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part
+    ): UploadImageResponse
 }
 
+
+
+data class UploadImageResponse(
+    val success: Boolean,
+    val url: String,
+    val path: String
+)
