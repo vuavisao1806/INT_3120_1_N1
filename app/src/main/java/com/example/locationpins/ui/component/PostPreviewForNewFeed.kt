@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -70,14 +71,22 @@ fun PostPreviewForNewsFeed(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Ảnh bài viết
-            Image(
-                painter = rememberAsyncImagePainter(post.imageUrl),
+            DynamicAsyncImage(
+                imageUrl = post.imageUrl,
                 contentDescription = post.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(4f / 3f),
-                contentScale = ContentScale.Crop
+                    .aspectRatio(4f / 3f)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
             )
+//            Image(
+//                painter = rememberAsyncImagePainter(post.imageUrl),
+//                contentDescription = post.title,
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .aspectRatio(4f / 3f),
+//                contentScale = ContentScale.Crop
+//            )
 
             // Nội dung bài viết
             Column(

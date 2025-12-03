@@ -16,6 +16,7 @@ import com.example.locationpins.data.remote.dto.tag.GetPostTagsRequest
 import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
+import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 
 
 import retrofit2.http.Body
@@ -72,5 +73,9 @@ interface ApiService {
     suspend fun login(
         @Body body: LoginRequest
     ): LoginResponse
+    @POST("/posts/newsfeed")
+    suspend fun getNewsfeed(
+        @Body body: GetNewsfeedRequest
+    ): List<PostDto>
 }
 
