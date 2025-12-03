@@ -2,8 +2,10 @@ package com.example.locationpins.ui.screen.newfeed
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.mapper.toPosts
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
+import com.example.locationpins.data.repository.PostRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +17,10 @@ import kotlinx.coroutines.launch
  * ViewModel cho màn hình News Feed
  *
  */
-class NewsFeedViewModel : ViewModel() {
+class NewsFeedViewModel(
+    private val postRepository: PostRepository = PostRepository(),
+    private val userId: Int = 1
+) : ViewModel() {
 
     // uiState private
     private val _uiState = MutableStateFlow(NewsFeedUiState())
@@ -34,8 +39,13 @@ class NewsFeedViewModel : ViewModel() {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
+                val postDtos = postRepository.getNewsfeed(
+                    userId = userId,
+                    limit = _uiState.value.pageSize,
+                    offset = 0
+                )
 
-                val posts = fetchPostsFromApi(page = 0, pageSize = _uiState.value.pageSize)
+                val posts = postDtos.toPosts()
 
                 _uiState.update {
                     it.copy(
@@ -59,14 +69,20 @@ class NewsFeedViewModel : ViewModel() {
     /**
      * Refresh toàn bộ feed
      */
+
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
 
             try {
-                delay(1000)
 
-                val posts = fetchPostsFromApi(page = 0, pageSize = _uiState.value.pageSize)
+                val postDtos = postRepository.getNewsfeed(
+                    userId = userId,
+                    limit = _uiState.value.pageSize,
+                    offset = 0
+                )
+
+                val posts = postDtos.toPosts()
 
                 _uiState.update {
                     it.copy(
@@ -87,11 +103,11 @@ class NewsFeedViewModel : ViewModel() {
         }
     }
 
+
     /**
      * Load thêm posts khi scroll đến cuối
      */
     fun loadMorePosts() {
-        // Nếu đang load hoặc đã hết dữ liệu thì không làm gì
         if (_uiState.value.isLoadingMore || _uiState.value.hasReachedEnd) {
             return
         }
@@ -100,14 +116,17 @@ class NewsFeedViewModel : ViewModel() {
             _uiState.update { it.copy(isLoadingMore = true) }
 
             try {
-                //Delay để giả lập
-                delay(1008)
-
                 val nextPage = _uiState.value.currentPage + 1
-                val newPosts = fetchPostsFromApi(
-                    page = nextPage,
-                    pageSize = _uiState.value.pageSize
+                val offset = nextPage * _uiState.value.pageSize
+
+                // ⭐ GỌI API THẬT
+                val newPostDtos = postRepository.getNewsfeed(
+                    userId = userId,
+                    limit = _uiState.value.pageSize,
+                    offset = offset
                 )
+
+                val newPosts = newPostDtos.toPosts()
 
                 _uiState.update {
                     it.copy(
@@ -136,7 +155,6 @@ class NewsFeedViewModel : ViewModel() {
             val updatedPosts = currentState.posts.map { post ->
                 if (post.postId == postId) {
                     val currentCount = post.reactCount as Int
-                    // Toggle react (demo: +1 hoặc -1)
                     post.copy(reactCount = currentCount + 1)
                 } else {
                     post

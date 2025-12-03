@@ -14,6 +14,7 @@ import com.example.locationpins.data.remote.dto.react.CancelReactionRequest
 import com.example.locationpins.data.remote.dto.react.ReactionRequest
 import com.example.locationpins.data.remote.dto.tag.GetPostTagsRequest
 import com.example.locationpins.data.remote.dto.tag.TagDto
+import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 
 
 import retrofit2.http.Body
@@ -66,5 +67,9 @@ interface ApiService {
         @Body body: GetPostTagsRequest
     ): List<TagDto>
 
+    @POST("/posts/newsfeed")
+    suspend fun getNewsfeed(
+        @Body body: GetNewsfeedRequest
+    ): List<PostDto>
 }
 
