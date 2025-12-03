@@ -144,7 +144,7 @@ fun CreatePostScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color(0xFFF5F5F5))
+                                        .background(Color.White)
                                 ) {
                                     Image(
                                         painter = rememberAsyncImagePainter(currentImageUri),

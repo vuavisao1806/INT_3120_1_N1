@@ -38,3 +38,15 @@ data class PostDto(
     @SerialName("created_at")
     val createdAt: String
 )
+
+@Serializable
+data class GetNewsfeedRequest(
+    @SerialName("user_id")
+    val userId: Int,
+
+    @SerialName("limit")
+    val limit: Int = 20,
+
+    @SerialName("offset")
+    val offset: Int = 0
+)
