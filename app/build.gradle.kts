@@ -42,10 +42,10 @@ android {
 
 dependencies {
     // Mapbox
-    implementation("com.mapbox.maps:android:11.16.6")
-    implementation("com.mapbox.extension:maps-compose:11.16.6")
-    implementation("com.mapbox.search:mapbox-search-android:2.16.6")
-    implementation("com.mapbox.search:mapbox-search-android-ui:2.16.6")
+    implementation("com.mapbox.maps:android-ndk27:11.16.6")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.16.6")
+    implementation("com.mapbox.search:mapbox-search-android-ndk27:2.16.6")
+    implementation("com.mapbox.search:mapbox-search-android-ui-ndk27:2.16.6")
     implementation("com.mapbox.mapboxsdk:mapbox-sdk-turf:7.9.0")
     // Viewmodel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
@@ -69,6 +69,8 @@ dependencies {
 
     //For newsfeed dynamic loading
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

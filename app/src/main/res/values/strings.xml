@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">LocationSocial</string>
+    <string name="bottom_nav_newfeed_title">Newfeed</string>
+    <string name="bottom_nav_map_title">Map</string>
+    <string name="bottom_nav_camera_title">Camera</string>
+    <string name="bottom_nav_gallery_title">Gallery</string>
+    <string name="bottom_nav_user_title">User</string>
+
+    <string name="top_bar_newfeed_title">Newfeed</string>
+    <string name="top_bar_map_title">Map</string>
+    <string name="top_bar_camera_title">Camera</string>
+    <string name="top_bar_gallery_title">Gallery</string>
+    <string name="top_bar_user_title">User</string>
 </resources>
