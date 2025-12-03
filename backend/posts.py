@@ -467,3 +467,51 @@ def get_newsfeed(body: GetNewsfeedRequest):
             return posts
     finally:
         conn.close()
+
+class GetPreviewPinsRequest(BaseModel):
+    user_id: int
+
+@router.post("/pinpreview")
+def get_preview_pins(body: GetPreviewPinsRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    p.pin_id,
+                    MIN(p.image_url) as image_url,
+                    (SELECT COUNT(*) FROM posts p2 WHERE p2.pin_id = p.pin_id) as cnt
+                FROM posts p
+                JOIN users u ON u.user_id = p.user_id
+                WHERE u.user_id = %s
+                GROUP BY p.pin_id;
+                """,
+                (body.user_id,)
+            )
+            pins = cur.fetchall()
+            return pins
+    finally:
+        conn.close()
+
+class GetPostByPinIdRequest(BaseModel):
+    pin_id: int
+
+@router.post("/pinId")
+def get_preview_pins(body: GetPostByPinIdRequest):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    *
+                FROM posts p
+                WHERE p.pin_id = %s;
+                """,
+                (body.pin_id,)
+            )
+            pins = cur.fetchall()
+            return pins
+    finally:
+        conn.close()
