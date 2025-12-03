@@ -1,7 +1,7 @@
 package com.example.locationpins.data.model
 
 data class User(
-    val userId: String,
+    val userId: Int,
     val userName: String,
     val location: String,
     val avatarUrl: String,

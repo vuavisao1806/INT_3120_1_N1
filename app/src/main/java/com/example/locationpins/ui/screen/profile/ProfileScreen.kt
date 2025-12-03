@@ -327,7 +327,7 @@ fun SelfActionRow(
 fun PreviewProfileScreen() {
     LocationSocialTheme {
         ProfileScreen( user = User(
-            userId = "u001",
+            userId = 1,
             userName = "linhnguyen",
             location = "Hồ Chí Minh, Việt Nam",
             avatarUrl = "https://example.com/avatar/linh.png",
@@ -351,7 +351,7 @@ fun PreviewSelf() {
     LocationSocialTheme {
         ProfileSelfView(
             user = User(
-                userId = "u001",
+                userId = 1,
                 userName = "linhnguyen",
                 location = "Hồ Chí Minh, Việt Nam",
                 avatarUrl = "https://example.com/avatar/linh.png",
@@ -378,7 +378,7 @@ fun PreviewStranger() {
     LocationSocialTheme {
         ProfileStrangerView(
             user = User(
-                userId = "u001",
+                userId = 1,
                 userName = "linhnguyen",
                 location = "Hồ Chí Minh, Việt Nam",
                 avatarUrl = "https://example.com/avatar/linh.png",
