@@ -6,6 +6,7 @@ import com.example.locationpins.data.mapper.toPosts
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.TagRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
  */
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
+    private val tagRepository: TagRepository = TagRepository(),
     private val userId: Int = 1
 ) : ViewModel() {
 
@@ -47,9 +49,17 @@ class NewsFeedViewModel(
 
                 val posts = postDtos.toPosts()
 
+                val postsWithTags: List<Post> = posts.map { post ->
+                    val tags = tagRepository
+                        .getTagsByPostId(post.postId.toInt())
+                        .map { t -> t.name }
+
+                    post.copy(tags = tags)
+                }
+
                 _uiState.update {
                     it.copy(
-                        posts = posts,
+                        posts = postsWithTags,
                         isLoading = false,
                         currentPage = 0,
                         hasReachedEnd = posts.size < it.pageSize

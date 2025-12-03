@@ -33,13 +33,18 @@ import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
 
 @Composable
-fun PostDetailScreen() {
+fun PostDetailScreen(
+    postId: String?,
+    onNavigateBack: () -> Unit,
+
+) {
     val viewModel = remember {
         PostDetailViewModel(
             postRepository = PostRepository(),
             commentRepository = CommentRepository(),
             reactionRepository = ReactionRepository(),
-            tagRepository = TagRepository()
+            tagRepository = TagRepository(),
+            postId = postId?.toIntOrNull() ?: 1
         )
     }
 
