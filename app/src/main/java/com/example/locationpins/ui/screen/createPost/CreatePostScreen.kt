@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.createPost
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,13 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.model.UserMock
+import com.example.locationpins.data.remote.RetrofitClient
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 
 enum class CreatePostStep {
@@ -40,11 +44,19 @@ fun CreatePostScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     user: User,
+    pinId: Int, // truyền từ màn trước vào
 ) {
+    val context = LocalContext.current
+
+    val viewModel: CreatePostViewModel = viewModel(
+        factory = CreatePostViewModelFactory(RetrofitClient.api)
+    )
+
     var step by remember { mutableStateOf(CreatePostStep.Editing) }
     var currentImageUri by remember { mutableStateOf(initialImageUri) }
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var isPosting by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         when (step) {
@@ -60,7 +72,10 @@ fun CreatePostScreen(
                                 )
                             },
                             navigationIcon = {
-                                IconButton(onClick = onNavigateBack) {
+                                IconButton(
+                                    enabled = !isPosting,
+                                    onClick = onNavigateBack
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Đóng"
@@ -69,13 +84,42 @@ fun CreatePostScreen(
                             },
                             actions = {
                                 IconButton(
-                                    onClick = { /* TODO: Xử lý đăng bài */ },
-                                    enabled = currentImageUri != null && title.isNotBlank()
+                                    onClick = {
+                                        val img = currentImageUri ?: return@IconButton
+                                        isPosting = true
+                                        viewModel.submitPost(
+                                            context = context,
+                                            pinId = pinId,
+                                            userId = user.userId, // đổi nếu field khác
+                                            title = title,
+                                            content = content,
+                                            imageUri = img,
+                                            status = "active",
+                                            onSuccess = {
+                                                isPosting = false
+                                                Toast.makeText(
+                                                    context,
+                                                    "Đăng bài thành công",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                onNavigateBack()
+                                            },
+                                            onError = { msg ->
+                                                isPosting = false
+                                                Toast.makeText(
+                                                    context,
+                                                    msg,
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        )
+                                    },
+                                    enabled = !isPosting && currentImageUri != null && title.isNotBlank()
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Send,
                                         contentDescription = "Đăng",
-                                        tint = if (currentImageUri != null && title.isNotBlank())
+                                        tint = if (!isPosting && currentImageUri != null && title.isNotBlank())
                                             Color(0xFF1DA1F2)
                                         else
                                             Color.Gray
@@ -104,7 +148,6 @@ fun CreatePostScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Avatar
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
@@ -127,7 +170,7 @@ fun CreatePostScreen(
                                     color = Color.Black
                                 )
                                 Text(
-                                    "@"+user.userName,
+                                    "@${user.userName}",
                                     fontSize = 14.sp,
                                     color = Color.Gray
                                 )
@@ -153,9 +196,10 @@ fun CreatePostScreen(
                                         contentScale = ContentScale.Crop
                                     )
 
-                                    // Camera button overlay (bottom right)
                                     IconButton(
-                                        onClick = { step = CreatePostStep.Capturing },
+                                        onClick = {
+                                            if (!isPosting) step = CreatePostStep.Capturing
+                                        },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
                                             .padding(16.dp)
@@ -174,11 +218,12 @@ fun CreatePostScreen(
                                     }
                                 }
                             } else {
-                                // Empty state - click to capture
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clickable { step = CreatePostStep.Capturing }
+                                        .clickable(enabled = !isPosting) {
+                                            step = CreatePostStep.Capturing
+                                        }
                                         .background(Color(0xFFF5F5F5)),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -216,6 +261,7 @@ fun CreatePostScreen(
                                 )
                             },
                             singleLine = true,
+                            enabled = !isPosting,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
@@ -241,6 +287,7 @@ fun CreatePostScreen(
                                 )
                             },
                             maxLines = 10,
+                            enabled = !isPosting,
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
@@ -279,6 +326,7 @@ fun CreatePostScreenPreview() {
         initialImageUri = null,
         onNavigateBack = {},
         modifier = Modifier,
-        user = UserMock.sampleUser.first()
+        user = UserMock.sampleUser.first(),
+        pinId = 1
     )
 }

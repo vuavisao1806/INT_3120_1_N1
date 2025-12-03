@@ -17,6 +17,9 @@ import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
+import com.example.locationpins.data.remote.dto.post.InsertPostRequest
+import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
+import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import okhttp3.MultipartBody
 
 
@@ -86,12 +89,12 @@ interface ApiService {
     suspend fun uploadImage(
         @Part file: MultipartBody.Part
     ): UploadImageResponse
+
+    @POST("/posts/insert")
+    suspend fun insertPost(
+        @Body body: InsertPostRequest
+    ): InsertPostSuccess
+
 }
 
 
-
-data class UploadImageResponse(
-    val success: Boolean,
-    val url: String,
-    val path: String
-)
