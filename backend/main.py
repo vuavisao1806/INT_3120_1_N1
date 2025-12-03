@@ -30,18 +30,34 @@ class LoginRequest(BaseModel):
     user_name: str
     user_password: str
 
-class LoginInvalid(BaseModel):
-    invalid_user: bool = True
+
+class UserOut(BaseModel):
+    user_id: str
+    user_name: str
+    quotes: str | None = None
+    avatar_url: str | None = None
+    role: str
+    location: str
+    created_at: str
+    name: str
+    phone_num: str
+    website: str
+
+
+class LoginResponse(BaseModel):
+    success: bool
+    user: UserOut | None = None
 
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-@app.post("/users/login")
+@app.post("/users/login", response_model=LoginResponse)
 def login(body: LoginRequest):
     conn = get_connection()
     try:
@@ -52,20 +68,15 @@ def login(body: LoginRequest):
             )
             user = cur.fetchone()
 
-        if user is None:
-            return LoginInvalid()
+        if user is None or not verify_password(body.user_password, user["password"]):
+            return LoginResponse(success=False, user=None)
 
-        if not verify_password(body.user_password, user["password"]):
-            return LoginInvalid()
-
-        # Xóa password khi trả về
         user.pop("password", None)
 
-        return user
+        return LoginResponse(success=True, user=UserOut(**user))
 
     finally:
         conn.close()
-
 
 
 # ====================================
@@ -81,8 +92,10 @@ class RegisterRequest(BaseModel):
 class RegisterNameInvalid(BaseModel):
     user_name_taken: bool = True
 
+
 class RegisterEmailInvalid(BaseModel):
     user_email_taken: bool = True
+
 
 class RegisterSuccess(BaseModel):
     register_success: bool = True
@@ -138,9 +151,11 @@ class UpdateUserByUserIdRequest(BaseModel):
     quotes: str
     avatar_url: str
     contact_info: str
-    
+
+
 class UpdateUserByUserIdSuccess(BaseModel):
     update_user_by_user_id_success: bool = True
+
 
 @app.post("/users/update")
 def register(body: UpdateUserByUserIdRequest):
@@ -158,19 +173,23 @@ def register(body: UpdateUserByUserIdRequest):
                     contact_info = %s
                 WHERE user_id = %s
                 """,
-                (body.quotes,body.avatar_url, body.contact_info, body.user_id)
+                (body.quotes, body.avatar_url, body.contact_info, body.user_id)
             )
-            
+
         conn.commit()
         return UpdateUserByUserIdSuccess()
 
     finally:
         conn.close()
-        
+
+
 class GetUserByUserIdRequest(BaseModel):
     user_id: str
+
+
 class GetUserByUserIdInvalid(BaseModel):
     get_user_by_user_id_invalid: bool = True
+
 
 @app.post("/users/get")
 def login(body: GetUserByUserIdRequest):
@@ -203,9 +222,11 @@ def login(body: GetUserByUserIdRequest):
 class InsertPinRequest(BaseModel):
     latitude: float
     longitude: float
-    
+
+
 class InsertPinSuccess(BaseModel):
     insert_pin_success: bool = True
+
 
 @app.post("/pins/insert")
 def register(body: InsertPinRequest):
@@ -218,21 +239,23 @@ def register(body: InsertPinRequest):
                 INSERT INTO pins (latitude, longitude)
                 VALUES (%s, %s)
                 """,
-                (body.latitude,body.longitude)
+                (body.latitude, body.longitude)
             )
-            
+
         conn.commit()
         return InsertPinSuccess()
 
     finally:
         conn.close()
-        
+
 # ==================================================
 #              LẤY DANH SÁCH GHIM THEO USER_ID
 # ==================================================
 
+
 class GetPinListByUserIdRequest(BaseModel):
     user_id: int
+
 
 @app.post("/pins/get/user-id")
 def get_pins_by_user_id(body: GetPinListByUserIdRequest):
@@ -246,14 +269,14 @@ def get_pins_by_user_id(body: GetPinListByUserIdRequest):
                 INNER JOIN user_pins ON pins.pin_id = user_pins.pin_id
                 WHERE user_pins.user_id = %s;
                 """,
-                (body.user_id,)  
+                (body.user_id,)
             )
-            pins = cur.fetchall()   
+            pins = cur.fetchall()
         return pins
     finally:
         conn.close()
 
-        
+
 # ==================================================
 #              TẠO MỘT POST
 # ==================================================
@@ -266,10 +289,11 @@ class InsertPostRequest(BaseModel):
     body: str
     image_url: str
     status: str
-    
-    
+
+
 class InsertPostSuccess(BaseModel):
     insert_post_success: bool = True
+
 
 @app.post("/posts/insert")
 def register(body: InsertPostRequest):
@@ -282,19 +306,20 @@ def register(body: InsertPostRequest):
                 INSERT INTO posts (pin_id, user_id, title, body, image_url, status)
                 VALUES (%s, %s,%s,%s,%s,%s)
                 """,
-                (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status)
+                (body.pin_id, body.user_id, body.title,
+                 body.body, body.image_url, body.status)
             )
-            
+
         conn.commit()
         return InsertPostSuccess()
 
     finally:
         conn.close()
-        
-        
+
+
 # ==================================================
 #       LẤY DANH SÁCH GHIM TRONG VÙNG BÁN KÍNH
-# ==================================================  
+# ==================================================
 
 class GetPinsInRadiusRequest(BaseModel):
     center_lat: float
@@ -337,12 +362,13 @@ def get_pins_in_radius(body: GetPinsInRadiusRequest):
 
 # ==================================================
 #       Tương tác comment với bài viết
-# ==================================================  
+# ==================================================
 
 class CreateCommentRequest(BaseModel):
     post_id: int
     user_id: int
     content: str
+
 
 @app.post("/posts/comment")
 def create_comment(body: CreateCommentRequest):
@@ -388,11 +414,13 @@ def create_comment(body: CreateCommentRequest):
 
 # ==================================================
 #       Tương tác thả tim với bài viết
-# ================================================== 
+# ==================================================
+
 
 class ReactionRequest(BaseModel):
     post_id: int
     user_id: int
+
 
 @app.post("/posts/react")
 def react_post(body: ReactionRequest):
@@ -440,11 +468,14 @@ def react_post(body: ReactionRequest):
         conn.close()
 # ==================================================
 #       Tương tác hủy thả tim với bài viết
-# ================================================== 
+# ==================================================
+
 
 class CancelReactionRequest(BaseModel):
     post_id: int
     user_id: int
+
+
 @app.post("/posts/react/cancel")
 def cancel_react_post(body: CancelReactionRequest):
     conn = get_connection()
@@ -502,11 +533,13 @@ def cancel_react_post(body: CancelReactionRequest):
 
 # ==================================================
 #       Tương tác hủy comment với bài viết
-# ==================================================  
+# ==================================================
 
 class CancelCommentRequest(BaseModel):
     comment_id: int
     user_id: int
+
+
 @app.post("/posts/comment/cancel")
 def cancel_comment(body: CancelCommentRequest):
     conn = get_connection()
@@ -580,11 +613,12 @@ def cancel_comment(body: CancelCommentRequest):
 
 
 # ==================================================
-#       Lấy 1 post theo post_id 
-# ================================================== 
+#       Lấy 1 post theo post_id
+# ==================================================
 
 class GetPostRequest(BaseModel):
     post_id: int
+
 
 @app.post("/posts/get")
 def get_post(body: GetPostRequest):
@@ -612,8 +646,11 @@ def get_post(body: GetPostRequest):
 # ==================================================
 #       Lấy danh sách comment của 1 bài viết (JOIN users)
 # ==================================================
+
+
 class GetPostCommentsRequest(BaseModel):
     post_id: int
+
 
 @app.post("/posts/get/comments")
 def get_comments_of_post(body: GetPostCommentsRequest):
@@ -646,6 +683,7 @@ def get_comments_of_post(body: GetPostCommentsRequest):
 
 class GetPostTagsRequest(BaseModel):
     post_id: int
+
 
 @app.post("/posts/get/tags")
 def get_post_tags(body: GetPostTagsRequest):

@@ -14,6 +14,8 @@ import com.example.locationpins.data.remote.dto.react.CancelReactionRequest
 import com.example.locationpins.data.remote.dto.react.ReactionRequest
 import com.example.locationpins.data.remote.dto.tag.GetPostTagsRequest
 import com.example.locationpins.data.remote.dto.tag.TagDto
+import com.example.locationpins.data.remote.dto.user.LoginRequest
+import com.example.locationpins.data.remote.dto.user.LoginResponse
 
 
 import retrofit2.http.Body
@@ -66,5 +68,9 @@ interface ApiService {
         @Body body: GetPostTagsRequest
     ): List<TagDto>
 
+    @POST("/users/login")
+    suspend fun login(
+        @Body body: LoginRequest
+    ): LoginResponse
 }
 

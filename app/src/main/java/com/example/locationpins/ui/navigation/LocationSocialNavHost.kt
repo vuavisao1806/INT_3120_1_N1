@@ -47,7 +47,7 @@ fun LocationSocialNavHost(
         composable(route = TopLevelDestination.USER.route) {
             ProfileScreen(
                 user = User(
-                    userId = "001",
+                    userId = 1,
                     userName = "tin chuan",
                     location = "Viet Nam",
                     avatarUrl = "di dau",
