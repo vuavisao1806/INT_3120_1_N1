@@ -63,12 +63,17 @@ fun PostPreviewForGrid(
         val edgePadding = max(widthDp.value * 0.04f, 8f).dp
 
         // Ảnh nền
-        Image(
-            painter = rememberAsyncImagePainter(post.imageUrl),
+        DynamicAsyncImage(
+            imageUrl = post.imageUrl,
             contentDescription = null,
             modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop
         )
+//        Image(
+//            painter = rememberAsyncImagePainter(post.imageUrl),
+//            contentDescription = null,
+//            modifier = Modifier.matchParentSize(),
+//            contentScale = ContentScale.Crop
+//        )
 
         // Icon + số react/comment
         Column(
