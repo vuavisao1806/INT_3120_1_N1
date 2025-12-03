@@ -17,7 +17,8 @@ class PostDetailViewModel(
     private val postRepository: PostRepository,
     private val commentRepository: CommentRepository,
     private val reactionRepository: ReactionRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val postId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostDetailUiState())
@@ -25,7 +26,6 @@ class PostDetailViewModel(
 
     // tạm thời hard-code, sau này truyền qua nav args cho đẹp
     private val currentUserId = 2
-    private val postId = 2
 
     init {
         loadPostDetails()

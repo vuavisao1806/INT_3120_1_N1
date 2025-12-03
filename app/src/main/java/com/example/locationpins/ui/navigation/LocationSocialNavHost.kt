@@ -10,7 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.navArgument
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.locationpins.data.model.User
@@ -21,6 +23,7 @@ import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
+import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
 import com.example.locationpins.ui.screen.profile.ProfileMode
 import com.example.locationpins.ui.screen.profile.ProfileScreen
 
@@ -37,12 +40,31 @@ fun LocationSocialNavHost(
         modifier = modifier
     ) {
         composable(route = TopLevelDestination.NEWFEED.route) {
-            NewsFeedScreen()
+            NewsFeedScreen(
+                onPostPress = { post ->
+                    // Navigate tới PostDetail với postId
+                    navController.navigate("post_detail/${post.postId}")
+                }
+            )
         }
 
         composable(route = TopLevelDestination.MAP.route) {
             MapScreen()
         }
+        composable(
+            route = "post_detail/{postId}",
+            arguments = listOf(
+                navArgument("postId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId")
+            PostDetailScreen(
+                postId = postId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+
 
         composable(route = TopLevelDestination.CAMERA.route) {
             var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -88,5 +110,7 @@ fun LocationSocialNavHost(
 //                modifier = TODO()
             )
         }
+
+
     }
 }

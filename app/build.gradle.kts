@@ -67,6 +67,8 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+
     //For newsfeed dynamic loading
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
     implementation(libs.androidx.navigation.runtime.ktx)
