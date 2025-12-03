@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from connection import get_connection
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
@@ -41,10 +41,25 @@ def register(body: InsertPostRequest):
                 """,
                 (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status)
             )
+
+             # 2. Gắn user với pin trong user_pins nếu chưa có
+            cur.execute(
+                """
+                INSERT INTO user_pins (user_id, pin_id)
+                VALUES (%s, %s)
+                ON CONFLICT (user_id, pin_id) DO NOTHING;
+                """,
+                (body.user_id, body.pin_id),
+            )
             
         connection.commit()
         return InsertPostSuccess()
 
+    except Exception as e:
+        connection.rollback()
+        print("ERROR /posts/insert:", e)  # log ra console
+        # trả luôn lỗi chi tiết để debug
+        raise HTTPException(status_code=500, detail=f"DB error: {e}")
     finally:
         connection.close()
         
@@ -528,22 +543,20 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-router = APIRouter(prefix="/images", tags=["images"])
-
-
-@router.post("/upload")
+@router.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     """
     Upload ảnh lên Supabase Storage và trả về 1 public URL duy nhất
     """
+    print("DEBUG content_type:", file.content_type)
 
     # 1. Check loại file
-    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-    if file.content_type not in allowed_types:
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
-            detail="Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)",
+            detail=f"Chỉ chấp nhận file ảnh, content_type hiện tại: {file.content_type}",
         )
+
 
     # 2. Đọc nội dung file
     contents = await file.read()

@@ -18,7 +18,7 @@ data class User(
 object UserMock {
     val sampleUser = listOf(
         User(
-            userId = "1",
+            userId = 1,
             userName = "vananh.ng",
             location = "Hà Nội",
             avatarUrl = "https://i.pravatar.cc/300?img=1",
@@ -33,7 +33,7 @@ object UserMock {
             website = "instagram.com/vananh.ng"
         ),
         User(
-            userId = "2",
+            userId = 2,
             userName = "minhquan.dev",
             location = "Đà Nẵng",
             avatarUrl = "https://i.pravatar.cc/300?img=2",
@@ -48,7 +48,7 @@ object UserMock {
             website = "github.com/minhquan99"
         ),
         User(
-            userId = "3",
+            userId = 3,
             userName = "maile.foodie",
             location = "TP.HCM",
             avatarUrl = "https://i.pravatar.cc/300?img=3",
@@ -63,7 +63,7 @@ object UserMock {
             website = "tiktok.com/@maile.foodie"
         ),
         User(
-            userId = "4",
+            userId = 4,
             userName = "duchuy.admin",
             location = "Hà Nội",
             avatarUrl = "https://i.pravatar.cc/300?img=5",
@@ -78,7 +78,7 @@ object UserMock {
             website = "phamduchuy.com"
         ),
         User(
-            userId = "5",
+            userId = 5,
             userName = "anhtuan.photo",
             location = "Huế",
             avatarUrl = "https://i.pravatar.cc/300?img=8",
@@ -93,7 +93,7 @@ object UserMock {
             website = "instagram.com/anhtuan.photo"
         ),
         User(
-            userId = "6",
+            userId = 6,
             userName = "ngoclan.slow",
             location = "Hải Phòng",
             avatarUrl = "https://i.pravatar.cc/300?img=12",
@@ -108,7 +108,7 @@ object UserMock {
             website = ""
         ),
         User(
-            userId = "7",
+            userId = 7,
             userName = "hieuminh.football",
             location = "Hà Nội",
             avatarUrl = "https://i.pravatar.cc/300?img=15",
@@ -123,7 +123,7 @@ object UserMock {
             website = ""
         ),
         User(
-            userId = "8",
+            userId = 8,
             userName = "huong.yoga",
             location = "Đà Lạt",
             avatarUrl = "https://i.pravatar.cc/300?img=20",
@@ -138,7 +138,7 @@ object UserMock {
             website = "yogawithhuong.vn"
         ),
         User(
-            userId = "9",
+            userId = 9,
             userName = "quocbao.tech",
             location = "TP.HCM",
             avatarUrl = "https://i.pravatar.cc/300?img=25",
@@ -153,7 +153,7 @@ object UserMock {
             website = "quocbao.dev"
         ),
         User(
-            userId = "10",
+            userId = 10,
             userName = "kimngan.catlover",
             location = "Cần Thơ",
             avatarUrl = "https://i.pravatar.cc/300?img=30",
