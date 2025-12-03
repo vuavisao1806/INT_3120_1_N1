@@ -18,6 +18,7 @@ import com.example.locationpins.data.model.UserMock
 import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
+import com.example.locationpins.ui.screen.gallery.GalleryScreen
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.profile.ProfileMode
@@ -62,8 +63,7 @@ fun LocationSocialNavHost(
         }
 
         composable(route = TopLevelDestination.GALLERY.route) {
-            Log.i("GALLERY", "Test gallery")
-            Text("See you soon")
+            GalleryScreen()
         }
 
         composable(route = TopLevelDestination.USER.route) {
