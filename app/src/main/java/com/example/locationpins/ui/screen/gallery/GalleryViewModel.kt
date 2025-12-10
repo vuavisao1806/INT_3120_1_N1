@@ -6,6 +6,7 @@ import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,7 @@ import kotlinx.coroutines.launch
 data class PinSummary(
     val pinId: Int,
     val coverImageUrl: String,
-    val postCount: Int
+    val postCount: Long
 )
 
 data class PostSummary(
@@ -42,7 +43,7 @@ class GalleryViewModel(
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
     // Mock user ID - trong thực tế lấy từ session/auth
-    private val currentUserId = 1
+
 
     init {
         loadPinsWithPosts()
@@ -57,18 +58,18 @@ class GalleryViewModel(
 
             try {
                 // 1. Lấy tất cả pins của user
-                val pins = pinRepository.getPinsByUserId(currentUserId)
+                val pins = postRepository.getPreviewPins(CurrentUser.currentUser?.userId ?: 1)
 
                 // 2. Với mỗi pin, lấy tất cả posts và đếm
                 val pinSummaries = pins.mapNotNull { pin ->
                     try {
-                        // Lấy post đầu tiên của pin để làm cover image
-                        val post = postRepository.getPost(pin.pinId)
+                        // Lấy min image của pin để làm cover image
+
 
                         PinSummary(
                             pinId = pin.pinId,
-                            coverImageUrl = post.imageUrl,
-                            postCount = 1 // Tạm thời = 1, sau này query đếm
+                            coverImageUrl = pin.pinImage,
+                            postCount = pin.quantity
                         )
                     } catch (e: Exception) {
                         // Pin không có post nào, bỏ qua
@@ -104,19 +105,19 @@ class GalleryViewModel(
             try {
                 // TODO: Tạo API endpoint mới để lấy tất cả posts theo pinId
                 // Hiện tại chỉ có 1 post per pin nên lấy luôn
-                val post = postRepository.getPost(pinId)
-
-                val postSummary = PostSummary(
-                    postId = post.postId,
-                    imageUrl = post.imageUrl,
-                    reactionCount = post.reactionCount ?: 0,
-                    commentCount = post.commentCount
-                )
-
+                val posts = postRepository.getPostByPin(pinId)
+                val postSumaries = posts.mapNotNull { post ->
+                    PostSummary(
+                        postId = post.postId,
+                        imageUrl = post.imageUrl,
+                        reactionCount = post.reactionCount ?: 0,
+                        commentCount = post.commentCount
+                    )
+                }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        currentPinPosts = listOf(postSummary)
+                        currentPinPosts = postSumaries
                     )
                 }
 

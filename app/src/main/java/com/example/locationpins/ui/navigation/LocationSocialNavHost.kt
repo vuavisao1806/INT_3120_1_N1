@@ -87,7 +87,10 @@ fun LocationSocialNavHost(
         }
 
         composable(route = TopLevelDestination.GALLERY.route) {
-            GalleryScreen()
+            GalleryScreen( onPostPress = { post ->
+                // Navigate tới PostDetail với postId
+                navController.navigate("post_detail/${post.postId}")
+            })
         }
 
         composable(route = TopLevelDestination.USER.route) {
