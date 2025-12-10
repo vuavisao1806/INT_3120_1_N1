@@ -1,5 +1,6 @@
 package com.example.locationpins.ui.screen.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.model.User
@@ -33,40 +34,43 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
         }
     }
 
-    fun login() {
+    fun login(onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             _uiState.update { curent -> curent.copy(isLoading = true, errorMessage = null) }
 
-//            delay(1200)
 
             val userName = _uiState.value.username
             val password = _uiState.value.password
-
-            val response = userRepository.login(userName, password)
-            if (!response.success) {
-                _uiState.update { current ->
-                    current.copy(
-                        isLoading = false,
-                        errorMessage = "Sai tên đăng nhập hoặc mật khẩu!"
+            try {
+                // Gọi API
+                Log.d("LOGIN_DEBUG", "Đang gọi API tới Server...")
+                val response = userRepository.login(userName, password)
+                if (!response.success) {
+                    _uiState.update { current ->
+                        current.copy(
+                            isLoading = false,
+                            errorMessage = "Sai tên đăng nhập hoặc mật khẩu!"
+                        )
+                    }
+                    onResult(false)
+                } else {
+                    CurrentUser.currentUser = User(
+                        userId = 1,
+                        userName = "linhnguyen",
+                        location = "Hồ Chí Minh, Việt Nam",
+                        avatarUrl = "https://example.com/avatar/linh.png",
+                        quote = "Sống là trải nghiệm.",
+                        name = "Nguyễn Thị Linh",
+                        quantityPin = 34,
+                        quantityReact = 1280,
+                        quantityComment = 256,
+                        userEmail = "linh.nguyen@example.com",
+                        phoneNum = "+84 912 345 678",
+                        website = "https://linhnguyen.dev",
+                        quantityContact = 5
                     )
-                }
-            } else {
-                CurrentUser.currentUser = User(
-                    userId = 1,
-                    userName = "linhnguyen",
-                    location = "Hồ Chí Minh, Việt Nam",
-                    avatarUrl = "https://example.com/avatar/linh.png",
-                    quote = "Sống là trải nghiệm.",
-                    name = "Nguyễn Thị Linh",
-                    quantityPin = 34,
-                    quantityReact = 1280,
-                    quantityComment = 256,
-                    userEmail = "linh.nguyen@example.com",
-                    phoneNum = "+84 912 345 678",
-                    website = "https://linhnguyen.dev",
-                    quantityContact = 5
-                )
-//                CurrentUser.currentUser = User(
+
+                    //                CurrentUser.currentUser = User(
 //                    userId = response.user.useId,
 //                    userName = response.user.useName,
 //                    location = response.user.location,
@@ -81,10 +85,23 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
 //                    phoneNum = response.user.phoneNum,
 //                    website = response.user.website,
 //                )
+                    onResult(true)
+                }
+
+            } catch (e: Exception) {
+                Log.e("LON_DEBUG", "Lỗi CRASH: ${e.message}")
+                e.printStackTrace()
+
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Lỗi hệ thống: ${e.message}")
+                }
+                onResult(false)
             }
+
         }
     }
 }
+
 
 object CurrentUser {
     var currentUser: User? = null

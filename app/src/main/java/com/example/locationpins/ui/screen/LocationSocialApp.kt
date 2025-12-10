@@ -33,7 +33,7 @@ internal fun LocationSocialInternalApp(
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            if (currentDestination?.route != TopLevelDestination.CAMERA.route) {
+            if (currentDestination?.route != TopLevelDestination.CAMERA.route && currentDestination?.route != TopLevelDestination.LOGIN.route) {
                 LocationSocialBottomBar(
                     topDestinations = appState.topLevelDestinations,
                     currentDestination = currentDestination,

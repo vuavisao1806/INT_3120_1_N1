@@ -21,6 +21,7 @@ import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
+import com.example.locationpins.ui.screen.login.LoginScreen
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
@@ -36,7 +37,7 @@ fun LocationSocialNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = TopLevelDestination.NEWFEED.route,
+        startDestination = TopLevelDestination.LOGIN.route,
         modifier = modifier
     ) {
         composable(route = TopLevelDestination.NEWFEED.route) {
@@ -112,6 +113,17 @@ fun LocationSocialNavHost(
             )
         }
 
-
+        composable(route = TopLevelDestination.LOGIN.route) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("newfeed") {
+                        popUpTo(TopLevelDestination.LOGIN.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onRegisterClick = {},
+                onForgotPasswordClick = {})
+        }
     }
 }

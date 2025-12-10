@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from connection import get_connection
 from pydantic import BaseModel
+
 import bcrypt
 
 router = APIRouter(
@@ -12,22 +13,40 @@ router = APIRouter(
 #              ĐĂNG NHẬP
 # ====================================
 
+
 class LoginRequest(BaseModel):
     user_name: str
     user_password: str
 
-class LoginInvalid(BaseModel):
-    invalid_user: bool = True
+
+class UserSchema(BaseModel):
+    user_id: int
+    user_name: str
+    user_email: str | None = None
+    avatar_url: str | None = None
+    quotes: str | None = None
+    location: str | None = None
+    name: str | None = None
+    phone_num: str | None = None
+    website: str | None = None
+
+
+
+
+class LoginResponse(BaseModel):
+    success: bool
+    user: UserSchema | None = None
 
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest):
     connection = get_connection()
     try:
@@ -39,19 +58,28 @@ def login(body: LoginRequest):
             user = cur.fetchone()
 
         if user is None:
-            return LoginInvalid()
+            return LoginResponse(
+                success=False,
+                user=None
+            )
 
         if not verify_password(body.user_password, user["password"]):
-            return LoginInvalid()
+            return LoginResponse(
+                success=False,
+                user=None
+            )
 
-        # Xóa password khi trả về
+        # --- Trường hợp Thành công ---
         user.pop("password", None)
 
-        return user
+        return LoginResponse(
+            success=True,
+            user=user
+        )
 
     finally:
         connection.close()
-        
+
 
 # ====================================
 #              ĐĂNG KÍ
@@ -66,8 +94,10 @@ class RegisterRequest(BaseModel):
 class RegisterNameInvalid(BaseModel):
     user_name_taken: bool = True
 
+
 class RegisterEmailInvalid(BaseModel):
     user_email_taken: bool = True
+
 
 class RegisterSuccess(BaseModel):
     register_success: bool = True
@@ -117,14 +147,17 @@ def register(body: RegisterRequest):
 #              THAY ĐỔI THÔNG TIN CÁ NHÂN
 # ==================================================
 
+
 class UpdateUserByUserIdRequest(BaseModel):
     user_id: str
     quotes: str
     avatar_url: str
     contact_info: str
-    
+
+
 class UpdateUserByUserIdSuccess(BaseModel):
     update_user_by_user_id_success: bool = True
+
 
 @router.post("/update")
 def update(body: UpdateUserByUserIdRequest):
@@ -142,19 +175,23 @@ def update(body: UpdateUserByUserIdRequest):
                     contact_info = %s
                 WHERE user_id = %s
                 """,
-                (body.quotes,body.avatar_url, body.contact_info, body.user_id)
+                (body.quotes, body.avatar_url, body.contact_info, body.user_id)
             )
-            
+
         connection.commit()
         return UpdateUserByUserIdSuccess()
 
     finally:
         connection.close()
-        
+
+
 class GetUserByUserIdRequest(BaseModel):
     user_id: str
+
+
 class GetUserByUserIdInvalid(BaseModel):
     get_user_by_user_id_invalid: bool = True
+
 
 @router.post("/get")
 def get(body: GetUserByUserIdRequest):

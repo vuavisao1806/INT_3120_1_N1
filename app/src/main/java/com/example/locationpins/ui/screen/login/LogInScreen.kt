@@ -34,7 +34,8 @@ import com.example.locationpins.data.repository.UserRepository
 @Composable
 fun LoginScreen(
     onRegisterClick: () -> Unit,
-    onForgotPasswordClick: () -> Unit
+    onForgotPasswordClick: () -> Unit,
+    onLoginSuccess: () -> Unit
 ) {
     val viewModel = remember {
         LoginViewModel(userRepository = UserRepository())
@@ -88,7 +89,13 @@ fun LoginScreen(
         }
         Spacer(Modifier.height(8.dp))
 
-        ButtonLogIn(onLoginClick = { viewModel.login() })
+        ButtonLogIn(onLoginClick = {
+            viewModel.login() { success ->
+                if (success) {
+                    onLoginSuccess()
+                }
+            }
+        })
 
         Spacer(Modifier.height(24.dp))
 
@@ -220,6 +227,7 @@ fun LoginScreenPreview() {
     LocationSocialTheme {
         LoginScreen(
             onRegisterClick = {},
-            onForgotPasswordClick = {})
+            onForgotPasswordClick = {},
+            onLoginSuccess = {})
     }
 }

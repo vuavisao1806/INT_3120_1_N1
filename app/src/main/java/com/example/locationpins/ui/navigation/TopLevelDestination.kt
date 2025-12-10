@@ -65,5 +65,12 @@ enum class TopLevelDestination(
         selectedIcon = LocationSocialIcons.Person,
         unselectedIcon = LocationSocialIcons.PersonBorder,
         route = "user"
+    ),
+    LOGIN(
+    iconTextId = R.string.bottom_nav_login_title,
+    titleTextId = R.string.top_bar_login_title,
+    selectedIcon = LocationSocialIcons.Login,
+    unselectedIcon = LocationSocialIcons.LoginBorder,
+    route = "login"
     )
 }
