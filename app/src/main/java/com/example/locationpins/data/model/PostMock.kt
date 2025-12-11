@@ -4,7 +4,7 @@ object PostMock {
     val samplePosts = listOf(
 
         Post(
-            postId = "1",
+            postId = 1,
             pinId = "pin_01",
             title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
             body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
@@ -14,7 +14,7 @@ object PostMock {
             tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
         ),
         Post(
-            postId = "2",
+            postId = 2,
             pinId = "pin_02",
             title = "Phở bò Hà Nội sáng sớm",
             body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
@@ -24,7 +24,7 @@ object PostMock {
             tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
         ),
         Post(
-            postId = "3",
+            postId = 3,
             pinId = "pin_03",
             title = "Vịnh Hạ Long từ flycam",
             body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
@@ -34,7 +34,7 @@ object PostMock {
             tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
         ),
         Post(
-            postId = "4",
+            postId = 4,
             pinId = "pin_04",
             title = "Hội An về đêm lung linh",
             body = "Thả đèn hoa đăng trên sông Hoài, đèn lồng rực rỡ khắp phố cổ. Cảm giác như bước vào phim cổ trang vậy.",
@@ -44,7 +44,7 @@ object PostMock {
             tags = listOf("Hội An", "Đèn lồng", "Night", "Heritage")
         ),
         Post(
-            postId = "5",
+            postId = 5,
             pinId = "pin_05",
             title = "Cà phê trứng giữa lòng Hà Nội",
             body = "Trời se lạnh mà ngồi nhâm nhi ly cà phê trứng béo ngậy ở quán Giảng thì hết sảy!",
@@ -54,7 +54,7 @@ object PostMock {
             tags = listOf("Cà phê", "Hà Nội", "Egg Coffee", "Drink")
         ),
         Post(
-            postId = "6",
+            postId = 6,
             pinId = "pin_06",
             title = "Ruộng bậc thang Mù Cang Chải mùa nước đổ",
             body = "Mùa nước đổ tháng 5-6, cả thung lũng ánh lên như tấm gương khổng lồ phản chiếu trời xanh.",
@@ -64,7 +64,7 @@ object PostMock {
             tags = listOf("Mù Cang Chải", "Yên Bái", "Terraced Field", "Nature")
         ),
         Post(
-            postId = "7",
+            postId = 7,
             pinId = "pin_07",
             title = "Bánh mì Sài Gòn - đỉnh cao ẩm thực đường phố",
             body = "Ổ bánh mì pate + thịt nướng + dưa chua + rau thơm = thiên đường chỉ 25k!",
@@ -74,7 +74,7 @@ object PostMock {
             tags = listOf("Bánh mì", "Sài Gòn", "Street Food", "Vietnam")
         ),
         Post(
-            postId = "8",
+            postId = 8,
             pinId = "pin_08",
             title = "Đèo Ô Quy Hồ - cung đường đẹp nhất Tây Bắc",
             body = "Đứng trên đỉnh đèo nhìn xuống thung lũng mây trắng bồng bềnh, gió lạnh buốt nhưng đáng giá từng giây.",
@@ -84,7 +84,7 @@ object PostMock {
             tags = listOf("Ô Quy Hồ", "Lào Cai", "Mountain Pass", "Motorcycle")
         ),
         Post(
-            postId = "9",
+            postId = 9,
             pinId = "pin_09",
             title = "Santorini của Việt Nam - Lý Sơn",
             body = "Nhà thờ vòng cung trắng xanh ở đảo Bé, nước trong veo nhìn thấy san hô luôn!",
@@ -94,7 +94,7 @@ object PostMock {
             tags = listOf("Lý Sơn", "Quảng Ngãi", "Island", "Sea")
         ),
         Post(
-            postId = "10",
+            postId = 10,
             pinId = "pin_10",
             title = "Sapa những ngày sương mù",
             body = "Cả thị trấn chìm trong sương, chỉ còn lại mái ngói âm dương và khói bếp Hoàng Liên Sơn.",
@@ -104,7 +104,7 @@ object PostMock {
             tags = listOf("Sapa", "Fog", "Morning", "Mountain")
         ),
         Post(
-            postId = "11",
+            postId = 11,
             pinId = "pin_11",
             title = "Chợ nổi Cái Răng - văn hóa miền Tây sông nước",
             body = "5h sáng đã nghe tiếng chào mời rộn ràng, xuồng ghe chở đầy trái cây tươi rói.",
@@ -114,7 +114,7 @@ object PostMock {
             tags = listOf("Cần Thơ", "Chợ nổi", "Mekong Delta", "Culture")
         ),
         Post(
-            postId = "12",
+            postId = 12,
             pinId = "pin_12",
             title = "Phú Quốc - hoàng hôn ở Dinh Cậu",
             body = "Hoàng hôn đỏ rực nhuộm cả bầu trời và mặt biển, ngồi đây nhậu mực nướng là hết bài.",
@@ -125,7 +125,7 @@ object PostMock {
         ),
 
         Post(
-            postId = "13",
+            postId = 13,
             pinId = "pin_13",
             title = "Cốm làng Vòng mùa thu Hà Nội",
             body = "Mùi cốm mới thoảng trong ngõ nhỏ, gói trong lá sen ăn kèm chuối tiêu là nhớ cả tuổi thơ.",
@@ -135,7 +135,7 @@ object PostMock {
             tags = listOf("Hà Nội", "Cốm", "Ẩm thực", "Mùa thu")
         ),
         Post(
-            postId = "14",
+            postId = 14,
             pinId = "pin_14",
             title = "Cốc cà phê vỉa hè Sài Gòn mưa lất phất",
             body = "Ngồi ghế nhựa, nghe nhạc Trịnh, nhìn xe cộ chạy qua dưới mưa phùn… Sài Gòn là đây chứ đâu.",
@@ -146,7 +146,7 @@ object PostMock {
         ),
 
         Post(
-            postId = "15",
+            postId = 15,
             pinId = "pin_15",
             title = "Đồi chè trái tim Mộc Châu",
             body = "Những trái tim xanh mướt giữa cao nguyên, chụp ảnh cưới hay sống ảo đều auto đẹp.",
@@ -156,7 +156,7 @@ object PostMock {
             tags = listOf("Mộc Châu", "Đồi chè", "Check-in", "Love")
         ),
         Post(
-            postId = "1",
+            postId = 1,
             pinId = "pin_01",
             title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
             body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
@@ -166,7 +166,7 @@ object PostMock {
             tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
         ),
         Post(
-            postId = "2",
+            postId = 2,
             pinId = "pin_02",
             title = "Phở bò Hà Nội sáng sớm",
             body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
@@ -176,7 +176,7 @@ object PostMock {
             tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
         ),
         Post(
-            postId = "3",
+            postId = 3,
             pinId = "pin_03",
             title = "Vịnh Hạ Long từ flycam",
             body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
@@ -186,7 +186,7 @@ object PostMock {
             tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
         ),
         Post(
-            postId = "1",
+            postId = 1,
             pinId = "pin_01",
             title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
             body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
@@ -196,7 +196,7 @@ object PostMock {
             tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
         ),
         Post(
-            postId = "2",
+            postId = 2,
             pinId = "pin_02",
             title = "Phở bò Hà Nội sáng sớm",
             body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
@@ -206,7 +206,7 @@ object PostMock {
             tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
         ),
         Post(
-            postId = "3",
+            postId = 3,
             pinId = "pin_03",
             title = "Vịnh Hạ Long từ flycam",
             body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
@@ -216,7 +216,7 @@ object PostMock {
             tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
         ),
         Post(
-            postId = "1",
+            postId = 1,
             pinId = "pin_01",
             title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
             body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
@@ -226,7 +226,7 @@ object PostMock {
             tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
         ),
         Post(
-            postId = "2",
+            postId = 2,
             pinId = "pin_02",
             title = "Phở bò Hà Nội sáng sớm",
             body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
@@ -236,7 +236,7 @@ object PostMock {
             tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
         ),
         Post(
-            postId = "3",
+            postId = 3,
             pinId = "pin_03",
             title = "Vịnh Hạ Long từ flycam",
             body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",
@@ -246,7 +246,7 @@ object PostMock {
             tags = listOf("Hạ Long", "Quảng Ninh", "Drone", "UNESCO")
         ),
         Post(
-            postId = "1",
+            postId = 1,
             pinId = "pin_01",
             title = "Cầu Vàng Đà Nẵng lúc hoàng hôn",
             body = "Đứng trên Cầu Vàng mà cảm giác như lạc vào thế giới thần tiên. Bàn tay khổng lồ nâng cầu giữa mây núi Bà Nà, view cực đỉnh!",
@@ -256,7 +256,7 @@ object PostMock {
             tags = listOf("Đà Nẵng", "Cầu Vàng", "Travel", "Sunset")
         ),
         Post(
-            postId = "2",
+            postId = 2,
             pinId = "pin_02",
             title = "Phở bò Hà Nội sáng sớm",
             body = "Không gì đánh bại được tô phở bò nóng hổi ở phố cổ. Nước dùng ngọt thanh, bánh đa dai dai, hành lá thơm lừng.",
@@ -266,7 +266,7 @@ object PostMock {
             tags = listOf("Ẩm thực", "Hà Nội", "Phở", "Food")
         ),
         Post(
-            postId = "3",
+            postId = 3,
             pinId = "pin_03",
             title = "Vịnh Hạ Long từ flycam",
             body = "Hơn 1.900 hòn đảo nổi lên giữa làn nước xanh ngọc. Di sản thế giới không phụ lòng người đến thăm.",

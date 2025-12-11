@@ -1,8 +1,6 @@
 package com.example.locationpins.ui.component
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,10 +17,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,27 +35,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.utils.formatCount
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostPreviewForNewsFeed(
     post: Post,
+    isLiked: Boolean = false,
+    isReacting: Boolean = false,
     modifier: Modifier = Modifier,
-    onPostPress: () -> Unit = {},
     onReactPress: () -> Unit = {},
+    onPostPress: () -> Unit = {},
     onCommentPress: () -> Unit = {},
     onTagPress: (String) -> Unit = {}
 ) {
-    //Bài viết dài có đang ở trạng thái mở rộng (hiển thị tất cả hay không)
+    // Bài viết dài có đang ở trạng thái mở rộng (hiển thị tất cả hay không)
     var isExpanded by remember { mutableStateOf(false) }
     val maxCollapsedLines = 3
     val cardShape = RoundedCornerShape(12.dp)
@@ -79,14 +81,6 @@ fun PostPreviewForNewsFeed(
                     .aspectRatio(4f / 3f)
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
             )
-//            Image(
-//                painter = rememberAsyncImagePainter(post.imageUrl),
-//                contentDescription = post.title,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .aspectRatio(4f / 3f),
-//                contentScale = ContentScale.Crop
-//            )
 
             // Nội dung bài viết
             Column(
@@ -168,21 +162,29 @@ fun PostPreviewForNewsFeed(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onReactPress() }
+                        .clickable(enabled = !isReacting) { onReactPress() }
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "React",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    if (isReacting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFFE53935)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = if (isLiked) "Unlike" else "Like",
+                            tint = if (isLiked) Color(0xFFE53935) else Color.Gray,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = formatCount(post.reactCount as Int),
-                        color = Color.Gray,
+                        color = if (isLiked) Color(0xFFE53935) else Color.Gray,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -221,7 +223,7 @@ fun PostPreviewForNewsFeed(
 fun PostPreviewForNewsFeedPreview() {
     PostPreviewForNewsFeed(
         post = PostMock.samplePosts.first(),
-        modifier = Modifier.padding(8.dp),
-        onTagPress = { tag -> println("Clicked tag: $tag") }
-    )
+        isLiked = true,
+        modifier = Modifier.padding(8.dp)
+    ) { tag -> println("Clicked tag: $tag") }
 }

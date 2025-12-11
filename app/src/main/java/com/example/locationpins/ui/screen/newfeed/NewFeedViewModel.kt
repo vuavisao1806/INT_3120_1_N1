@@ -1,13 +1,14 @@
 package com.example.locationpins.ui.screen.newfeed
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.mapper.toPosts
 import com.example.locationpins.data.model.Post
-import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
-import kotlinx.coroutines.delay
+import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,12 +17,12 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel cho màn hình News Feed
- *
  */
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
-    private val userId: Int = 1
+    private val reactionRepository: ReactionRepository = ReactionRepository(),
+    private val userId: Int = CurrentUser.currentUser?.userId ?: 1
 ) : ViewModel() {
 
     // uiState private
@@ -51,10 +52,25 @@ class NewsFeedViewModel(
 
                 val postsWithTags: List<Post> = posts.map { post ->
                     val tags = tagRepository
-                        .getTagsByPostId(post.postId.toInt())
+                        .getTagsByPostId(post.postId)
                         .map { t -> t.name }
 
                     post.copy(tags = tags)
+                }
+
+                // Load trạng thái like cho tất cả posts
+                val likedMap = mutableMapOf<Int, Boolean>()
+                postsWithTags.forEach { post ->
+                    try {
+                        val isLiked = reactionRepository.checkReactPost(
+                            postId = post.postId,
+                            userId = userId
+                        )
+                        likedMap[post.postId] = isLiked
+                    } catch (e: Exception) {
+                        Log.e("NewsFeedViewModel", "Error checking reaction for post ${post.postId}: ${e.message}")
+                        likedMap[post.postId] = false
+                    }
                 }
 
                 _uiState.update {
@@ -62,7 +78,8 @@ class NewsFeedViewModel(
                         posts = postsWithTags,
                         isLoading = false,
                         currentPage = 0,
-                        hasReachedEnd = posts.size < it.pageSize
+                        hasReachedEnd = posts.size < it.pageSize,
+                        likedPosts = likedMap
                     )
                 }
             } catch (e: Exception) {
@@ -79,13 +96,11 @@ class NewsFeedViewModel(
     /**
      * Refresh toàn bộ feed
      */
-
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
 
             try {
-
                 val postDtos = postRepository.getNewsfeed(
                     userId = userId,
                     limit = _uiState.value.pageSize,
@@ -94,12 +109,28 @@ class NewsFeedViewModel(
 
                 val posts = postDtos.toPosts()
 
+                // Load trạng thái like cho tất cả posts
+                val likedMap = mutableMapOf<Int, Boolean>()
+                posts.forEach { post ->
+                    try {
+                        val isLiked = reactionRepository.checkReactPost(
+                            postId = post.postId,
+                            userId = userId
+                        )
+                        likedMap[post.postId] = isLiked
+                    } catch (e: Exception) {
+                        Log.e("NewsFeedViewModel", "Error checking reaction for post ${post.postId}: ${e.message}")
+                        likedMap[post.postId] = false
+                    }
+                }
+
                 _uiState.update {
                     it.copy(
                         posts = posts,
                         isRefreshing = false,
                         currentPage = 0,
-                        hasReachedEnd = posts.size < it.pageSize
+                        hasReachedEnd = posts.size < it.pageSize,
+                        likedPosts = likedMap
                     )
                 }
             } catch (e: Exception) {
@@ -112,7 +143,6 @@ class NewsFeedViewModel(
             }
         }
     }
-
 
     /**
      * Load thêm posts khi scroll đến cuối
@@ -129,7 +159,6 @@ class NewsFeedViewModel(
                 val nextPage = _uiState.value.currentPage + 1
                 val offset = nextPage * _uiState.value.pageSize
 
-                // ⭐ GỌI API THẬT
                 val newPostDtos = postRepository.getNewsfeed(
                     userId = userId,
                     limit = _uiState.value.pageSize,
@@ -138,12 +167,28 @@ class NewsFeedViewModel(
 
                 val newPosts = newPostDtos.toPosts()
 
+                // Load trạng thái like cho posts mới
+                val newLikedMap = _uiState.value.likedPosts.toMutableMap()
+                newPosts.forEach { post ->
+                    try {
+                        val isLiked = reactionRepository.checkReactPost(
+                            postId = post.postId,
+                            userId = userId
+                        )
+                        newLikedMap[post.postId] = isLiked
+                    } catch (e: Exception) {
+                        Log.e("NewsFeedViewModel", "Error checking reaction for post ${post.postId}: ${e.message}")
+                        newLikedMap[post.postId] = false
+                    }
+                }
+
                 _uiState.update {
                     it.copy(
                         posts = it.posts + newPosts,
                         isLoadingMore = false,
                         currentPage = nextPage,
-                        hasReachedEnd = newPosts.size < it.pageSize
+                        hasReachedEnd = newPosts.size < it.pageSize,
+                        likedPosts = newLikedMap
                     )
                 }
             } catch (e: Exception) {
@@ -160,17 +205,91 @@ class NewsFeedViewModel(
     /**
      * React/Unreact một post
      */
-    fun toggleReact(postId: String) {
-        _uiState.update { currentState ->
-            val updatedPosts = currentState.posts.map { post ->
-                if (post.postId == postId) {
-                    val currentCount = post.reactCount as Int
-                    post.copy(reactCount = currentCount + 1)
+    fun toggleReact(postId: Int) {
+        val currentState = _uiState.value
+
+        // Kiểm tra nếu post đang được xử lý thì không làm gì
+        if (currentState.reactingPostIds.contains(postId)) {
+            return
+        }
+
+        val isCurrentlyLiked = currentState.likedPosts[postId] ?: false
+
+        viewModelScope.launch {
+            // Thêm postId vào set đang xử lý
+            _uiState.update { state ->
+                state.copy(
+                    reactingPostIds = state.reactingPostIds + postId
+                )
+            }
+
+            try {
+                // Optimistic update: Cập nhật UI trước
+                _uiState.update { state ->
+                    val updatedPosts = state.posts.map { post ->
+                        if (post.postId == postId) {
+                            val currentCount = post.reactCount as Int
+                            val offset = if (isCurrentlyLiked) -1 else 1
+                            post.copy(reactCount = currentCount + offset)
+                        } else {
+                            post
+                        }
+                    }
+
+                    val updatedLikedMap = state.likedPosts.toMutableMap()
+                    updatedLikedMap[postId] = !isCurrentlyLiked
+
+                    state.copy(
+                        posts = updatedPosts,
+                        likedPosts = updatedLikedMap
+                    )
+                }
+
+                // Gọi API
+                if (isCurrentlyLiked) {
+                    reactionRepository.cancelReactPost(
+                        postId = postId,
+                        userId = userId
+                    )
                 } else {
-                    post
+                    reactionRepository.reactPost(
+                        postId = postId,
+                        userId = userId
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e("NewsFeedViewModel", "Error toggling reaction: ${e.message}")
+
+                // Revert lại nếu có lỗi
+                _uiState.update { state ->
+                    val revertedPosts = state.posts.map { post ->
+                        if (post.postId == postId) {
+                            val currentCount = post.reactCount as Int
+                            val offset = if (isCurrentlyLiked) 1 else -1 // Đảo ngược offset
+                            post.copy(reactCount = currentCount + offset)
+                        } else {
+                            post
+                        }
+                    }
+
+                    val revertedLikedMap = state.likedPosts.toMutableMap()
+                    revertedLikedMap[postId] = isCurrentlyLiked
+
+                    state.copy(
+                        posts = revertedPosts,
+                        likedPosts = revertedLikedMap,
+                        error = "Không thể ${if (isCurrentlyLiked) "hủy thích" else "thích"}: ${e.message}"
+                    )
+                }
+            } finally {
+                // Xóa postId khỏi set đang xử lý
+                _uiState.update { state ->
+                    state.copy(
+                        reactingPostIds = state.reactingPostIds - postId
+                    )
                 }
             }
-            currentState.copy(posts = updatedPosts)
         }
     }
 
@@ -179,22 +298,5 @@ class NewsFeedViewModel(
      */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
-    }
-
-    /**
-     * Simulate API call để fetch posts
-     * Sẽ thay thế bằng Api thật
-     */
-    private suspend fun fetchPostsFromApi(page: Int, pageSize: Int): List<Post> {
-        // Giả lập phân trang với dữ liệu mock
-        val allPosts = PostMock.samplePosts
-        val startIndex = page * pageSize
-        val endIndex = minOf(startIndex + pageSize, allPosts.size)
-
-        return if (startIndex < allPosts.size) {
-            allPosts.subList(startIndex, endIndex)
-        } else {
-            emptyList()
-        }
     }
 }

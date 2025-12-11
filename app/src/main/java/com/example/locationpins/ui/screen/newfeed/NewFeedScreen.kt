@@ -21,10 +21,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 @Composable
 fun NewsFeedScreen(
     onPostPress: (Post) -> Unit = {},
-    onCommentPress: (Post) -> Unit = {},
     onTagPress: (String) -> Unit = {},
-    onReactPress: (Post) -> Unit = {}
-
 ) {
     // Khởi tạo ViewModel bên trong composable
     val viewModel: NewsFeedViewModel = viewModel()
@@ -83,12 +80,21 @@ fun NewsFeedScreen(
                             items = uiState.posts,
                             key = { post -> post.postId }
                         ) { post ->
+                            val isLiked = uiState.likedPosts[post.postId] == true
+                            val isReacting = uiState.reactingPostIds.contains(post.postId)
+
                             PostPreviewForNewsFeed(
                                 post = post,
+                                isLiked = isLiked,
+                                isReacting = isReacting,
                                 modifier = Modifier.padding(horizontal = 12.dp),
+                                onReactPress = {
+                                    if (!isReacting) {
+                                        viewModel.toggleReact(post.postId)
+                                    }
+                                },
                                 onPostPress = { onPostPress(post) },
-                                onReactPress = { onReactPress(post) },
-                                onCommentPress = { onCommentPress(post) },
+                                onCommentPress = { onPostPress(post) },
                                 onTagPress = onTagPress
                             )
                         }

@@ -28,5 +28,11 @@ data class NewsFeedUiState(
     val currentPage: Int = 0,
 
     // Số lượng posts mỗi trang
-    val pageSize: Int = 10
+    val pageSize: Int = 10,
+
+    // Map lưu trạng thái like của từng post (postId -> isLiked)
+    val likedPosts: Map<Int, Boolean> = emptyMap(),
+
+    // Set các postId đang được xử lý react (để disable button)
+    val reactingPostIds: Set<Int> = emptySet()
 )

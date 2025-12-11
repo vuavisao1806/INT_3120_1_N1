@@ -8,7 +8,7 @@ import com.example.locationpins.data.remote.dto.post.PostDto
  */
 fun PostDto.toPost(): Post {
     return Post(
-        postId = this.postId.toString(),
+        postId = this.postId,
         pinId = this.pinId.toString(),
         title = this.title,
         body = this.body,
