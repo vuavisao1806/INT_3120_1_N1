@@ -50,3 +50,49 @@ data class GetNewsfeedRequest(
     @SerialName("offset")
     val offset: Int = 0
 )
+
+@Serializable
+data class GetPinPreviewRequest(
+    @SerialName("user_id")
+    val userId: Int
+)
+
+@Serializable
+data class PinPreview(
+    @SerialName("pin_id")
+    val pinId: Int,
+    @SerialName("image_url")
+    val pinImage: String,
+    @SerialName("cnt")
+    val quantity: Long
+)
+
+@Serializable
+data class GetPostByPinRequest(
+    @SerialName("pin_id")
+    val pinId: Int
+)
+
+@Serializable
+data class PostByPinResponse(
+    @SerialName("post_id")
+    val postId: Int,
+    @SerialName("pin_id")
+    val pinId: Int,
+    @SerialName("title")
+    val title: String,
+    @SerialName("body")
+    val body: String,
+    @SerialName("image_url")
+    val imageUrl: String,
+    @SerialName("user_id")
+    val userId: Int,
+    @SerialName("status")
+    val status: String,
+    @SerialName("reaction_count")
+    val reactionCount: Int,
+    @SerialName("comment_count")
+    val commentCount: Int,
+    @SerialName("created_at")
+    val createdAt: String
+)

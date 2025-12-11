@@ -36,7 +36,8 @@ enum class GalleryStep {
 @Composable
 fun GalleryScreen(
     viewModel: GalleryViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPostPress: (PostSummary) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var currentStep by remember { mutableStateOf(GalleryStep.PinList) }
@@ -81,6 +82,7 @@ fun GalleryScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+
                 uiState.error != null -> {
                     ErrorView(
                         message = uiState.error ?: "Đã xảy ra lỗi",
@@ -88,6 +90,7 @@ fun GalleryScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+
                 else -> {
                     when (currentStep) {
                         GalleryStep.PinList -> {
@@ -100,10 +103,12 @@ fun GalleryScreen(
                                 }
                             )
                         }
+
                         GalleryStep.PostList -> {
                             PostListView(
                                 posts = uiState.currentPinPosts,
-                                pinSummary = uiState.pinSummaries.find { it.pinId == selectedPinId }
+                                pinSummary = uiState.pinSummaries.find { it.pinId == selectedPinId },
+                                onPostPress = onPostPress
                             )
                         }
                     }
@@ -234,6 +239,7 @@ private fun PinGridItem(
 private fun PostListView(
     posts: List<PostSummary>,
     pinSummary: PinSummary?,
+    onPostPress: (PostSummary) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -282,7 +288,7 @@ private fun PostListView(
                 ) { post ->
                     PostGridItemWithStats(
                         post = post,
-                        onClick = { /* TODO: Navigate to post detail */ }
+                        onClick = { onPostPress(post) }
                     )
                 }
             }

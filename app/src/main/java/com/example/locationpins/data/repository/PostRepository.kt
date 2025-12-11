@@ -4,7 +4,11 @@ import com.example.locationpins.data.remote.RetrofitClient
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.comment.GetPostCommentsRequest
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
+import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
+import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
+import com.example.locationpins.data.remote.dto.post.PinPreview
+import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.PostDto
 
 
@@ -30,6 +34,13 @@ class PostRepository {
                 offset = offset
             )
         )
+    }
+
+    suspend fun getPreviewPins(userId:Int): List<PinPreview>{
+        return api.getPinPreview(GetPinPreviewRequest(userId))
+    }
+    suspend fun getPostByPin(pinId: Int): List<PostByPinResponse> {
+        return api.getPostByPin(GetPostByPinRequest(pinId))
     }
 
 

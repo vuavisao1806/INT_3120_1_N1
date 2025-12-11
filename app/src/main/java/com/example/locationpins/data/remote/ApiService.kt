@@ -17,8 +17,12 @@ import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
+import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
+import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
+import com.example.locationpins.data.remote.dto.post.PinPreview
+import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import okhttp3.MultipartBody
 
@@ -79,6 +83,7 @@ interface ApiService {
     suspend fun login(
         @Body body: LoginRequest
     ): LoginResponse
+
     @POST("/posts/newsfeed")
     suspend fun getNewsfeed(
         @Body body: GetNewsfeedRequest
@@ -94,6 +99,16 @@ interface ApiService {
     suspend fun insertPost(
         @Body body: InsertPostRequest
     ): InsertPostSuccess
+
+    @POST("posts/pinpreview")
+    suspend fun getPinPreview(
+        @Body request: GetPinPreviewRequest
+    ): List<PinPreview>
+
+    @POST("/posts/pinId")
+    suspend fun getPostByPin(
+        @Body request: GetPostByPinRequest
+    ): List<PostByPinResponse>
 
 }
 
