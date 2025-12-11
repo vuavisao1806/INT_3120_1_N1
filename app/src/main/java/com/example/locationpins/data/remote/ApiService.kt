@@ -2,6 +2,8 @@ package com.example.locationpins.data.remote
 
 
 import com.example.locationpins.data.remote.dto.comment.CancelCommentRequest
+import com.example.locationpins.data.remote.dto.comment.CheckPostCommentRequest
+import com.example.locationpins.data.remote.dto.comment.CheckPostCommentRespond
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.comment.CreateCommentRequest
 import com.example.locationpins.data.remote.dto.comment.GetPostCommentsRequest
@@ -110,6 +112,10 @@ interface ApiService {
         @Body request: GetPostByPinRequest
     ): List<PostByPinResponse>
 
+    @POST("/posts/react/check")
+    suspend fun checkPostComment(
+        @Body request: CheckPostCommentRequest
+    ): CheckPostCommentRespond
 }
 
 

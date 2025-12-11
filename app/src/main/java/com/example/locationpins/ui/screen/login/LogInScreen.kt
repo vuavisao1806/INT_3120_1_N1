@@ -90,7 +90,7 @@ fun LoginScreen(
         Spacer(Modifier.height(8.dp))
 
         ButtonLogIn(onLoginClick = {
-            viewModel.login() { success ->
+            viewModel.login { success ->
                 if (success) {
                     onLoginSuccess()
                 }

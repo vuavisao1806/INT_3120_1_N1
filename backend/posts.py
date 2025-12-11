@@ -167,6 +167,35 @@ def react_post(body: ReactionRequest):
                 )
     finally:
         connection.close()
+
+class CheckReactionRequest(BaseModel):
+    post_id: int
+    user_id: int
+
+class HaveReaction(BaseModel):
+    have_reaction: bool = True
+
+@router.post("/react/check")
+def check_react_post(body: CheckReactionRequest):
+    connection = get_connection()
+    try:
+        with connection:
+            with connection.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM reactions
+                    WHERE post_id = %s AND user_id = %s;
+                    """,
+                    (body.post_id, body.user_id)
+                )
+                status: HaveReaction = HaveReaction()
+                if (cur.rowcount == 0):
+                    status.have_reaction = False
+                return status
+    finally:
+        connection.close()
+
+
 # ==================================================
 #       Tương tác hủy thả tim với bài viết
 # ================================================== 
@@ -174,6 +203,7 @@ def react_post(body: ReactionRequest):
 class CancelReactionRequest(BaseModel):
     post_id: int
     user_id: int
+
 @router.post("/react/cancel")
 def cancel_react_post(body: CancelReactionRequest):
     connection = get_connection()
