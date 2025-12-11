@@ -41,3 +41,26 @@ data class LoginResponse(
     val success: Boolean,
     val user: UserDto?
 )
+
+@Serializable
+data class RegisterRequest(
+    @SerialName("user_name")
+    val userName: String,
+    @SerialName("user_email")
+    val userEmail: String,
+    @SerialName("user_password")
+    val userPassword: String
+)
+
+
+@Serializable
+data class RegisterResponse(
+    @SerialName("user_name_taken")
+    val userNameTaken: Boolean? = null,
+
+    @SerialName("user_email_taken")
+    val userEmailTaken: Boolean? = null,
+
+    @SerialName("register_success")
+    val registerSuccess: Boolean? = null
+)

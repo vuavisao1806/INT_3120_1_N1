@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
+
+class LoginViewModel(private val userRepository: UserRepository = UserRepository()) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -23,6 +24,18 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     fun enterPassword(value: String) {
         _uiState.update { curent ->
             curent.copy(password = value)
+        }
+    }
+
+    fun enterConfirmPassword(value: String) {
+        _uiState.update { curent ->
+            curent.copy(confirmPassword = value)
+        }
+    }
+
+    fun enterEmail(value: String) {
+        _uiState.update { curent ->
+            curent.copy(email = value)
         }
     }
 
@@ -89,7 +102,7 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
                 }
 
             } catch (e: Exception) {
-                Log.e("LON_DEBUG", "Lỗi CRASH: ${e.message}")
+                Log.e("LOGIN_DEBUG", "Lỗi CRASH: ${e.message}")
                 e.printStackTrace()
 
                 _uiState.update {
@@ -100,8 +113,68 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
 
         }
     }
-}
 
+    fun register(onSuccess: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { curent -> curent.copy(isLoading = true, errorMessage = null) }
+
+
+            val userName = _uiState.value.username
+            val password = _uiState.value.password
+            val confirmPassword = _uiState.value.confirmPassword
+            val email = _uiState.value.email
+            try {
+
+                Log.d("REGISTER_DEBUG", "Đang gọi API tới Server...")
+                if (password.equals(confirmPassword)) {
+                    val response = userRepository.register(
+                        userName = userName,
+                        userPassword = password,
+                        userEmail = email
+                    )
+                    when {
+                        response.userNameTaken == true -> {
+                            _uiState.update {
+                                it.copy(isLoading = false, errorMessage = "Người dùng đã tồn tại")
+                            }
+                            onSuccess(false)
+                        }
+
+                        response.userEmailTaken == true -> {
+                            _uiState.update {
+                                it.copy(isLoading = false, errorMessage = "Email đã tồn tại")
+                            }
+                            onSuccess(false)
+                        }
+
+                        response.registerSuccess == true -> {  _uiState.update {
+                            it.copy(isLoading = true, errorMessage = "Người dùng đã tồn tại")
+                        }
+                            onSuccess(true)
+                        }
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = "Mật khẩu xác nhận không khớp")
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("REGISTER_DEBUG", "Lỗi CRASH: ${e.message}")
+                e.printStackTrace()
+
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Lỗi hệ thống: ${e.message}")
+                }
+                onSuccess(false)
+            }
+        }
+    }
+
+    fun reset() {
+        _uiState.value = LoginUiState()
+    }
+}
 
 object CurrentUser {
     var currentUser: User? = null
