@@ -9,7 +9,6 @@ import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +22,7 @@ import kotlinx.coroutines.launch
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
-    private val reactionRepository: ReactionRepository = ReactionRepository(),
-    private val userId: Int = 1
+    private val reactionRepository: ReactionRepository = ReactionRepository()
 ) : ViewModel() {
 
     // uiState private
@@ -45,7 +43,7 @@ class NewsFeedViewModel(
 
             try {
                 val postDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = 0
                 )
@@ -90,7 +88,7 @@ class NewsFeedViewModel(
             try {
 
                 val postDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = 0
                 )
@@ -134,7 +132,7 @@ class NewsFeedViewModel(
 
                 // GỌI API THẬT
                 val newPostDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = offset
                 )
@@ -160,7 +158,7 @@ class NewsFeedViewModel(
         }
     }
 
-    suspend fun checkPostComment(postId: Int): Boolean {
+    suspend fun checkPostReact(postId: Int): Boolean {
         return reactionRepository.checkReactPost(
             postId = postId,
             userId = CurrentUser.currentUser!!.userId

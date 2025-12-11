@@ -216,3 +216,30 @@ def get(body: GetUserByUserIdRequest):
 
     finally:
         connection.close()
+
+class CheckIsFriend(BaseModel):
+    own_id: int
+    other_id: int
+
+class IsFriendRespond(BaseModel):
+    is_friend: bool = True
+
+@router.post("/isfriend")
+def is_friend(body: CheckIsFriend):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT 1 FROM friends
+                    WHERE user_id = %s AND friend_id = %s;
+                """,
+                (body.own_id, body.other_id,)
+            )
+            status: IsFriendRespond = IsFriendRespond()
+            if (cur.rowcount == 0):
+                status.is_friend = False
+            return status
+
+    finally:
+        connection.close()

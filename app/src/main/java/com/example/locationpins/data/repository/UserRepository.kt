@@ -1,6 +1,8 @@
 package com.example.locationpins.data.repository
 
 import com.example.locationpins.data.remote.RetrofitClient
+import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
+import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
@@ -33,5 +35,17 @@ class UserRepository {
             userPassword = userPassword,
             avatarUrl = avatarUrl
         ))
+    }
+
+    suspend fun isFriend(
+        ownId: Int,
+        otherId: Int
+    ): Boolean {
+        return api.checkIsFriend(
+            CheckIsFriendRequest(
+                ownId = ownId,
+                otherId = otherId
+            )
+        ).isFriend
     }
 }

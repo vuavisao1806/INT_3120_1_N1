@@ -86,3 +86,17 @@ data class RegisterResponse(
     @SerialName("register_success")
     val registerSuccess: Boolean? = null
 )
+
+@Serializable
+data class CheckIsFriendRequest(
+    @SerialName("own_id")
+    val ownId: Int,
+    @SerialName("other_id")
+    val otherId: Int
+)
+
+@Serializable
+data class IsFriendRespond(
+    @SerialName("is_friend")
+    val isFriend: Boolean
+)

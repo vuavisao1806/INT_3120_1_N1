@@ -31,20 +31,6 @@ data class GetPostCommentsRequest(
 )
 
 @Serializable
-data class CheckPostCommentRequest(
-    @SerialName("post_id")
-    val postId: Int,
-    @SerialName("user_id")
-    val userId: Int
-)
-
-@Serializable
-data class CheckPostCommentRespond(
-    @SerialName("have_reaction")
-    val haveReaction: Boolean
-)
-
-@Serializable
 data class CommentDto(
     @SerialName("comment_id")
     val commentId: Int,
