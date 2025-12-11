@@ -20,6 +20,7 @@ import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.login.LoginScreen
+import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
@@ -85,7 +86,7 @@ fun LocationSocialNavHost(
         }
 
         composable(route = TopLevelDestination.GALLERY.route) {
-            GalleryScreen( onPostPress = { post ->
+            GalleryScreen(onPostPress = { post ->
                 // Navigate tới PostDetail với postId
                 navController.navigate("post_detail/${post.postId}")
             })
@@ -99,16 +100,14 @@ fun LocationSocialNavHost(
         }
 
         composable(route = TopLevelDestination.LOGIN.route) {
-            LoginScreen(
+            LoginView(
                 onLoginSuccess = {
                     navController.navigate("newfeed") {
                         popUpTo(TopLevelDestination.LOGIN.route) {
                             inclusive = true
                         }
                     }
-                },
-                onRegisterClick = {},
-                onForgotPasswordClick = {})
+                })
         }
     }
 }

@@ -26,6 +26,8 @@ import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
+import com.example.locationpins.data.remote.dto.user.RegisterRequest
+import com.example.locationpins.data.remote.dto.user.RegisterResponse
 import okhttp3.MultipartBody
 
 
@@ -112,6 +114,11 @@ interface ApiService {
         @Body request: GetPostByPinRequest
     ): List<PostByPinResponse>
 
+    @POST("/users/register")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ): RegisterResponse
+  
     @POST("/posts/react/check")
     suspend fun checkPostComment(
         @Body request: CheckPostCommentRequest
