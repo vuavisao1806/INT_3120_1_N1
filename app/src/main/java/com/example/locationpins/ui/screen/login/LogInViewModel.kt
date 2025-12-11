@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.model.User
+import com.example.locationpins.data.remote.dto.user.toUser
 import com.example.locationpins.data.repository.UserRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,7 +55,6 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
             val userName = _uiState.value.username
             val password = _uiState.value.password
             try {
-                // Gọi API
                 Log.d("LOGIN_DEBUG", "Đang gọi API tới Server...")
                 val response = userRepository.login(userName, password)
                 if (!response.success) {
@@ -67,42 +66,12 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
                     }
                     onResult(false)
                 } else {
-                    CurrentUser.currentUser = User(
-                        userId = 1,
-                        userName = "linhnguyen",
-                        location = "Hồ Chí Minh, Việt Nam",
-                        avatarUrl = "https://example.com/avatar/linh.png",
-                        quote = "Sống là trải nghiệm.",
-                        name = "Nguyễn Thị Linh",
-                        quantityPin = 34,
-                        quantityReact = 1280,
-                        quantityComment = 256,
-                        userEmail = "linh.nguyen@example.com",
-                        phoneNum = "+84 912 345 678",
-                        website = "https://linhnguyen.dev",
-                        quantityContact = 5
-                    )
-
-                    //                CurrentUser.currentUser = User(
-//                    userId = response.user.useId,
-//                    userName = response.user.useName,
-//                    location = response.user.location,
-//                    avatarUrl = TODO(),
-//                    quote = response.user.quotes,
-//                    name = response.user.name,
-//                    quantityPin = TODO(),
-//                    quantityReact = TODO(),
-//                    quantityComment = TODO(),
-//                    quantityContact = TODO(),
-//                    userEmail = response.user.useEmail,
-//                    phoneNum = response.user.phoneNum,
-//                    website = response.user.website,
-//                )
+                    CurrentUser.currentUser = response.user!!.toUser()
                     onResult(true)
                 }
 
             } catch (e: Exception) {
-                Log.e("LOGIN_DEBUG", "Lỗi CRASH: ${e.message}")
+                Log.e("Login", "The error occurs when login: ${e.message}")
                 e.printStackTrace()
 
                 _uiState.update {

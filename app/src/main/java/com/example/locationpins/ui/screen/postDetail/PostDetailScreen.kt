@@ -14,16 +14,19 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.locationpins.R
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.tag.TagDto
@@ -31,6 +34,8 @@ import com.example.locationpins.data.repository.CommentRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
+import com.example.locationpins.utils.formatCount
 
 @Composable
 fun PostDetailScreen(
@@ -89,11 +94,11 @@ fun PostDetailScreen(
 
                     // Post Content
                     item {
-                        PostContent(uiState.post!!.body ?: "")
+                        PostContent(uiState.post!!.body)
                     }
 
                     // Post Image
-                    uiState.post!!.imageUrl?.let { imageUrl ->
+                    uiState.post!!.imageUrl.let { imageUrl ->
                         item {
                             PostImage(imageUrl)
                         }
@@ -109,7 +114,7 @@ fun PostDetailScreen(
                     // Like & Comment Count
                     item {
                         InteractionStats(
-                            likes = uiState.post!!.reactionCount ?: 0,
+                            likes = uiState.post!!.reactionCount,
                             comments = uiState.post!!.commentCount,
                             isLiked = uiState.isLiked,
                             onLikeClick = { viewModel.onLikeClick() }
@@ -178,12 +183,12 @@ fun PostHeader(post: PostDto) {
 
             Column {
                 Text(
-                    text = post.userName ?: "Unknown",
+                    text = post.userName,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = post.createdAt ?: "",
+                    text = post.createdAt,
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
@@ -246,7 +251,7 @@ fun TagsRow(tags: List<TagDto>) {
                     modifier = Modifier
                 ) {
                     Text(
-                        text = tag.name ?: "",
+                        text = tag.name,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         fontSize = 12.sp,
                         color = tagColor
@@ -269,7 +274,7 @@ fun InteractionStats(
         color = Color.White
     ) {
         Column {
-            Divider(color = Color(0xFFE0E0E0))
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, color = Color(0xFFE0E0E0))
 
             Row(
                 modifier = Modifier
@@ -292,7 +297,7 @@ fun InteractionStats(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "${likes}k",
+                        text = formatCount(likes),
                         fontSize = 16.sp,
                         color = Color.Gray
                     )
@@ -312,7 +317,7 @@ fun InteractionStats(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "${comments}k",
+                        text = formatCount(comments),
                         fontSize = 16.sp,
                         color = Color.Gray
                     )
@@ -329,7 +334,7 @@ fun CommentsSectionHeader() {
         color = Color.White
     ) {
         Column {
-            Divider(color = Color(0xFFE0E0E0))
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, color = Color(0xFFE0E0E0))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -377,13 +382,13 @@ fun CommentItem(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = comment.userName ?: "Unknown",
+                            text = comment.userName,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = comment.content ?: "",
+                            text = comment.content,
                             fontSize = 14.sp,
                             lineHeight = 18.sp
                         )
@@ -395,7 +400,7 @@ fun CommentItem(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = comment.createdAt ?: "",
+                        text = comment.createdAt,
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -426,7 +431,7 @@ fun BottomCommentInput(
         ) {
             // Avatar
             AsyncImage(
-                model = "https://picsum.photos/seed/current-user/200",
+                model = CurrentUser.currentUser!!.avatarUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .size(36.dp)

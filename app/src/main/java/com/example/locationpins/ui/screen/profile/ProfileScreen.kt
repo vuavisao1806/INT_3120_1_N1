@@ -39,8 +39,8 @@ import com.example.locationpins.ui.theme.LocationSocialTheme
 fun ProfileScreen(
     user: User,
     profileMode: ProfileMode,
-    viewModel: ProfileViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     // lưu user vào viewModel
@@ -183,13 +183,15 @@ fun AvatarAndNameColumn(user: User) {
             color = Color.Gray
         )
 
-        Spacer(Modifier.height(8.dp))
 
-        Text(
-            text = user.quote,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF4C4C4C)
-        )
+        user.quote?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF4C4C4C)
+            )
+        }
     }
 }
 
@@ -199,10 +201,10 @@ fun InfoUserRow(user: User, modifier: Modifier = Modifier) {
         modifier = modifier.padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        InfoLine("📍", user.location)
+        user.location?.let { InfoLine("📍", it) }
         InfoLine("📧", user.userEmail)
-        InfoLine("📱", user.phoneNum)
-        InfoLine("🌐", user.website)
+        user.phoneNumber?.let { InfoLine("📱", it) }
+        user.website?.let { InfoLine("🌐", it) }
     }
 }
 
@@ -248,7 +250,7 @@ fun ParametersRow(user: User, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = 4.dp)
             .border(0.5.dp, Color(0xFFE5E5E5)),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -326,22 +328,24 @@ fun SelfActionRow(
 @Composable
 fun PreviewProfileScreen() {
     LocationSocialTheme {
-        ProfileScreen( user = User(
-            userId = 1,
-            userName = "linhnguyen",
-            location = "Hồ Chí Minh, Việt Nam",
-            avatarUrl = "https://example.com/avatar/linh.png",
-            quote = "Sống là trải nghiệm.",
-            name = "Nguyễn Thị Linh",
-            quantityPin = 34,
-            quantityReact = 1280,
-            quantityComment = 256,
-            userEmail = "linh.nguyen@example.com",
-            phoneNum = "+84 912 345 678",
-            website = "https://linhnguyen.dev",
-            quantityContact = 5
-        ),
-            profileMode = ProfileMode.Stranger)
+        ProfileScreen(
+            user = User(
+                userId = 1,
+                userName = "linhnguyen",
+                location = "Hồ Chí Minh, Việt Nam",
+                avatarUrl = "https://example.com/avatar/linh.png",
+                quote = "Sống là trải nghiệm.",
+                name = "Nguyễn Thị Linh",
+                quantityPin = 34,
+                quantityReact = 1280,
+                quantityComment = 256,
+                userEmail = "linh.nguyen@example.com",
+                phoneNumber = "+84 912 345 678",
+                website = "https://linhnguyen.dev",
+                quantityContact = 5
+            ),
+            profileMode = ProfileMode.Stranger
+        )
     }
 }
 
@@ -361,7 +365,7 @@ fun PreviewSelf() {
                 quantityReact = 1280,
                 quantityComment = 256,
                 userEmail = "linh.nguyen@example.com",
-                phoneNum = "+84 912 345 678",
+                phoneNumber = "+84 912 345 678",
                 website = "https://linhnguyen.dev",
                 quantityContact = 5
             ),
@@ -388,7 +392,7 @@ fun PreviewStranger() {
                 quantityReact = 1280,
                 quantityComment = 256,
                 userEmail = "linh.nguyen@example.com",
-                phoneNum = "+84 912 345 678",
+                phoneNumber = "+84 912 345 678",
                 website = "https://linhnguyen.dev",
                 quantityContact = 5
             ),

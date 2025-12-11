@@ -1,9 +1,7 @@
 package com.example.locationpins.ui.navigation
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.navArgument
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,6 +18,7 @@ import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
+import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.login.LoginScreen
 import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
@@ -96,24 +94,8 @@ fun LocationSocialNavHost(
 
         composable(route = TopLevelDestination.USER.route) {
             ProfileScreen(
-                user = User(
-                    userId = 1,
-                    userName = "tin chuan",
-                    location = "Viet Nam",
-                    avatarUrl = "di dau",
-                    quote = "tin rat chuan",
-                    name = "xin chao",
-                    quantityPin = 1,
-                    quantityReact = 1,
-                    quantityComment = 1,
-                    quantityContact = 1,
-                    userEmail = "aaa@gmail.com",
-                    phoneNum = "124151423",
-                    website = "www.google.com"
-                ),
+                user = CurrentUser.currentUser!!,
                 profileMode = ProfileMode.Self
-//                viewModel = TODO(),
-//                modifier = TODO()
             )
         }
 

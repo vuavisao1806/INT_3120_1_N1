@@ -1,11 +1,13 @@
 package com.example.locationpins.ui.screen.postDetail
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.repository.CommentRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,9 +26,6 @@ class PostDetailViewModel(
     private val _uiState = MutableStateFlow(PostDetailUiState())
     val uiState: StateFlow<PostDetailUiState> = _uiState.asStateFlow()
 
-    // tạm thời hard-code, sau này truyền qua nav args cho đẹp
-    private val currentUserId = 2
-
     init {
         loadPostDetails()
     }
@@ -39,12 +38,17 @@ class PostDetailViewModel(
                 val post = postRepository.getPost(postId)
                 val comments = commentRepository.getPostComments(postId)
                 val tags = tagRepository.getTagsByPostId(postId)
+                val isLiked = reactionRepository.checkReactPost(
+                    postId = postId,
+                    userId = CurrentUser.currentUser!!.userId
+                )
 
                 _uiState.update {
                     it.copy(
                         post = post,
                         comments = comments,
                         tags = tags,
+                        isLiked = isLiked,
                         isLoading = false
                     )
                 }
@@ -67,39 +71,29 @@ class PostDetailViewModel(
         val currentState = _uiState.value
         val isCurrentlyLiked = currentState.isLiked
         val currentPost = currentState.post ?: return
+        val currentUserId = CurrentUser.currentUser!!.userId
 
         viewModelScope.launch {
             try {
+                val offset = if (isCurrentlyLiked) -1 else 1
+                _uiState.update { state ->
+                    state.copy(
+                        isLiked = !state.isLiked,
+                        post = currentPost.copy(
+                            reactionCount = currentPost.reactionCount + offset
+                        )
+                    )
+                }
                 if (isCurrentlyLiked) {
-                    // Unlike
                     reactionRepository.cancelReactPost(
                         postId = postId,
                         userId = currentUserId
                     )
-                    _uiState.update { state ->
-                        val post = state.post ?: currentPost
-                        state.copy(
-                            isLiked = false,
-                            post = post.copy(
-                                reactionCount = (post.reactionCount ?: 1) - 1
-                            )
-                        )
-                    }
                 } else {
-                    // Like
                     reactionRepository.reactPost(
                         postId = postId,
                         userId = currentUserId
                     )
-                    _uiState.update { state ->
-                        val post = state.post ?: currentPost
-                        state.copy(
-                            isLiked = true,
-                            post = post.copy(
-                                reactionCount = (post.reactionCount ?: 0) + 1
-                            )
-                        )
-                    }
                 }
             } catch (e: Exception) {
                 // revert lại trạng thái nếu lỗi
@@ -109,6 +103,8 @@ class PostDetailViewModel(
     }
 
     fun onSendComment() {
+        val currentUserId = CurrentUser.currentUser!!.userId
+        Log.d("USER ID WHEN COMMENTING", currentUserId.toString())
         val text = _uiState.value.commentText.trim()
         if (text.isBlank()) return
 
@@ -135,6 +131,7 @@ class PostDetailViewModel(
                         )
                     )
                 }
+                Log.d("COMMENT SUCCESS", "COMMENT")
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -147,6 +144,7 @@ class PostDetailViewModel(
     }
 
     fun onDeleteComment(commentId: Int) {
+        val currentUserId = CurrentUser.currentUser!!.userId
         viewModelScope.launch {
             try {
                 commentRepository.cancelComment(

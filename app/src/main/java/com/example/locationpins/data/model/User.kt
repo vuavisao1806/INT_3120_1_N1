@@ -3,17 +3,17 @@ package com.example.locationpins.data.model
 data class User(
     val userId: Int,
     val userName: String,
-    val location: String,
+    val location: String?,
     val avatarUrl: String,
-    val quote: String,
+    val quote: String?,
     val name: String,
     val quantityPin: Int,
     val quantityReact: Int,
     val quantityComment: Int,
     val quantityContact: Int,
     val userEmail: String,
-    val phoneNum: String,
-    val website: String,
+    val phoneNumber: String?,
+    val website: String?,
 )
 object UserMock {
     val sampleUser = listOf(
@@ -29,7 +29,7 @@ object UserMock {
             quantityComment = 892,
             quantityContact = 428,
             userEmail = "vananh@gmail.com",
-            phoneNum = "0987 654 321",
+            phoneNumber = "0987 654 321",
             website = "instagram.com/vananh.ng"
         ),
         User(
@@ -44,7 +44,7 @@ object UserMock {
             quantityComment = 1203,
             quantityContact = 312,
             userEmail = "minhquan99@gmail.com",
-            phoneNum = "0905 123 456",
+            phoneNumber = "0905 123 456",
             website = "github.com/minhquan99"
         ),
         User(
@@ -59,7 +59,7 @@ object UserMock {
             quantityComment = 3421,
             quantityContact = 789,
             userEmail = "maile2801@gmail.com",
-            phoneNum = "0938 777 888",
+            phoneNumber = "0938 777 888",
             website = "tiktok.com/@maile.foodie"
         ),
         User(
@@ -74,7 +74,7 @@ object UserMock {
             quantityComment = 2890,
             quantityContact = 1203,
             userEmail = "duchuy.pham@gmail.com",
-            phoneNum = "0912 345 678",
+            phoneNumber = "0912 345 678",
             website = "phamduchuy.com"
         ),
         User(
@@ -89,7 +89,7 @@ object UserMock {
             quantityComment = 4321,
             quantityContact = 987,
             userEmail = "tuancha@gmail.com",
-            phoneNum = "0983 111 222",
+            phoneNumber = "0983 111 222",
             website = "instagram.com/anhtuan.photo"
         ),
         User(
@@ -104,7 +104,7 @@ object UserMock {
             quantityComment = 987,
             quantityContact = 456,
             userEmail = "ngoclan.bui@gmail.com",
-            phoneNum = "0935 999 888",
+            phoneNumber = "0935 999 888",
             website = ""
         ),
         User(
@@ -119,7 +119,7 @@ object UserMock {
             quantityComment = 2103,
             quantityContact = 623,
             userEmail = "hieuminh99@gmail.com",
-            phoneNum = "0903 456 789",
+            phoneNumber = "0903 456 789",
             website = ""
         ),
         User(
@@ -134,7 +134,7 @@ object UserMock {
             quantityComment = 3210,
             quantityContact = 567,
             userEmail = "huongvuthi@gmail.com",
-            phoneNum = "0978 123 456",
+            phoneNumber = "0978 123 456",
             website = "yogawithhuong.vn"
         ),
         User(
@@ -149,7 +149,7 @@ object UserMock {
             quantityComment = 1987,
             quantityContact = 890,
             userEmail = "baonq@gmail.com",
-            phoneNum = "0918 555 666",
+            phoneNumber = "0918 555 666",
             website = "quocbao.dev"
         ),
         User(
@@ -164,7 +164,7 @@ object UserMock {
             quantityComment = 4567,
             quantityContact = 1023,
             userEmail = "kimngan.phan@gmail.com",
-            phoneNum = "0947 888 999",
+            phoneNumber = "0947 888 999",
             website = "instagram.com/kimngan.catlover"
         )
     )
