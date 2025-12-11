@@ -6,6 +6,9 @@ import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
 
+// This is extremely bad code but whatever
+const val DEFAULT_AVATAR_URL = "https://dwadscpiphluqvkwrgdf.supabase.co/storage/v1/object/public/avatars/empty_avatar.png"
+
 class UserRepository {
     private val api = RetrofitClient.api
 
@@ -13,14 +16,22 @@ class UserRepository {
         userName: String,
         userPassword: String
     ): LoginResponse {
-        return api.login(LoginRequest(userName, userPassword))
+        return api.login(LoginRequest(userName = userName, userPassword = userPassword))
     }
 
     suspend fun register(
-        userName: String,
+        username: String,
+        name: String,
         userPassword: String,
-        userEmail: String
+        userEmail: String,
+        avatarUrl: String = DEFAULT_AVATAR_URL
     ): RegisterResponse {
-        return api.register(RegisterRequest(userName, userEmail, userPassword))
+        return api.register(RegisterRequest(
+            userName = username,
+            name = name,
+            userEmail = userEmail,
+            userPassword = userPassword,
+            avatarUrl = avatarUrl
+        ))
     }
 }

@@ -1,8 +1,6 @@
 package com.example.locationpins.ui.component
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,13 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.utils.formatCount
@@ -49,8 +45,9 @@ import com.example.locationpins.utils.formatCount
 fun PostPreviewForNewsFeed(
     post: Post,
     modifier: Modifier = Modifier,
-    onPostPress: () -> Unit = {},
+//    onReactPress: suspend (Int, Boolean) -> Unit,
     onReactPress: () -> Unit = {},
+    onPostPress: () -> Unit = {},
     onCommentPress: () -> Unit = {},
     onTagPress: (String) -> Unit = {}
 ) {
@@ -79,14 +76,6 @@ fun PostPreviewForNewsFeed(
                     .aspectRatio(4f / 3f)
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
             )
-//            Image(
-//                painter = rememberAsyncImagePainter(post.imageUrl),
-//                contentDescription = post.title,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .aspectRatio(4f / 3f),
-//                contentScale = ContentScale.Crop
-//            )
 
             // Nội dung bài viết
             Column(
@@ -221,7 +210,6 @@ fun PostPreviewForNewsFeed(
 fun PostPreviewForNewsFeedPreview() {
     PostPreviewForNewsFeed(
         post = PostMock.samplePosts.first(),
-        modifier = Modifier.padding(8.dp),
-        onTagPress = { tag -> println("Clicked tag: $tag") }
-    )
+        modifier = Modifier.padding(8.dp)
+    ) { tag -> println("Clicked tag: $tag") }
 }

@@ -90,6 +90,7 @@ class RegisterRequest(BaseModel):
     name: str
     user_password: str
     user_email: str
+    avatar_url: str
 
 
 class RegisterNameInvalid(BaseModel):
@@ -132,10 +133,10 @@ def register(body: RegisterRequest):
             # Insert new user
             cur.execute(
                 """
-                INSERT INTO users (user_name, name, password, user_email)
-                VALUES (%s, %s, %s, %s);
+                INSERT INTO users (user_name, name, password, user_email, avatar_url)
+                VALUES (%s, %s, %s, %s, %s);
                 """,
-                (body.user_name, body.name, hashed_pw, body.user_email)
+                (body.user_name, body.name, hashed_pw, body.user_email, body.avatar_url)
             )
 
         connection.commit()

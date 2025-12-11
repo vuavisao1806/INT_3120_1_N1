@@ -206,6 +206,12 @@ fun RegisterScreen(
         )
         Spacer(Modifier.height(10.dp))
         TextFieldNotHidden(
+            content = "Họ tên",
+            onValueChange = { viewModel.enterName(it) },
+            info = uiState.name
+        )
+        Spacer(Modifier.height(10.dp))
+        TextFieldNotHidden(
             content = "Email",
             onValueChange = { viewModel.enterEmail(it) },
             info = uiState.email

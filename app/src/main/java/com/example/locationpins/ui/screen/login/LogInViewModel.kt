@@ -33,6 +33,12 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
         }
     }
 
+    fun enterName(value: String) {
+        _uiState.update { curent ->
+            curent.copy(name = value)
+        }
+    }
+
     fun enterEmail(value: String) {
         _uiState.update { curent ->
             curent.copy(email = value)
@@ -87,8 +93,8 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
         viewModelScope.launch {
             _uiState.update { curent -> curent.copy(isLoading = true, errorMessage = null) }
 
-
-            val userName = _uiState.value.username
+            val username = _uiState.value.username
+            val name = _uiState.value.name
             val password = _uiState.value.password
             val confirmPassword = _uiState.value.confirmPassword
             val email = _uiState.value.email
@@ -97,7 +103,8 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
                 Log.d("REGISTER_DEBUG", "Đang gọi API tới Server...")
                 if (password.equals(confirmPassword)) {
                     val response = userRepository.register(
-                        userName = userName,
+                        username = username,
+                        name = name,
                         userPassword = password,
                         userEmail = email
                     )

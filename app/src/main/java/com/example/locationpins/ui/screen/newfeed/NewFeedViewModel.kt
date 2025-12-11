@@ -6,7 +6,9 @@ import com.example.locationpins.data.mapper.toPosts
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.launch
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
+    private val reactionRepository: ReactionRepository = ReactionRepository(),
     private val userId: Int = 1
 ) : ViewModel() {
 
@@ -129,7 +132,7 @@ class NewsFeedViewModel(
                 val nextPage = _uiState.value.currentPage + 1
                 val offset = nextPage * _uiState.value.pageSize
 
-                // ⭐ GỌI API THẬT
+                // GỌI API THẬT
                 val newPostDtos = postRepository.getNewsfeed(
                     userId = userId,
                     limit = _uiState.value.pageSize,
@@ -157,15 +160,35 @@ class NewsFeedViewModel(
         }
     }
 
+    suspend fun checkPostComment(postId: Int): Boolean {
+        return reactionRepository.checkReactPost(
+            postId = postId,
+            userId = CurrentUser.currentUser!!.userId
+        )
+    }
+
     /**
      * React/Unreact một post
      */
-    fun toggleReact(postId: String) {
+    suspend fun toggleReact(postId: Int, status: Boolean) {
         _uiState.update { currentState ->
             val updatedPosts = currentState.posts.map { post ->
                 if (post.postId == postId) {
+                    val userId = CurrentUser.currentUser!!.userId
                     val currentCount = post.reactCount as Int
-                    post.copy(reactCount = currentCount + 1)
+                    val offset = if (status) -1 else 1
+                    if (!status) {
+                        reactionRepository.reactPost(
+                            postId = postId,
+                            userId = userId
+                        )
+                    } else {
+                        reactionRepository.cancelReactPost(
+                            postId = postId,
+                            userId = userId
+                        )
+                    }
+                    post.copy(reactCount = currentCount + offset)
                 } else {
                     post
                 }

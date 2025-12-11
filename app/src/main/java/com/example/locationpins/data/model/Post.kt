@@ -1,8 +1,8 @@
 package com.example.locationpins.data.model
 
 data class Post (
-    val postId: String,
-    val pinId: String,
+    val postId: Int,
+    val pinId: Int,
     val title: String,
     val body: String,
     val imageUrl: String,
