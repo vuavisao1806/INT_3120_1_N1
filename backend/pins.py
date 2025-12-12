@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from connection import get_connection
+from connection import get_database_connection
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -20,7 +20,7 @@ class InsertPinSuccess(BaseModel):
 
 @router.post("/insert")
 def insert(body: InsertPinRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # Check username exists
@@ -47,7 +47,7 @@ class GetPinListByUserIdRequest(BaseModel):
 
 @router.post("/get/user-id")
 def get_pins_by_user_id(body: GetPinListByUserIdRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(
@@ -76,7 +76,7 @@ class GetPinsInRadiusRequest(BaseModel):
 
 @router.post("/get/in-radius")
 def get_pins_in_radius(body: GetPinsInRadiusRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # Haversine: tính khoảng cách giữa (center_lat, center_lng) và (p.latitude, p.longitude)
@@ -103,5 +103,92 @@ def get_pins_in_radius(body: GetPinsInRadiusRequest):
 
             pins = cur.fetchall()
             return pins
+    finally:
+        connection.close()
+
+# ==================================================
+#   TÌM HOẶC TẠO PIN DựA TRÊN TỌA ĐỘ
+# ==================================================
+
+class PinByCoordRequest(BaseModel):
+    center_lat: float
+    center_lng: float
+    radius_meters: float = 50.0  # Bán kính mặc định 50m để tìm pin gần nhất
+
+class PinByCoordResponse(BaseModel):
+    pin_id: int
+    is_new_pin: bool  # True nếu tạo pin mới, False nếu dùng pin có sẵn
+
+@router.post("/get-or-create-by-coord")
+def add_post_into_pin_by_coord(body: PinByCoordRequest):
+    """
+    Tìm pin gần nhất trong bán kính cho trước.
+    Nếu không tìm thấy -> tạo pin mới tại tọa độ đó.
+    Trả về pin_id để sử dụng khi tạo post.
+    """
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            # 1. Tìm pin gần nhất trong bán kính
+            cur.execute(
+                """
+                SELECT 
+                    p.pin_id,
+                    (
+                        6371000 * acos(
+                            cos(radians(%s)) * cos(radians(p.latitude::double precision)) *
+                            cos(radians(p.longitude::double precision) - radians(%s)) +
+                            sin(radians(%s)) * sin(radians(p.latitude::double precision))
+                        )
+                    ) AS distance_meters
+                FROM pins p
+                WHERE (
+                    6371000 * acos(
+                        cos(radians(%s)) * cos(radians(p.latitude::double precision)) *
+                        cos(radians(p.longitude::double precision) - radians(%s)) +
+                        sin(radians(%s)) * sin(radians(p.latitude::double precision))
+                    )
+                ) <= %s
+                ORDER BY distance_meters ASC
+                LIMIT 1;
+                """,
+                (
+                    body.center_lat,        # %s thứ 1
+                    body.center_lng,        # %s thứ 2
+                    body.center_lat,        # %s thứ 3
+                    body.center_lat,        # %s thứ 4
+                    body.center_lng,        # %s thứ 5
+                    body.center_lat,        # %s thứ 6
+                    body.radius_meters      # %s thứ 7
+                )
+            )
+
+            existing_pin = cur.fetchone()
+
+            # 2. Nếu tìm thấy pin → trả về pin_id có sẵn
+            if existing_pin:
+                return PinByCoordResponse(
+                    pin_id=existing_pin["pin_id"],
+                    is_new_pin=False
+                )
+
+            # 3. Nếu không tìm thấy → tạo pin mới
+            cur.execute(
+                """
+                INSERT INTO pins (latitude, longitude)
+                VALUES (%s, %s)
+                RETURNING pin_id;
+                """,
+                (body.center_lat, body.center_lng)
+            )
+
+            new_pin = cur.fetchone()
+            connection.commit()
+
+            return PinByCoordResponse(
+                pin_id=new_pin["pin_id"],
+                is_new_pin=True
+            )
+
     finally:
         connection.close()

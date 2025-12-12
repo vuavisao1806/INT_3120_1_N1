@@ -29,3 +29,21 @@ data class PinDto(
     val createdAt: String
 )
 
+@Serializable
+data class PinByCoordRequest(
+    @SerialName("center_lat")
+    val centerLatitude: Double,
+    @SerialName("center_lng")
+    val centerLongitude: Double,
+    @SerialName("radius_meters")
+    val radiusMeters: Double
+)
+
+@Serializable
+data class PinByCoordResponse(
+    @SerialName("pin_id")
+    val pinId: Int,
+    @SerialName("is_new_pin")
+    val isNewPin: Boolean
+)
+

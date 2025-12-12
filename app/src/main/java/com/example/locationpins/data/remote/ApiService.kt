@@ -8,6 +8,8 @@ import com.example.locationpins.data.remote.dto.comment.GetPostCommentsRequest
 import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.example.locationpins.data.remote.dto.pins.GetPinListByUserIdRequest
 import com.example.locationpins.data.remote.dto.pins.GetPinListInRadiusRequest
+import com.example.locationpins.data.remote.dto.pins.PinByCoordRequest
+import com.example.locationpins.data.remote.dto.pins.PinByCoordResponse
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.react.CancelReactionRequest
@@ -23,9 +25,12 @@ import com.example.locationpins.data.remote.dto.post.InsertPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
+import com.example.locationpins.data.remote.dto.post.SensitiveTextRespond
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
-import com.example.locationpins.data.remote.dto.react.CheckPostReactRespond
+import com.example.locationpins.data.remote.dto.react.CheckPostReactRespose
+import com.example.locationpins.data.remote.dto.sensitive.CheckIsSensitiveText
+import com.example.locationpins.data.remote.dto.sensitive.IsSensitiveTextRespond
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
 import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
@@ -126,7 +131,7 @@ interface ApiService {
     @POST("/posts/react/check")
     suspend fun checkPostReact(
         @Body request: CheckPostReactRequest
-    ): CheckPostReactRespond
+    ): CheckPostReactRespose
 
     @POST("/users/isfriend")
     suspend fun checkIsFriend(
@@ -137,6 +142,22 @@ interface ApiService {
     suspend fun getUser(
         @Body request: GetUserRequest
     ): UserDto
+  
+    @POST("/sensitive/text")
+    suspend fun checkIsSensitiveText(
+        @Body request: CheckIsSensitiveText
+    ): IsSensitiveTextRespond
+
+    @Multipart
+    @POST("/sensitive/image")
+    suspend fun checkIsSensitiveImage(
+        @Part file: MultipartBody.Part // Chờ nhận trực tiếp MultipartBody.Part
+    ): SensitiveTextRespond
+
+    @POST("/pins/get-or-create-by-coord")
+    suspend fun getPinIdByCoordinates(
+        @Body request: PinByCoordRequest
+    ): PinByCoordResponse
 }
 
 

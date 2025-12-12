@@ -12,14 +12,11 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.locationpins.data.model.User
-import com.example.locationpins.data.model.UserMock
 import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
 import com.example.locationpins.ui.screen.login.CurrentUser
-import com.example.locationpins.ui.screen.login.LoginScreen
 import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
@@ -80,8 +77,7 @@ fun LocationSocialNavHost(
                 CreatePostScreen(
                     initialImageUri = capturedImageUri,
                     onNavigateBack = { navController.popBackStack() },
-                    user = UserMock.sampleUser.first(),
-                    pinId = 5,
+                    user = CurrentUser.currentUser!!
                 )
             }
         }

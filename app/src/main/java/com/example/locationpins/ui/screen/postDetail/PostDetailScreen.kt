@@ -21,18 +21,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.locationpins.R
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.repository.CommentRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
+import com.example.locationpins.data.repository.SensitiveContentRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.utils.formatCount
@@ -49,6 +48,7 @@ fun PostDetailScreen(
             commentRepository = CommentRepository(),
             reactionRepository = ReactionRepository(),
             tagRepository = TagRepository(),
+            sensitiveContentRepository = SensitiveContentRepository(),
             postId = postId?.toIntOrNull() ?: 1
         )
     }

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from connection import get_connection
+from connection import get_database_connection
 from pydantic import BaseModel
 
 import bcrypt
@@ -46,7 +46,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 @router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(
@@ -105,7 +105,7 @@ class RegisterSuccess(BaseModel):
 
 @router.post("/register")
 def register(body: RegisterRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
 
@@ -162,7 +162,7 @@ class UpdateUserByUserIdSuccess(BaseModel):
 
 @router.post("/update")
 def update(body: UpdateUserByUserIdRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
 
@@ -196,7 +196,7 @@ class GetUserByUserIdInvalid(BaseModel):
 
 @router.post("/get")
 def get(body: GetUserByUserIdRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(
@@ -228,7 +228,7 @@ class IsFriendRespond(BaseModel):
 
 @router.post("/isfriend")
 def is_friend(body: CheckIsFriend):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(

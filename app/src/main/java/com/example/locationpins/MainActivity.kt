@@ -9,12 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.locationpins.ui.screen.LocationSocialApp
+import com.example.locationpins.ui.screen.map.LocationManager
 import com.example.locationpins.ui.screen.rememberLocationSocialAppState
 import com.example.locationpins.ui.theme.LocationSocialTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        LocationManager.init(this)
         enableEdgeToEdge()
         setContent {
             LocationSocialTheme {
@@ -27,7 +29,6 @@ class MainActivity : ComponentActivity() {
                     LocationSocialApp(appState = appState)
                 }
             }
-
         }
     }
 }

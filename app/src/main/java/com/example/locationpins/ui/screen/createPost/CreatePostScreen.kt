@@ -29,7 +29,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.model.UserMock
-import com.example.locationpins.data.remote.RetrofitClient
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 
 enum class CreatePostStep {
@@ -43,14 +42,11 @@ fun CreatePostScreen(
     initialImageUri: Uri?,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    user: User,
-    pinId: Int, // truyền từ màn trước vào
+    user: User
 ) {
     val context = LocalContext.current
 
-    val viewModel: CreatePostViewModel = viewModel(
-        factory = CreatePostViewModelFactory(RetrofitClient.api)
-    )
+    val viewModel: CreatePostViewModel = viewModel()
 
     var step by remember { mutableStateOf(CreatePostStep.Editing) }
     var currentImageUri by remember { mutableStateOf(initialImageUri) }
@@ -89,7 +85,6 @@ fun CreatePostScreen(
                                         isPosting = true
                                         viewModel.submitPost(
                                             context = context,
-                                            pinId = pinId,
                                             userId = user.userId, // đổi nếu field khác
                                             title = title,
                                             content = content,
@@ -325,8 +320,6 @@ fun CreatePostScreenPreview() {
     CreatePostScreen(
         initialImageUri = null,
         onNavigateBack = {},
-        modifier = Modifier,
-        user = UserMock.sampleUser.first(),
-        pinId = 1
+        user = UserMock.sampleUser.first()
     )
 }

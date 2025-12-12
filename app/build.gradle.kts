@@ -91,4 +91,9 @@ dependencies {
     // OkHttp + logging
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    // 1. Fix lỗi "Unresolved reference 'location'"
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // 2. Fix lỗi "Unresolved reference 'ProcessLifecycleOwner'"
+    implementation("androidx.lifecycle:lifecycle-process:2.6.2")
 }
