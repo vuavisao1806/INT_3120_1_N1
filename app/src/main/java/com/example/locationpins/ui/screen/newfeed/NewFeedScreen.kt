@@ -80,10 +80,19 @@ fun NewsFeedScreen(
                             items = uiState.posts,
                             key = { post -> post.postId }
                         ) { post ->
+                            val isLiked = uiState.likedPosts[post.postId] == true
+                            val isReacting = uiState.reactingPostIds.contains(post.postId)
+
                             PostPreviewForNewsFeed(
                                 post = post,
+                                isLiked = isLiked,
+                                isReacting = isReacting,
                                 modifier = Modifier.padding(horizontal = 12.dp),
-//                                onReactPress = viewModel::toggleReact,
+                                onReactPress = {
+                                    if (!isReacting) {
+                                        viewModel.toggleReact(post.postId)
+                                    }
+                                },
                                 onPostPress = { onPostPress(post) },
                                 onCommentPress = { onPostPress(post) },
                                 onTagPress = onTagPress

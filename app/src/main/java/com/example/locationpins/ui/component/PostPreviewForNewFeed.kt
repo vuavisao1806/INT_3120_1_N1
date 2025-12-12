@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,18 +43,20 @@ import androidx.compose.ui.unit.sp
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.model.PostMock
 import com.example.locationpins.utils.formatCount
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostPreviewForNewsFeed(
     post: Post,
+    isLiked: Boolean = false,
+    isReacting: Boolean = false,
     modifier: Modifier = Modifier,
-//    onReactPress: suspend (Int, Boolean) -> Unit,
     onReactPress: () -> Unit = {},
     onPostPress: () -> Unit = {},
     onCommentPress: () -> Unit = {},
     onTagPress: (String) -> Unit = {}
 ) {
-    //Bài viết dài có đang ở trạng thái mở rộng (hiển thị tất cả hay không)
+    // Bài viết dài có đang ở trạng thái mở rộng (hiển thị tất cả hay không)
     var isExpanded by remember { mutableStateOf(false) }
     val maxCollapsedLines = 3
     val cardShape = RoundedCornerShape(12.dp)
@@ -157,21 +162,29 @@ fun PostPreviewForNewsFeed(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onReactPress() }
+                        .clickable(enabled = !isReacting) { onReactPress() }
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "React",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    if (isReacting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFFE53935)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = if (isLiked) "Unlike" else "Like",
+                            tint = if (isLiked) Color(0xFFE53935) else Color.Gray,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = formatCount(post.reactCount as Int),
-                        color = Color.Gray,
+                        color = if (isLiked) Color(0xFFE53935) else Color.Gray,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -210,6 +223,7 @@ fun PostPreviewForNewsFeed(
 fun PostPreviewForNewsFeedPreview() {
     PostPreviewForNewsFeed(
         post = PostMock.samplePosts.first(),
+        isLiked = true,
         modifier = Modifier.padding(8.dp)
     ) { tag -> println("Clicked tag: $tag") }
 }
