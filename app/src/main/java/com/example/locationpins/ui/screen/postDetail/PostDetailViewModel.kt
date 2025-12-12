@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.repository.CommentRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
+import com.example.locationpins.data.repository.SensitiveContentRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ class PostDetailViewModel(
     private val commentRepository: CommentRepository,
     private val reactionRepository: ReactionRepository,
     private val tagRepository: TagRepository,
+    private val sensitiveContentRepository: SensitiveContentRepository,
     private val postId: Int
 ) : ViewModel() {
 
@@ -110,7 +112,15 @@ class PostDetailViewModel(
 
         viewModelScope.launch {
             try {
+                val isSensitive: Boolean = sensitiveContentRepository.isSensitiveText(text = text)
+                if (isSensitive) {
+                    Log.d("SENSITIVE DETECTION", "The content isn't allowed")
+                    // TODO: Thêm hiệu ứng như kiểu cái viền đỏ xung quanh ô nhập hoặc hiện cảnh báo (aler)
+                    // TODO: Mr. LDHA sẽ thực hiện
+                    return@launch
+                }
                 _uiState.update { it.copy(isSubmittingComment = true, error = null) }
+
 
                 commentRepository.createComment(
                     postId = postId,

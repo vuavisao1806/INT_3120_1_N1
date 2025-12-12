@@ -48,9 +48,7 @@ fun CreatePostScreen(
 ) {
     val context = LocalContext.current
 
-    val viewModel: CreatePostViewModel = viewModel(
-        factory = CreatePostViewModelFactory(RetrofitClient.api)
-    )
+    val viewModel: CreatePostViewModel = viewModel()
 
     var step by remember { mutableStateOf(CreatePostStep.Editing) }
     var currentImageUri by remember { mutableStateOf(initialImageUri) }
