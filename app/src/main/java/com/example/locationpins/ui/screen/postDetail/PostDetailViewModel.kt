@@ -112,9 +112,7 @@ class PostDetailViewModel(
 
         viewModelScope.launch {
             try {
-                Log.d("CHECK BEFORE", "Before")
                 val isSensitive: Boolean = sensitiveContentRepository.isSensitiveText(text = text)
-                Log.d("CHECK AFTER", "Ater")
                 if (isSensitive) {
                     Log.d("SENSITIVE DETECTION", "The content isn't allowed")
                     // TODO: Thêm hiệu ứng như kiểu cái viền đỏ xung quanh ô nhập hoặc hiện cảnh báo (aler)

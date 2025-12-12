@@ -18,7 +18,7 @@ class SensitiveContentRepository {
         ).isSensitive
     }
 
-    suspend fun isSensitiveImage(imagePart: MultipartBody.Part): SensitiveTextRespond {
-        return api.checkIsSensitiveImage(imagePart)
+    suspend fun isSensitiveImage(imagePart: MultipartBody.Part): Boolean {
+        return api.checkIsSensitiveImage(imagePart).isSensitive
     }
 }
