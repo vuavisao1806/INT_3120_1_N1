@@ -37,37 +37,45 @@ import com.example.locationpins.ui.theme.LocationSocialTheme
 
 @Composable
 fun ProfileScreen(
-    user: User,
-    profileMode: ProfileMode,
+    userId: Int,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     // lưu user vào viewModel
-    LaunchedEffect(user.userId, profileMode) {
-        viewModel.setUser(user, profileMode)
+    LaunchedEffect(userId) {
+        viewModel.setUser(userId)
     }
+    val user = uiState.user
+    val profileMode = uiState.profileMode
     Box(modifier = Modifier.fillMaxSize()) {
-        when (profileMode) {
-            is ProfileMode.Self -> ProfileSelfView(
-                user,
-                onInvitesClick = {},
-                onEditClick = {})
-            is ProfileMode.Friend -> ProfileFriendView(user)
-            ProfileMode.Stranger -> ProfileStrangerView(
-                user,
-                onClick = {viewModel.onGetContactClick()})
-        }
-        // Hiện form nhập yêu cầu liên hệ đối với người lạ
-        if (uiState.showRequestContact) {
-            RequestContactScreen(
-                onDismiss = {
-                   viewModel.onDismissRequestDialog()
-                },
-                onSend = { viewModel.onSendClick() },
-                onMessageChange = { viewModel.onMessageChange(it) },
-                message = viewModel.getMessage()
-            )
+
+        if (uiState.isLoading) {
+            // Hiển thị loading khi đang gọi API
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            when (profileMode) {
+                is ProfileMode.Self -> ProfileSelfView(
+                    user,
+                    onInvitesClick = {},
+                    onEditClick = {})
+
+                is ProfileMode.Friend -> ProfileFriendView(user)
+                ProfileMode.Stranger -> ProfileStrangerView(
+                    user,
+                    onClick = { viewModel.onGetContactClick() })
+            }
+            // Hiện form nhập yêu cầu liên hệ đối với người lạ
+            if (uiState.showRequestContact) {
+                RequestContactScreen(
+                    onDismiss = {
+                        viewModel.onDismissRequestDialog()
+                    },
+                    onSend = { viewModel.onSendClick() },
+                    onMessageChange = { viewModel.onMessageChange(it) },
+                    message = viewModel.getMessage()
+                )
+            }
         }
     }
 }
@@ -76,7 +84,7 @@ fun ProfileScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProfileSelfView(
-    user: User,
+    user: User?,
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -110,7 +118,7 @@ fun ProfileSelfView(
                     )
 
                     SelfActionRow(
-                        pendingInvites = user.quantityContact,
+                        pendingInvites = user?.quantityContact ?: 0,
                         onInvitesClick = onInvitesClick,
                         onEditClick = onEditClick
                     )
@@ -126,7 +134,7 @@ fun ProfileSelfView(
 
 // Màn hình cho bạn bè
 @Composable
-fun ProfileFriendView(user: User, modifier: Modifier = Modifier) {
+fun ProfileFriendView(user: User?, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -136,9 +144,10 @@ fun ProfileFriendView(user: User, modifier: Modifier = Modifier) {
         ParametersRow(user)
     }
 }
+
 // Màn hình cho người lạ
 @Composable
-fun ProfileStrangerView(user: User, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ProfileStrangerView(user: User?, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -150,11 +159,11 @@ fun ProfileStrangerView(user: User, onClick: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-fun AvatarAndNameColumn(user: User) {
+fun AvatarAndNameColumn(user: User?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(user.avatarUrl)
+                .data(user?.avatarUrl)
                 .crossfade(true)
                 .build(),
             error = painterResource(R.drawable.empty_avatar),
@@ -172,19 +181,19 @@ fun AvatarAndNameColumn(user: User) {
         Spacer(Modifier.height(12.dp))
 
         Text(
-            text = user.name,
+            text = user?.name ?: "User",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
         Text(
-            text = "@${user.userName}",
+            text = "@${user?.userName}",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
 
 
-        user.quote?.let {
+        user?.quote?.let {
             Spacer(Modifier.height(8.dp))
             Text(
                 text = it,
@@ -196,15 +205,15 @@ fun AvatarAndNameColumn(user: User) {
 }
 
 @Composable
-fun InfoUserRow(user: User, modifier: Modifier = Modifier) {
+fun InfoUserRow(user: User?, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        user.location?.let { InfoLine("📍", it) }
-        InfoLine("📧", user.userEmail)
-        user.phoneNumber?.let { InfoLine("📱", it) }
-        user.website?.let { InfoLine("🌐", it) }
+        user?.location?.let { InfoLine("📍", it) }
+        InfoLine("📧", user?.userEmail ?: "email")
+        user?.phoneNumber?.let { InfoLine("📱", it) }
+        user?.website?.let { InfoLine("🌐", it) }
     }
 }
 
@@ -246,7 +255,7 @@ fun GetContactButton(
 }
 
 @Composable
-fun ParametersRow(user: User, modifier: Modifier = Modifier) {
+fun ParametersRow(user: User?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -254,9 +263,9 @@ fun ParametersRow(user: User, modifier: Modifier = Modifier) {
             .border(0.5.dp, Color(0xFFE5E5E5)),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        StatItem("Ghim", user.quantityPin)
-        StatItem("Lượt thích", user.quantityReact)
-        StatItem("Bình luận", user.quantityComment)
+        StatItem("Ghim", user?.quantityPin ?: 0)
+        StatItem("Lượt thích", user?.quantityReact ?: 0)
+        StatItem("Bình luận", user?.quantityComment ?: 0)
     }
 }
 
@@ -275,6 +284,7 @@ private fun StatItem(label: String, value: Int) {
         )
     }
 }
+
 // Hàng chứa button danh sách liên hệ và edit (đối với bản thân)
 @Composable
 fun SelfActionRow(
@@ -329,22 +339,7 @@ fun SelfActionRow(
 fun PreviewProfileScreen() {
     LocationSocialTheme {
         ProfileScreen(
-            user = User(
-                userId = 1,
-                userName = "linhnguyen",
-                location = "Hồ Chí Minh, Việt Nam",
-                avatarUrl = "https://example.com/avatar/linh.png",
-                quote = "Sống là trải nghiệm.",
-                name = "Nguyễn Thị Linh",
-                quantityPin = 34,
-                quantityReact = 1280,
-                quantityComment = 256,
-                userEmail = "linh.nguyen@example.com",
-                phoneNumber = "+84 912 345 678",
-                website = "https://linhnguyen.dev",
-                quantityContact = 5
-            ),
-            profileMode = ProfileMode.Stranger
+            1
         )
     }
 }

@@ -31,8 +31,6 @@ class UserSchema(BaseModel):
     website: str | None = None
 
 
-
-
 class LoginResponse(BaseModel):
     success: bool
     user: UserSchema | None = None
@@ -136,7 +134,8 @@ def register(body: RegisterRequest):
                 INSERT INTO users (user_name, name, password, user_email, avatar_url)
                 VALUES (%s, %s, %s, %s, %s);
                 """,
-                (body.user_name, body.name, hashed_pw, body.user_email, body.avatar_url)
+                (body.user_name, body.name, hashed_pw,
+                 body.user_email, body.avatar_url)
             )
 
         connection.commit()
@@ -188,7 +187,7 @@ def update(body: UpdateUserByUserIdRequest):
 
 
 class GetUserByUserIdRequest(BaseModel):
-    user_id: str
+    user_id: int
 
 
 class GetUserByUserIdInvalid(BaseModel):
@@ -217,12 +216,15 @@ def get(body: GetUserByUserIdRequest):
     finally:
         connection.close()
 
+
 class CheckIsFriend(BaseModel):
     own_id: int
     other_id: int
 
+
 class IsFriendRespond(BaseModel):
     is_friend: bool = True
+
 
 @router.post("/isfriend")
 def is_friend(body: CheckIsFriend):

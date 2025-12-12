@@ -27,9 +27,11 @@ import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRespond
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
+import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
+import com.example.locationpins.data.remote.dto.user.UserDto
 import okhttp3.MultipartBody
 
 
@@ -120,16 +122,21 @@ interface ApiService {
     suspend fun register(
         @Body request: RegisterRequest
     ): RegisterResponse
-  
+
     @POST("/posts/react/check")
     suspend fun checkPostReact(
         @Body request: CheckPostReactRequest
     ): CheckPostReactRespond
 
-    @POST("/user/isfriend")
+    @POST("/users/isfriend")
     suspend fun checkIsFriend(
         @Body request: CheckIsFriendRequest
     ): IsFriendRespond
+
+    @POST("/users/get")
+    suspend fun getUser(
+        @Body request: GetUserRequest
+    ): UserDto
 }
 
 

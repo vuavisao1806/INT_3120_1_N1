@@ -12,11 +12,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.example.locationpins.ui.navigation.TopLevelDestination
+import com.example.locationpins.ui.screen.login.CurrentUser
 
 @Composable
 fun rememberLocationSocialAppState(
     navController: NavHostController = rememberNavController()
-) : LocationSocialAppState = remember(navController) { LocationSocialAppState(navController) }
+): LocationSocialAppState = remember(navController) { LocationSocialAppState(navController) }
 
 @Stable
 class LocationSocialAppState(
@@ -59,11 +60,19 @@ class LocationSocialAppState(
                 // Restore state when re-selecting a previously selected item
                 restoreState = true
             }
-            navController.navigate(topLevelDestination.route, topLevelNavOptions)
+            val routeToNavigate = when (topLevelDestination) {
+                TopLevelDestination.USER -> {
+                    val currentUserId = CurrentUser.currentUser?.userId ?: -1
+                    "${topLevelDestination.route}/$currentUserId"
+                }
+
+                else -> topLevelDestination.route
+            }
+            navController.navigate(routeToNavigate, topLevelNavOptions)
         }
     }
 
-//    Using when separating the camera button on bottom navigation
+    //    Using when separating the camera button on bottom navigation
     fun navigateToCamera() {
         navController.navigate(TopLevelDestination.CAMERA.route)
     }
