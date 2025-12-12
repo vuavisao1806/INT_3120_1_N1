@@ -1,38 +1,38 @@
 package com.example.locationpins.ui.screen.map
 
-import android.app.Application
-import android.content.ContentValues.TAG
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.remote.dto.pins.PinDto
+import com.example.locationpins.data.repository.PinRepository
+import com.mapbox.geojson.Point
+import com.mapbox.search.ApiType
 import com.mapbox.search.SearchEngine
 import com.mapbox.search.SearchEngineSettings
 import com.mapbox.search.SearchOptions
+import com.mapbox.search.SearchSelectionCallback
 import com.mapbox.search.SearchSuggestionsCallback
+import com.mapbox.search.result.SearchResult
 import com.mapbox.search.result.SearchSuggestion
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.locationpins.data.repository.PinRepository
-import com.mapbox.geojson.Point
-import com.mapbox.search.ApiType
-import com.mapbox.search.SearchSelectionCallback
-import com.mapbox.search.result.SearchResult
 
 class MapViewModel(
     private val pinRepo: PinRepository = PinRepository()
 ) : ViewModel() {
+
     companion object {
         private const val TAG = "MapViewModel"
-        private const val RADIUS_METERS =  1000.0   // ví dụ 1km
+        private const val RADIUS_METERS = 100000.0
     }
 
     private val _uiState = MutableStateFlow(MapUiState())
-    val uiState: StateFlow<MapUiState> = _uiState
+    val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
 
     private val searchEngine: SearchEngine by lazy {
         val settings = SearchEngineSettings()
@@ -41,277 +41,195 @@ class MapViewModel(
             settings = settings
         )
     }
-    private var searchJob: Job? = null
 
+    private var searchJob: Job? = null
+    private var pollingJob: Job? = null
 
     init {
-        loadPins(1) // đoạn này là mock userId=1, sau app phải lưu userId hiện tại lại
+        // ✅ Lắng nghe vị trí từ LocationManager (nguồn duy nhất cho logic app)
+        observeUserLocation()
+
+        // ✅ Load pin định kỳ
+        startPeriodicPinLoading(userId = 1)
+    }
+
+    private fun observeUserLocation() {
+        viewModelScope.launch {
+            LocationManager.location.collect { loc ->
+                loc ?: return@collect
+                val point = Point.fromLngLat(loc.longitude, loc.latitude)
+
+                _uiState.update { state ->
+                    state.copy(userLocation = point)
+                }
+            }
+        }
+    }
+
+    fun onMyLocationClicked(): Point? {
+        val loc = LocationManager.location.value
+        return loc?.let { Point.fromLngLat(it.longitude, it.latitude) }
     }
 
     fun onShowBottomSheet() {
-        _uiState.value = _uiState.value.copy(showBottomSheet = true)
+        _uiState.update { it.copy(showBottomSheet = true) }
     }
 
     fun onHideBottomSheet() {
-        _uiState.value = _uiState.value.copy(showBottomSheet = false)
+        _uiState.update { it.copy(showBottomSheet = false) }
     }
 
     fun onMapStyleSelected(styleUri: String) {
-        _uiState.value = _uiState.value.copy(currentStyleUri = styleUri)
+        _uiState.update { it.copy(currentStyleUri = styleUri) }
     }
 
-    /**
-     * Thực hiện một lần search với Mapbox SearchEngine.
-     *
-     * @param query        Chuỗi người dùng nhập (đã trim).
-     * @param searchEngine Đối tượng Mapbox dùng để gọi API search.
-     * @param onResult     Hàm callback được gọi KHI SEARCH THÀNH CÔNG,
-     *                     nhận vào danh sách gợi ý (List<SearchSuggestion>).
-     * @param onError      Hàm callback được gọi KHI CÓ LỖI trong quá trình search.
-     */
-    fun runSearch(
-        query: String,
-        onResult: (List<SearchSuggestion>) -> Unit,
-        onError: (Exception) -> Unit,
-    ) {
-        // Cấu hình search: giới hạn tối đa 10 gợi ý
-        val options = SearchOptions(limit = 10)
-
-        // Gọi hàm search của Mapbox
-        searchEngine.search(
-            query,
-            options,
-            // Tạo một instance (đối tượng) ẩn danh implement interface SearchSuggestionsCallback.
-            // Mapbox sẽ GIỮ đối tượng này lại và TỰ GỌI 2 hàm onError / onSuggestions
-            // khi có kết quả từ server.
-            object : SearchSuggestionsCallback {
-                /**
-                 * Hàm này được Mapbox gọi khi có lỗi xảy ra trong quá trình search.
-                 */
-                override fun onError(e: Exception) {
-                    // Chuyển tiếp lỗi ra ngoài cho caller thông qua callback onError
-                    // (onError được truyền vào runSearch từ bên ngoài).
-                    onError(e)
-                }
-
-                /**
-                 * Hàm này được Mapbox gọi khi search thành công và có danh sách gợi ý.
-                 *
-                 * @param suggestions Danh sách các SearchSuggestion trả về.
-                 * @param responseInfo Thông tin thêm về response (ở đây không dùng tới).
-                 */
-                override fun onSuggestions(
-                    suggestions: List<SearchSuggestion>,
-                    responseInfo: com.mapbox.search.ResponseInfo
-                ) {
-                    // Chuyển danh sách gợi ý ra ngoài cho caller xử lý
-                    // (caller sẽ update UI trong onResult).
-                    onResult(suggestions)
-                }
-            }
-        )
-    }
-
-    /**
-     * Hàm này được gọi mỗi khi query (text user nhập) thay đổi.
-     * Thường sẽ được gọi từ trong UI.
-     *
-     * Nhiệm vụ:
-     *  - Cập nhật query vào uiState.
-     *  - Áp dụng debounce (chờ user gõ xong ~500ms mới search).
-     *  - Không search nếu query quá ngắn (< 2 ký tự).
-     *  - Khi search xong thì cập nhật suggestions + trạng thái isSearching.
-     */
-    fun onQueryChange(
-        newQuery: String,
-    ) {
-        // Cập nhật query mới vào state để UI hiển thị
-        _uiState.value = _uiState.value.copy(query = newQuery)
-
-        // Huỷ coroutine search cũ (nếu có) để thực hiện DEBOUNCE:
-        // mỗi lần user gõ thêm ký tự thì cancel lần search trước,
-        // chỉ giữ lại lần search ứng với lần gõ cuối cùng.
+    fun onQueryChange(newQuery: String) {
+        _uiState.update { it.copy(query = newQuery) }
         searchJob?.cancel()
 
-        // Bỏ khoảng trắng thừa ở đầu/cuối
         val trimmedQuery = newQuery.trim()
-
-        // Nếu query quá ngắn (< 2 ký tự) thì không gọi API,
-        // đồng thời xoá danh sách gợi ý và tắt trạng thái loading.
         if (trimmedQuery.length < 2) {
-            _uiState.value = _uiState.value.copy(
-                suggestions = emptyList(),
-                isSearching = false
-            )
+            _uiState.update { it.copy(suggestions = emptyList(), isSearching = false) }
             return
         }
 
-        // Tạo một coroutine mới để thực hiện search sau khi debounce
         searchJob = viewModelScope.launch {
-            // Đợi 500ms kể từ lần gõ cuối cùng trước khi thật sự gọi search
-            // → đây chính là cơ chế DEBOUNCE.
             delay(500)
+            _uiState.update { it.copy(isSearching = true) }
 
-            // Báo cho UI biết là đang search (có thể show loading, spinner, v.v.)
-            _uiState.value = _uiState.value.copy(isSearching = true)
-
-            // Gọi hàm runSearch đã viết ở trên.
-            // Ở đây ta truyền vào 2 callback:
-            //  - onResult: xử lý khi Mapbox trả về gợi ý.
-            //  - onError: xử lý khi search bị lỗi.
-            runSearch(
+            runMapboxSearch(
                 query = trimmedQuery,
-                onResult = { list ->
-                    // KHI SEARCH THÀNH CÔNG:
-                    //  - cập nhật danh sách gợi ý vào uiState
-                    //  - tắt trạng thái loading
-                    _uiState.value = _uiState.value.copy(
-                        suggestions = list,
-                        isSearching = false
-                    )
+                onResult = { suggestions ->
+                    _uiState.update { it.copy(suggestions = suggestions, isSearching = false) }
                 },
-                onError = {
-                    // KHI CÓ LỖI:
-                    //  - xoá danh sách gợi ý (hoặc có thể giữ lại tuỳ design)
-                    //  - tắt trạng thái loading
-                    //  - có thể log/hiển thị message lỗi (chưa thêm)
-                    _uiState.value = _uiState.value.copy(
-                        suggestions = emptyList(),
-                        isSearching = false
-                    )
+                onError = { e ->
+                    Log.e(TAG, "Search failed", e)
+                    _uiState.update { it.copy(suggestions = emptyList(), isSearching = false) }
                 }
             )
         }
     }
 
-
-
-
-    fun onClearQuery() {
-        _uiState.value = _uiState.value.copy(
-            query = "",
-            suggestions = emptyList(),
-            isSearching = false
-        )
-    }
-
-    /**
-     * User bấm chọn một suggestion trong list.
-     * Ở đây vừa:
-     *  - cập nhật query
-     *  - clear suggestions
-     *  - gọi searchEngine.select để lấy toạ độ
-     *  - set cameraCoordinate để UI move camera
-     */
-    fun onSuggestionSelected(suggestion: SearchSuggestion) {
-        // Clear list & set query trước cho UI phản hồi nhanh
-        _uiState.value = _uiState.value.copy(
-            query = suggestion.name,
-            suggestions = emptyList()
-        )
-
-        searchEngine.select(
-            suggestion,
-            object : SearchSelectionCallback {
-                override fun onError(e: Exception) {
-                    // Có thể log nếu cần, tạm thời bỏ qua
-                }
-
+    private fun runMapboxSearch(
+        query: String,
+        onResult: (List<SearchSuggestion>) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        searchEngine.search(
+            query,
+            SearchOptions(limit = 10),
+            object : SearchSuggestionsCallback {
                 override fun onSuggestions(
                     suggestions: List<SearchSuggestion>,
                     responseInfo: com.mapbox.search.ResponseInfo
-                ) {
-                    // category suggestions - ignore
-                }
+                ) = onResult(suggestions)
 
-                override fun onResult(
-                    suggestion: SearchSuggestion,
-                    result: SearchResult,
-                    responseInfo: com.mapbox.search.ResponseInfo
-                ) {
-                    val coordinate: Point = result.coordinate ?: return
-                    _uiState.value = _uiState.value.copy(
-                        cameraCoordinate = coordinate
-                    )
-                }
-
-                override fun onResults(
-                    suggestion: SearchSuggestion,
-                    results: List<SearchResult>,
-                    responseInfo: com.mapbox.search.ResponseInfo
-                ) {
-                    val first = results.firstOrNull() ?: return
-                    val coordinate: Point = first.coordinate ?: return
-                    _uiState.value = _uiState.value.copy(
-                        cameraCoordinate = coordinate
-                    )
-                }
+                override fun onError(e: Exception) = onError(e)
             }
         )
     }
 
-    /**
-     * Gọi sau khi UI đã move camera xong để reset state,
-     * tránh việc camera bị move lại nhiều lần.
-     */
-    fun onCameraMoved() {
-        _uiState.value = _uiState.value.copy(
-            cameraCoordinate = null
-        )
+    fun onSuggestionSelected(suggestion: SearchSuggestion) {
+        _uiState.update { it.copy(query = suggestion.name, suggestions = emptyList()) }
+
+        searchEngine.select(suggestion, object : SearchSelectionCallback {
+            override fun onError(e: Exception) {
+                Log.e(TAG, "Select location failed", e)
+            }
+
+            override fun onSuggestions(
+                suggestions: List<SearchSuggestion>,
+                responseInfo: com.mapbox.search.ResponseInfo
+            ) {
+                // ignore
+            }
+
+            override fun onResult(
+                suggestion: SearchSuggestion,
+                result: SearchResult,
+                responseInfo: com.mapbox.search.ResponseInfo
+            ) {
+                result.coordinate?.let { point ->
+                    _uiState.update { it.copy(cameraCoordinate = point) }
+                }
+            }
+
+            override fun onResults(
+                suggestion: SearchSuggestion,
+                results: List<SearchResult>,
+                responseInfo: com.mapbox.search.ResponseInfo
+            ) {
+                results.firstOrNull()?.coordinate?.let { point ->
+                    _uiState.update { it.copy(cameraCoordinate = point) }
+                }
+            }
+        })
     }
 
-    fun loadPins(userId: Int) {
-        viewModelScope.launch {
-            try {
-                // 1. Lấy pin mà user sở hữu (sẽ là list đỏ)
-                val ownedPins = pinRepo.getPinsByUserId(userId)
-                Log.d(TAG, "Loaded ${ownedPins.size} owned pins for userId=$userId")
+    fun onClearQuery() {
+        _uiState.update { it.copy(query = "", suggestions = emptyList(), isSearching = false) }
+    }
 
-                // 2. Lấy vị trí hiện tại của user từ uiState
-                val location = _uiState.value.userLocation
+    fun onCameraMoved() {
+        _uiState.update { it.copy(cameraCoordinate = null) }
+    }
 
-                // 3. Nếu đã biết vị trí → gọi API lấy pins trong bán kính,
-                //    còn nếu chưa biết thì tạm coi là không có pin xanh.
-                val radiusPins: List<PinDto> = if (true){
-
-                    val result = pinRepo.getPinsInRadius(
-                        centerLat = 21.0086345288,
-                        centerLng = 105.782360384,
-                        radiusMeters = RADIUS_METERS
-                    )
-                    Log.d(TAG, "Loaded ${result.size} radius pins around user location")
-                    result
-                } else {
-                    Log.d(TAG, "User location is null, skip loading radius pins")
-                    emptyList()
-                }
-
-                // 4. Phân loại: đỏ / xanh
-
-                // tập id pin mà user sở hữu
-                val ownedIds = ownedPins.map { it.pinId }.toSet()
-
-                // green = pin trong bán kính nhưng KHÔNG thuộc owned
-                val greenOnly = radiusPins.filter { it.pinId !in ownedIds }
-
-                // 5. Cập nhật uiState với 2 list MỚI
-                _uiState.value = _uiState.value.copy(
-                    redPinList = ownedPins,
-                    greenPinList = greenOnly
-                )
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading pins for userId=$userId", e)
+    private fun startPeriodicPinLoading(userId: Int) {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            while (true) {
+                loadPins(userId)
+                delay(5000)
             }
         }
     }
 
+    private fun loadPins(userId: Int) {
+        viewModelScope.launch {
+            try {
+                val currentLocation = _uiState.value.userLocation
 
-    fun onUserLocationChanged(point: Point) {
-        _uiState.value = _uiState.value.copy(
-            userLocation = point
-        )
+                val ownedPins = try {
+                    pinRepo.getPinsByUserId(userId)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading owned pins", e)
+                    emptyList()
+                }
+
+                val radiusPins: List<PinDto> = if (currentLocation != null) {
+                    try {
+                        pinRepo.getPinsInRadius(
+                            centerLat = currentLocation.latitude(),
+                            centerLng = currentLocation.longitude(),
+                            radiusMeters = RADIUS_METERS
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error loading radius pins", e)
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
+
+                val ownedIds = ownedPins.map { it.pinId }.toSet()
+                val greenOnly = radiusPins.filter { it.pinId !in ownedIds }
+
+                _uiState.update {
+                    it.copy(
+                        redPinList = ownedPins,
+                        greenPinList = greenOnly
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Critical error in loadPins", e)
+            }
+        }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        pollingJob?.cancel()
+        searchJob?.cancel()
+    }
 }
-
