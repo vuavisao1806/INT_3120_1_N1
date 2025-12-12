@@ -13,7 +13,7 @@ data class InsertPostRequest(
     val body: String,
     @SerialName("image_url")
     val imageUrl: String,
-    val status: String
+    val status: String = "DEFAULT"
 )
 
 @Serializable
