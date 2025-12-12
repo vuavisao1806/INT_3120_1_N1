@@ -1,8 +1,8 @@
 package com.example.locationpins.data.repository
 
 import com.example.locationpins.data.remote.RetrofitClient
-import com.example.locationpins.data.remote.dto.comment.CheckPostCommentRequest
 import com.example.locationpins.data.remote.dto.react.CancelReactionRequest
+import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
 import com.example.locationpins.data.remote.dto.react.ReactionRequest
 
 class ReactionRepository {
@@ -37,8 +37,8 @@ class ReactionRepository {
         postId: Int,
         userId: Int
     ): Boolean {
-        return api.checkPostComment(
-            CheckPostCommentRequest(
+        return api.checkPostReact(
+            CheckPostReactRequest(
                 postId = postId,
                 userId = userId
             )

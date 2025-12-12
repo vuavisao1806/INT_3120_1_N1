@@ -21,8 +21,7 @@ import kotlinx.coroutines.launch
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
-    private val reactionRepository: ReactionRepository = ReactionRepository(),
-    private val userId: Int = CurrentUser.currentUser?.userId ?: 1
+    private val reactionRepository: ReactionRepository = ReactionRepository()
 ) : ViewModel() {
 
     // uiState private
@@ -43,7 +42,7 @@ class NewsFeedViewModel(
 
             try {
                 val postDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = 0
                 )
@@ -102,7 +101,7 @@ class NewsFeedViewModel(
 
             try {
                 val postDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = 0
                 )
@@ -160,7 +159,7 @@ class NewsFeedViewModel(
                 val offset = nextPage * _uiState.value.pageSize
 
                 val newPostDtos = postRepository.getNewsfeed(
-                    userId = userId,
+                    userId = CurrentUser.currentUser!!.userId,
                     limit = _uiState.value.pageSize,
                     offset = offset
                 )
@@ -200,6 +199,13 @@ class NewsFeedViewModel(
                 }
             }
         }
+    }
+
+    suspend fun checkPostReact(postId: Int): Boolean {
+        return reactionRepository.checkReactPost(
+            postId = postId,
+            userId = CurrentUser.currentUser!!.userId
+        )
     }
 
     /**

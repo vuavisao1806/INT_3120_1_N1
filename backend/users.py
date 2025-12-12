@@ -90,6 +90,7 @@ class RegisterRequest(BaseModel):
     name: str
     user_password: str
     user_email: str
+    avatar_url: str
 
 
 class RegisterNameInvalid(BaseModel):
@@ -132,10 +133,10 @@ def register(body: RegisterRequest):
             # Insert new user
             cur.execute(
                 """
-                INSERT INTO users (user_name, name, password, user_email)
-                VALUES (%s, %s, %s, %s);
+                INSERT INTO users (user_name, name, password, user_email, avatar_url)
+                VALUES (%s, %s, %s, %s, %s);
                 """,
-                (body.user_name, body.name, hashed_pw, body.user_email)
+                (body.user_name, body.name, hashed_pw, body.user_email, body.avatar_url)
             )
 
         connection.commit()
@@ -212,6 +213,33 @@ def get(body: GetUserByUserIdRequest):
         user.pop("password", None)
 
         return user
+
+    finally:
+        connection.close()
+
+class CheckIsFriend(BaseModel):
+    own_id: int
+    other_id: int
+
+class IsFriendRespond(BaseModel):
+    is_friend: bool = True
+
+@router.post("/isfriend")
+def is_friend(body: CheckIsFriend):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT 1 FROM friends
+                    WHERE user_id = %s AND friend_id = %s;
+                """,
+                (body.own_id, body.other_id,)
+            )
+            status: IsFriendRespond = IsFriendRespond()
+            if (cur.rowcount == 0):
+                status.is_friend = False
+            return status
 
     finally:
         connection.close()

@@ -23,6 +23,20 @@ data class CancelReactionRequest(
 )
 
 @Serializable
+data class CheckPostReactRequest(
+    @SerialName("post_id")
+    val postId: Int,
+    @SerialName("user_id")
+    val userId: Int
+)
+
+@Serializable
+data class CheckPostReactRespond(
+    @SerialName("have_reaction")
+    val haveReaction: Boolean
+)
+
+@Serializable
 data class ReactionDto(
     @SerialName("post_id")
     val postId: Int,

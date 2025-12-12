@@ -1,12 +1,8 @@
 package com.example.locationpins.data.remote.dto.user
 
-import com.example.locationpins.R
 import com.example.locationpins.data.model.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
-// This is extremely bad code but whatever
-const val DEFAULT_AVATAR_URL = "https://dwadscpiphluqvkwrgdf.supabase.co/storage/v1/object/public/avatars/default_avt.jpg"
 
 @Serializable
 data class LoginRequest(
@@ -69,10 +65,13 @@ data class LoginResponse(
 data class RegisterRequest(
     @SerialName("user_name")
     val userName: String,
+    val name: String,
     @SerialName("user_email")
     val userEmail: String,
     @SerialName("user_password")
-    val userPassword: String
+    val userPassword: String,
+    @SerialName("avatar_url")
+    val avatarUrl: String
 )
 
 
@@ -86,4 +85,18 @@ data class RegisterResponse(
 
     @SerialName("register_success")
     val registerSuccess: Boolean? = null
+)
+
+@Serializable
+data class CheckIsFriendRequest(
+    @SerialName("own_id")
+    val ownId: Int,
+    @SerialName("other_id")
+    val otherId: Int
+)
+
+@Serializable
+data class IsFriendRespond(
+    @SerialName("is_friend")
+    val isFriend: Boolean
 )

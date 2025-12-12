@@ -4,6 +4,7 @@ package com.example.locationpins.ui.screen.login
 data class LoginUiState(
 
     val username: String = "",
+    val name: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val email: String = "",

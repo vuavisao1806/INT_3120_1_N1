@@ -2,8 +2,6 @@ package com.example.locationpins.data.remote
 
 
 import com.example.locationpins.data.remote.dto.comment.CancelCommentRequest
-import com.example.locationpins.data.remote.dto.comment.CheckPostCommentRequest
-import com.example.locationpins.data.remote.dto.comment.CheckPostCommentRespond
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.comment.CreateCommentRequest
 import com.example.locationpins.data.remote.dto.comment.GetPostCommentsRequest
@@ -26,6 +24,10 @@ import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
+import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
+import com.example.locationpins.data.remote.dto.react.CheckPostReactRespond
+import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
+import com.example.locationpins.data.remote.dto.user.IsFriendRespond
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
 import okhttp3.MultipartBody
@@ -120,9 +122,14 @@ interface ApiService {
     ): RegisterResponse
   
     @POST("/posts/react/check")
-    suspend fun checkPostComment(
-        @Body request: CheckPostCommentRequest
-    ): CheckPostCommentRespond
+    suspend fun checkPostReact(
+        @Body request: CheckPostReactRequest
+    ): CheckPostReactRespond
+
+    @POST("/user/isfriend")
+    suspend fun checkIsFriend(
+        @Body request: CheckIsFriendRequest
+    ): IsFriendRespond
 }
 
 
