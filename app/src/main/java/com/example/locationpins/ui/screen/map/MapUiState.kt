@@ -18,5 +18,5 @@ data class MapUiState(
     // list pin mà người dùng sở hữu
     val redPinList: List<PinDto> =  emptyList(),
     // vị trí hiện tại của user (từ GPS / Mapbox)
-    val userLocation: Point? = null,
+    val userLocation: Point = Point.fromLngLat(106.7, 10.77) ,
 )
