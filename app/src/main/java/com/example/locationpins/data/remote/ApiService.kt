@@ -23,6 +23,7 @@ import com.example.locationpins.data.remote.dto.post.InsertPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
+import com.example.locationpins.data.remote.dto.post.SensitiveTextRespond
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRespond
@@ -137,6 +138,12 @@ interface ApiService {
     suspend fun checkIsSensitiveText(
         @Body request: CheckIsSensitiveText
     ): IsSensitiveTextRespond
+
+    @Multipart
+    @POST("/sensitive/image")
+    suspend fun checkIsSensitiveImage(
+        @Part file: MultipartBody.Part // Chờ nhận trực tiếp MultipartBody.Part
+    ): SensitiveTextRespond
 }
 
 

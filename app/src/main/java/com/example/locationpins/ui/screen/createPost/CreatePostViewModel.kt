@@ -2,6 +2,7 @@ package com.example.locationpins.ui.screen.createPost
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -32,6 +33,20 @@ class CreatePostViewModel(
             try {
                 // 1. Convert Uri -> Multipart
                 val imagePart = uriToMultipart(context, imageUri, "file")
+
+                try {
+                    val sensitiveCheckRes = apiService.checkIsSensitiveImage(imagePart)
+
+                    if (sensitiveCheckRes.isSensitive) {
+                        Log.d("check", "ngu")
+                        onError("Hình ảnh chứa nội dung nhạy cảm. Không thể tải lên.")
+                        return@launch
+                    }
+
+                } catch (e: Exception) {
+                    onError("Lỗi khi kiểm tra nội dung hình ảnh: ${e.message}")
+                    return@launch
+                }
 
                 // 2. Upload ảnh
                 val uploadRes = apiService.uploadImage(imagePart)

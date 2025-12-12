@@ -4,6 +4,8 @@ package com.example.locationpins.data.remote.dto.post
 import com.mapbox.search.common.SearchAddressCountry
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import retrofit2.http.Multipart
+import retrofit2.http.POST
 
 @Serializable
 data class GetPostRequest(
@@ -95,4 +97,10 @@ data class PostByPinResponse(
     val commentCount: Int,
     @SerialName("created_at")
     val createdAt: String
+)
+
+@Serializable
+data class SensitiveTextRespond(
+    @SerialName("is_sensitive")
+    val isSensitive: Boolean
 )
