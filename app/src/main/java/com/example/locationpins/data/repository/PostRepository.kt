@@ -1,8 +1,6 @@
 package com.example.locationpins.data.repository
 
 import com.example.locationpins.data.remote.RetrofitClient
-import com.example.locationpins.data.remote.dto.comment.CommentDto
-import com.example.locationpins.data.remote.dto.comment.GetPostCommentsRequest
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
 import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
@@ -10,6 +8,8 @@ import com.example.locationpins.data.remote.dto.post.GetPostRequest
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.PostDto
+import com.example.locationpins.data.remote.dto.post.SensitiveTextRespond
+import okhttp3.MultipartBody
 
 
 class PostRepository {
@@ -42,6 +42,4 @@ class PostRepository {
     suspend fun getPostByPin(pinId: Int): List<PostByPinResponse> {
         return api.getPostByPin(GetPostByPinRequest(pinId))
     }
-
-
 }
