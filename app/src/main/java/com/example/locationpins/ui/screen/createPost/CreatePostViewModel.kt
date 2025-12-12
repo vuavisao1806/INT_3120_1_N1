@@ -6,8 +6,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.repository.CreatePostRepository
+import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.SensitiveContentRepository
+import com.example.locationpins.ui.screen.map.LocationManager
+import com.example.locationpins.ui.screen.newfeed.NewsFeedUiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -16,15 +22,32 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class CreatePostViewModel(
-//    private val apiService: ApiService // TODO: where is the corresponding repository?
     private val createPostRepository: CreatePostRepository = CreatePostRepository(),
     private val sensitiveContentRepository: SensitiveContentRepository = SensitiveContentRepository(),
-    private val postRepository: PostRepository = PostRepository()
+    private val postRepository: PostRepository = PostRepository(),
+    private val pinRepository: PinRepository = PinRepository()
 ) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(CreatePostUiState())
+    val uiState: StateFlow<CreatePostUiState> = _uiState.asStateFlow()
+
+    init {
+        // Load post location
+        loadPostLocation()
+    }
+
+    fun loadPostLocation() {
+        val currentLocation = LocationManager.location.value
+        _uiState.update {
+            it.copy(
+                centerLatitude = currentLocation!!.latitude,
+                centerLongitude = currentLocation.longitude
+            )
+        }
+    }
 
     fun submitPost(
         context: Context,
-        pinId: Int,
         userId: Int,
         title: String,
         content: String,
@@ -88,7 +111,7 @@ class CreatePostViewModel(
 
                 // 3. Gọi /posts/insert
                 val insertRes = postRepository.insertPost(
-                    pinId = pinId,
+                    pinId = getSelfPinIdByCoordinates(),
                     userId = userId,
                     title = title,
                     content = content,
@@ -105,6 +128,14 @@ class CreatePostViewModel(
                 onError(e.message ?: "Có lỗi xảy ra")
             }
         }
+    }
+
+    suspend fun getSelfPinIdByCoordinates(): Int {
+        // We set up radiusMeters as default value (50m)
+        return pinRepository.getPinIdByCoordinates(
+            centerLatitude = _uiState.value.centerLatitude,
+            centerLongitude = _uiState.value.centerLongitude
+        ).pinId
     }
 
     private fun uriToMultipart(
@@ -132,15 +163,3 @@ class CreatePostViewModel(
         )
     }
 }
-
-//class CreatePostViewModelFactory(
-//    private val apiService: ApiService
-//) : ViewModelProvider.Factory {
-//    @Suppress("UNCHECKED_CAST")
-//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-//        if (modelClass.isAssignableFrom(CreatePostViewModel::class.java)) {
-//            return CreatePostViewModel(apiService) as T
-//        }
-//        throw IllegalArgumentException("Unknown ViewModel class")
-//    }
-//}

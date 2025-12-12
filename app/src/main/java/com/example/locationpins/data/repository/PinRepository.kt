@@ -5,6 +5,8 @@ package com.example.locationpins.data.repository
 import com.example.locationpins.data.remote.RetrofitClient
 import com.example.locationpins.data.remote.dto.pins.GetPinListByUserIdRequest
 import com.example.locationpins.data.remote.dto.pins.GetPinListInRadiusRequest
+import com.example.locationpins.data.remote.dto.pins.PinByCoordRequest
+import com.example.locationpins.data.remote.dto.pins.PinByCoordResponse
 import com.example.locationpins.data.remote.dto.pins.PinDto
 
 
@@ -26,6 +28,20 @@ class PinRepository {
             GetPinListInRadiusRequest(
                 centerLat = centerLat,
                 centerLng = centerLng,
+                radiusMeters = radiusMeters
+            )
+        )
+    }
+
+    suspend fun getPinIdByCoordinates(
+        centerLatitude: Double,
+        centerLongitude: Double,
+        radiusMeters: Double = 50.0
+    ): PinByCoordResponse {
+        return api.getPinIdByCoordinates(
+            request = PinByCoordRequest(
+                centerLatitude = centerLatitude,
+                centerLongitude = centerLongitude,
                 radiusMeters = radiusMeters
             )
         )

@@ -105,7 +105,7 @@ fun MapScreen() {
             modifier = Modifier.matchParentSize(),
             mapViewportState = mapViewportState,
         ) {
-            // ✅ CHỈ BẬT PUCK XANH (KHÔNG LISTENER)
+            // CHỈ BẬT PUCK XANH (KHÔNG LISTENER)
             DisposableMapEffect(Unit) { mapView ->
                 val locationComponent = mapView.location
                 locationComponent.updateSettings {
