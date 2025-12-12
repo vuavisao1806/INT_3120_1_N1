@@ -123,10 +123,10 @@ class PinByCoordResponse(BaseModel):
 def add_post_into_pin_by_coord(body: PinByCoordRequest):
     """
     Tìm pin gần nhất trong bán kính cho trước.
-    Nếu không tìm thấy → tạo pin mới tại tọa độ đó.
+    Nếu không tìm thấy -> tạo pin mới tại tọa độ đó.
     Trả về pin_id để sử dụng khi tạo post.
     """
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # 1. Tìm pin gần nhất trong bán kính
