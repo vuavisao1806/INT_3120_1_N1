@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from connection import get_connection
+from connection import get_database_connection
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -20,7 +20,7 @@ class InsertPinSuccess(BaseModel):
 
 @router.post("/insert")
 def insert(body: InsertPinRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # Check username exists
@@ -47,7 +47,7 @@ class GetPinListByUserIdRequest(BaseModel):
 
 @router.post("/get/user-id")
 def get_pins_by_user_id(body: GetPinListByUserIdRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(
@@ -76,7 +76,7 @@ class GetPinsInRadiusRequest(BaseModel):
 
 @router.post("/get/in-radius")
 def get_pins_in_radius(body: GetPinsInRadiusRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # Haversine: tính khoảng cách giữa (center_lat, center_lng) và (p.latitude, p.longitude)

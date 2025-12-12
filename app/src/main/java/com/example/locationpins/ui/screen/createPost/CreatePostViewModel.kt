@@ -14,7 +14,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class CreatePostViewModel(
-    private val apiService: ApiService
+    private val apiService: ApiService // TODO: where is the corresponding repository?
 ) : ViewModel() {
 
     fun submitPost(
