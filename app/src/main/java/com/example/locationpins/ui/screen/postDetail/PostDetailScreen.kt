@@ -40,7 +40,7 @@ import com.example.locationpins.utils.formatCount
 fun PostDetailScreen(
     postId: String?,
     onNavigateBack: () -> Unit,
-
+    onClickUserName: (Int) -> Unit
 ) {
     val viewModel = remember {
         PostDetailViewModel(
@@ -62,6 +62,7 @@ fun PostDetailScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+
             uiState.error != null && uiState.post == null -> {
                 Column(
                     modifier = Modifier
@@ -80,6 +81,7 @@ fun PostDetailScreen(
                     }
                 }
             }
+
             uiState.post != null -> {
                 LazyColumn(
                     modifier = Modifier
@@ -89,7 +91,7 @@ fun PostDetailScreen(
                 ) {
                     // Post Header
                     item {
-                        PostHeader(uiState.post!!)
+                        PostHeader(uiState.post!!, onClickUserName = onClickUserName)
                     }
 
                     // Post Content
@@ -133,7 +135,8 @@ fun PostDetailScreen(
                     ) { comment ->
                         CommentItem(
                             comment = comment,
-                            onDeleteClick = { viewModel.onDeleteComment(comment.commentId) }
+                            onDeleteClick = { viewModel.onDeleteComment(comment.commentId) },
+                            onClickUser = onClickUserName
                         )
                     }
                 }
@@ -159,7 +162,7 @@ fun PostDetailScreen(
 }
 
 @Composable
-fun PostHeader(post: PostDto) {
+fun PostHeader(post: PostDto, onClickUserName: (Int) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White
@@ -175,18 +178,22 @@ fun PostHeader(post: PostDto) {
                 contentDescription = null,
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .clickable() { onClickUserName(post.userId) },
                 contentScale = ContentScale.Crop
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column {
+
                 Text(
                     text = post.userName,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    modifier = Modifier.clickable() { onClickUserName(post.userId) }
                 )
+
                 Text(
                     text = post.createdAt,
                     fontSize = 12.sp,
@@ -353,7 +360,8 @@ fun CommentsSectionHeader() {
 @Composable
 fun CommentItem(
     comment: CommentDto,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onClickUser: (Int) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -369,7 +377,8 @@ fun CommentItem(
                 contentDescription = null,
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .clickable() { onClickUser(comment.userId) },
                 contentScale = ContentScale.Crop
             )
 
@@ -381,11 +390,14 @@ fun CommentItem(
                     color = Color(0xFFF0F0F0)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
+
                         Text(
                             text = comment.userName,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable() { onClickUser(comment.userId) }
                         )
+
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = comment.content,

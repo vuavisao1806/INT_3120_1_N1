@@ -57,7 +57,8 @@ fun LocationSocialNavHost(
             val postId = backStackEntry.arguments?.getString("postId")
             PostDetailScreen(
                 postId = postId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onClickUserName = { userId -> navController.navigate("user/${userId}") }
             )
         }
 
@@ -88,10 +89,14 @@ fun LocationSocialNavHost(
             })
         }
 
-        composable(route = TopLevelDestination.USER.route) {
+        composable(
+            route = "${TopLevelDestination.USER.route}/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType }
+            )) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: -1
             ProfileScreen(
-                user = CurrentUser.currentUser!!,
-                profileMode = ProfileMode.Self
+                userId = userId
             )
         }
 

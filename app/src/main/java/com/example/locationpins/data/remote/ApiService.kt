@@ -32,9 +32,11 @@ import com.example.locationpins.data.remote.dto.react.CheckPostReactRespose
 import com.example.locationpins.data.remote.dto.sensitive.CheckIsSensitiveText
 import com.example.locationpins.data.remote.dto.sensitive.IsSensitiveTextRespond
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
+import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
+import com.example.locationpins.data.remote.dto.user.UserDto
 import okhttp3.MultipartBody
 
 
@@ -125,17 +127,22 @@ interface ApiService {
     suspend fun register(
         @Body request: RegisterRequest
     ): RegisterResponse
-  
+
     @POST("/posts/react/check")
     suspend fun checkPostReact(
         @Body request: CheckPostReactRequest
     ): CheckPostReactRespose
 
-    @POST("/user/isfriend")
+    @POST("/users/isfriend")
     suspend fun checkIsFriend(
         @Body request: CheckIsFriendRequest
     ): IsFriendRespond
 
+    @POST("/users/get")
+    suspend fun getUser(
+        @Body request: GetUserRequest
+    ): UserDto
+  
     @POST("/sensitive/text")
     suspend fun checkIsSensitiveText(
         @Body request: CheckIsSensitiveText

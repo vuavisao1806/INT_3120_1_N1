@@ -13,4 +13,5 @@ data class ProfileUiState(
     val profileMode: ProfileMode = ProfileMode.Self,
     val showRequestContact: Boolean = false,
     val requestMessage: String = "",
+    val isLoading: Boolean=false
 )
