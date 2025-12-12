@@ -9,7 +9,7 @@ data class InsertPostRequest(
     val title: String,
     val body: String,
     val image_url: String,
-    val status: String
+    val status: String = "DEFAULT"
 )
 
 @Serializable
