@@ -40,9 +40,10 @@ class NewsFeedViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
+            val userId = CurrentUser.currentUser!!.userId
             try {
                 val postDtos = postRepository.getNewsfeed(
-                    userId = CurrentUser.currentUser!!.userId,
+                    userId = userId,
                     limit = _uiState.value.pageSize,
                     offset = 0
                 )
@@ -114,7 +115,7 @@ class NewsFeedViewModel(
                     try {
                         val isLiked = reactionRepository.checkReactPost(
                             postId = post.postId,
-                            userId = userId
+                            userId = CurrentUser.currentUser!!.userId
                         )
                         likedMap[post.postId] = isLiked
                     } catch (e: Exception) {
@@ -172,7 +173,7 @@ class NewsFeedViewModel(
                     try {
                         val isLiked = reactionRepository.checkReactPost(
                             postId = post.postId,
-                            userId = userId
+                            userId = CurrentUser.currentUser!!.userId
                         )
                         newLikedMap[post.postId] = isLiked
                     } catch (e: Exception) {
@@ -220,7 +221,7 @@ class NewsFeedViewModel(
         }
 
         val isCurrentlyLiked = currentState.likedPosts[postId] ?: false
-
+        val userId = CurrentUser.currentUser!!.userId
         viewModelScope.launch {
             // Thêm postId vào set đang xử lý
             _uiState.update { state ->

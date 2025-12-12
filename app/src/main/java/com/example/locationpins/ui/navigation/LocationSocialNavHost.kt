@@ -79,7 +79,7 @@ fun LocationSocialNavHost(
                 CreatePostScreen(
                     initialImageUri = capturedImageUri,
                     onNavigateBack = { navController.popBackStack() },
-                    user = UserMock.sampleUser.first(),
+                    user = CurrentUser.currentUser!!,
                     pinId = 5,
                 )
             }

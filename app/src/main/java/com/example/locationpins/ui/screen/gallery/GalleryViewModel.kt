@@ -58,7 +58,7 @@ class GalleryViewModel(
 
             try {
                 // 1. Lấy tất cả pins của user
-                val pins = postRepository.getPreviewPins(CurrentUser.currentUser?.userId ?: 1)
+                val pins = postRepository.getPreviewPins(CurrentUser.currentUser!!.userId)
 
                 // 2. Với mỗi pin, lấy tất cả posts và đếm
                 val pinSummaries = pins.mapNotNull { pin ->
