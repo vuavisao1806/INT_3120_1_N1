@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from connection import get_connection
+from connection import get_database_connection
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 import uuid
@@ -30,14 +30,14 @@ class InsertPostSuccess(BaseModel):
 
 @router.post("/insert")
 def register(body: InsertPostRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             # Check username exists
             cur.execute(
                 """
                 INSERT INTO posts (pin_id, user_id, title, body, image_url, status)
-                VALUES (%s, %s,%s,%s,%s,%s)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """,
                 (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status)
             )
@@ -75,7 +75,7 @@ class CreateCommentRequest(BaseModel):
 
 @router.post("/comment")
 def create_comment(body: CreateCommentRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection:
             with connection.cursor() as cur:
@@ -88,7 +88,6 @@ def create_comment(body: CreateCommentRequest):
                     """,
                     (body.post_id, body.user_id, body.content)
                 )
-                comment = cur.fetchone()
 
                 # 2. Update comment_count
                 cur.execute(
@@ -125,7 +124,7 @@ class ReactionRequest(BaseModel):
 
 @router.post("/react")
 def react_post(body: ReactionRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection:
             with connection.cursor() as cur:
@@ -177,7 +176,7 @@ class HaveReaction(BaseModel):
 
 @router.post("/react/check")
 def check_react_post(body: CheckReactionRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection:
             with connection.cursor() as cur:
@@ -206,7 +205,7 @@ class CancelReactionRequest(BaseModel):
 
 @router.post("/react/cancel")
 def cancel_react_post(body: CancelReactionRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection:
             with connection.cursor() as cur:
@@ -268,7 +267,7 @@ class CancelCommentRequest(BaseModel):
     user_id: int
 @router.post("/comment/cancel")
 def cancel_comment(body: CancelCommentRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection:
             with connection.cursor() as cur:
@@ -347,7 +346,7 @@ class GetPostRequest(BaseModel):
 
 @router.post("/get")
 def get_post(body: GetPostRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         # dùng RealDictCursor để trả về dạng dict -> FastAPI tự convert sang JSON đẹp
         with connection.cursor(cursor_factory=RealDictCursor) as cur:
@@ -376,7 +375,7 @@ class GetPostCommentsRequest(BaseModel):
 
 @router.post("/get/comments")
 def get_comments_of_post(body: GetPostCommentsRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         # dùng RealDictCursor để trả về dict thay vì tuple
         with connection.cursor(cursor_factory=RealDictCursor) as cur:
@@ -408,7 +407,7 @@ class GetPostTagsRequest(BaseModel):
 
 @router.post("/get/tags")
 def get_post_tags(body: GetPostTagsRequest):
-    connection = get_connection()
+    connection = get_database_connection()
     try:
         with connection.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
@@ -438,7 +437,7 @@ class GetNewsfeedRequest(BaseModel):
 
 @router.post("/newsfeed")
 def get_newsfeed(body: GetNewsfeedRequest):
-    conn = get_connection()
+    conn = get_database_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
@@ -478,7 +477,7 @@ class GetPreviewPinsRequest(BaseModel):
 
 @router.post("/pinpreview")
 def get_preview_pins(body: GetPreviewPinsRequest):
-    conn = get_connection()
+    conn = get_database_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
@@ -504,7 +503,7 @@ class GetPostByPinIdRequest(BaseModel):
 
 @router.post("/pinId")
 def get_preview_pins(body: GetPostByPinIdRequest):
-    conn = get_connection()
+    conn = get_database_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
