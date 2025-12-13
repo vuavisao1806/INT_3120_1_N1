@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from connection import get_openai_connection
-from openai import OpenAI
 import base64
 from fastapi import File, UploadFile
 

@@ -31,7 +31,7 @@ data class CheckPostReactRequest(
 )
 
 @Serializable
-data class CheckPostReactRespose(
+data class CheckPostReactResponse(
     @SerialName("have_reaction")
     val haveReaction: Boolean
 )

@@ -6,9 +6,12 @@ import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
 import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostRequest
+import com.example.locationpins.data.remote.dto.post.InsertPostSuccess
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.PostDto
+import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
+import okhttp3.MultipartBody
 
 
 class PostRepository {
@@ -22,7 +25,7 @@ class PostRepository {
         content: String,
         imageUrl: String,
         status: String
-    ): Boolean {
+    ): InsertPostSuccess {
         val insertPostRequest = InsertPostRequest(
             pinId = pinId,
             userId = userId,
@@ -31,7 +34,7 @@ class PostRepository {
             imageUrl = imageUrl,
             status = status
         )
-        return api.insertPost(insertPostRequest).insertPostSuccess
+        return api.insertPost(insertPostRequest)
     }
 
     suspend fun getPost(postId: Int): PostDto {

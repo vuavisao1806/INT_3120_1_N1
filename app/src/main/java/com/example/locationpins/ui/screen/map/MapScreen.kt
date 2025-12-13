@@ -50,6 +50,8 @@ import com.mapbox.maps.extension.style.layers.generated.fillLayer
 import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
+import com.mapbox.maps.extension.style.layers.properties.generated.TextJustify
+import com.mapbox.maps.extension.style.layers.properties.generated.TextTranslateAnchor
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.extension.style.sources.getSource
@@ -58,6 +60,8 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.PuckBearing
+import com.mapbox.maps.plugin.animation.MapAnimationOptions
+import com.mapbox.maps.plugin.animation.flyTo
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
 import com.mapbox.search.result.SearchSuggestion
 import com.mapbox.turf.TurfConstants
@@ -169,6 +173,7 @@ fun MapScreen() {
             }
 
             // ========== CLUSTERING ==========
+            // ========== CLUSTERING ==========
             MapEffect(uiState.redPinList to uiState.greenPinList) { mapView ->
                 val redPins = uiState.redPinList
                 val greenPins = uiState.greenPinList
@@ -179,73 +184,67 @@ fun MapScreen() {
                 val mapboxMap = mapView.getMapboxMap()
                 val ctx = mapView.context
 
-                // Click handler
+                // Click handler (CLUSTER + PIN ĐƠN LẺ)
                 mapView.gestures.addOnMapClickListener { point ->
                     val screenPoint = mapboxMap.pixelForCoordinate(point)
 
-                    // Click vào CLUSTER
+                    val clusterLayerIds = listOf("red-clusters-icon-layer", "green-clusters-icon-layer")
+                    val pinLayerIds = listOf("red-unclustered-layer", "green-unclustered-layer")
+
+                    // 1) Ưu tiên click cluster trước
                     mapboxMap.queryRenderedFeatures(
                         RenderedQueryGeometry(screenPoint),
-                        RenderedQueryOptions(
-                            listOf("red-clusters-layer", "green-clusters-layer"),
-                            null
-                        )
+                        RenderedQueryOptions(clusterLayerIds, null)
                     ) { expected ->
-                        if (expected.isValue) {
-                            val features = expected.value
-                            if (!features.isNullOrEmpty()) {
-                                val feature = features[0].queriedFeature.feature
-                                val properties = feature.properties()
+                        val clusterHits = expected.value.orEmpty()
 
-                                if (properties?.has("cluster") == true &&
-                                    properties.get("cluster").asBoolean
-                                ) {
-                                    val currentZoom = mapboxMap.cameraState.zoom
-                                    val pointCount = properties.get("point_count")?.asInt ?: 0
+                        if (clusterHits.isNotEmpty()) {
+                            val feature = clusterHits.first().queriedFeature.feature
+                            val props = feature.properties()
 
-                                    val zoomIncrement = when {
-                                        pointCount > 100 -> 2.0
-                                        pointCount > 50 -> 2.5
-                                        else -> 3.0
-                                    }
+                            if (props?.has("cluster") == true && props.get("cluster").asBoolean) {
+                                val currentZoom = mapboxMap.cameraState.zoom
+                                val pointCount = props.get("point_count")?.asInt ?: 0
 
-                                    val targetZoom = (currentZoom + zoomIncrement).coerceAtMost(20.0)
-
-                                    mapboxMap.easeTo(
-                                        CameraOptions.Builder()
-                                            .center(feature.geometry() as? Point)
-                                            .zoom(targetZoom)
-                                            .build()
-                                    )
-                                    return@queryRenderedFeatures
+                                val zoomIncrement = when {
+                                    pointCount > 100 -> 1.5
+                                    pointCount > 50 -> 1.5
+                                    else -> 1.5
                                 }
+
+                                val targetZoom = (currentZoom + zoomIncrement).coerceAtMost(20.0)
+
+                                mapboxMap.flyTo(
+                                    CameraOptions.Builder()
+                                        .center(feature.geometry() as? Point)
+                                        .zoom(targetZoom)
+                                        .build(),
+                                    MapAnimationOptions.mapAnimationOptions {
+                                        duration(1200L)
+                                    }
+                                )
+                                return@queryRenderedFeatures
                             }
                         }
+
+                        // 2) Nếu không trúng cluster thì check pin đơn lẻ
+                        mapboxMap.queryRenderedFeatures(
+                            RenderedQueryGeometry(screenPoint),
+                            RenderedQueryOptions(pinLayerIds, null)
+                        ) { expected2 ->
+                            val pinHits = expected2.value.orEmpty()
+                            if (pinHits.isEmpty()) return@queryRenderedFeatures
+
+                            val f = pinHits.first().queriedFeature.feature
+                            if (!f.hasProperty("pinId")) return@queryRenderedFeatures
+
+                            val pinId = f.getStringProperty("pinId")
+                            val type = f.getStringProperty("type")
+
+                            // TODO: chuyển màn hình khi click pin đơn lẻ
+                            Log.d("MapDebug", "Clicked pinId=$pinId type=$type")
+                        }
                     }
-
-                    // Click vào PIN ĐƠN LẺ
-                    mapboxMap.queryRenderedFeatures(
-                        RenderedQueryGeometry(screenPoint),
-                        RenderedQueryOptions(
-                            listOf("red-unclustered-layer", "green-unclustered-layer"),
-                            null
-                        )
-                    ) { expected ->
-                        val features = expected.value ?: return@queryRenderedFeatures
-                        if (features.isEmpty()) return@queryRenderedFeatures
-
-                        val featureWrapper = features.first()
-                        val f = featureWrapper.queriedFeature.feature
-
-                        if (!f.hasProperty("pinId")) return@queryRenderedFeatures
-
-                        val pinId = f.getStringProperty("pinId")
-                        val type = f.getStringProperty("type")
-
-                        // TODO: xử lý khi click vào ghim đơn
-                        Log.d("MapDebug", "Clicked pinId=$pinId type=$type")
-                    }
-
                     true
                 }
 
@@ -262,7 +261,7 @@ fun MapScreen() {
 
                     val greenFeatures = greenPins.map { pin ->
                         if (pin.latitude == 0.0 || pin.longitude == 0.0) {
-                            Log.e("MapDebug", "⚠️ Pin ID ${pin.pinId} has (0,0)!")
+                            Log.e("MapDebug", "Pin ID ${pin.pinId} has (0,0)!")
                         }
                         Feature.fromGeometry(
                             Point.fromLngLat(pin.longitude, pin.latitude)
@@ -275,16 +274,43 @@ fun MapScreen() {
                     val redFC = FeatureCollection.fromFeatures(redFeatures)
                     val greenFC = FeatureCollection.fromFeatures(greenFeatures)
 
+                    // =======================
                     // Icons
+                    // =======================
                     val redBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red)
+                    val redClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red_cluster)
+
                     val greenBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green)
+                    val greenClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green_cluster)
 
-                    style.addImage("pin-red", redBitmap)
-                    style.addImage("pin-green", greenBitmap)
+                    try {
+                        if (style.getStyleImage("pin-red") == null) style.addImage("pin-red", redBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-red", redBitmap) }
+                    }
 
+                    try {
+                        if (style.getStyleImage("pin-red-cluster") == null) style.addImage("pin-red-cluster", redClusterBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-red-cluster", redClusterBitmap) }
+                    }
+
+                    try {
+                        if (style.getStyleImage("pin-green") == null) style.addImage("pin-green", greenBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-green", greenBitmap) }
+                    }
+
+                    try {
+                        if (style.getStyleImage("pin-green-cluster") == null) style.addImage("pin-green-cluster", greenClusterBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-green-cluster", greenClusterBitmap) }
+                    }
+
+                    // =======================
                     // RED source + layers
+                    // =======================
                     val redSourceId = "red-pins-source"
-                    val redClusterLayerId = "red-clusters-layer"
                     val redUnclusteredLayerId = "red-unclustered-layer"
 
                     val existingRedSource = style.getSource(redSourceId)
@@ -301,35 +327,49 @@ fun MapScreen() {
                             }
                         )
 
+                        // CLUSTER icon layer
+                        val redClusterIconLayerId = "red-clusters-icon-layer"
                         style.addLayer(
-                            symbolLayer(redClusterLayerId, redSourceId) {
+                            symbolLayer(redClusterIconLayerId, redSourceId) {
                                 filter(Expression.has("point_count"))
-                                iconImage("pin-red")
+
+                                iconImage("pin-red-cluster")
                                 iconAnchor(IconAnchor.BOTTOM)
                                 iconAllowOverlap(true)
-                                iconSize(0.1)
+                                iconSize(0.08)
+                            }
+                        )
+
+                        // CLUSTER text layer (text only, do not set iconImage here)
+                        val redClusterTextLayerId = "red-clusters-text-layer"
+                        style.addLayer(
+                            symbolLayer(redClusterTextLayerId, redSourceId) {
+                                filter(Expression.has("point_count"))
 
                                 textField(Expression.get("point_count_abbreviated"))
                                 textSize(12.0)
-                                textColor("#FF0000")
+                                textColor("#000000")
                                 textHaloColor("#FFFFFF")
-                                textHaloWidth(4.0)
-                                textAnchor(TextAnchor.TOP_RIGHT)
-                                textOffset(listOf(0.8, -0.8))
+                                textHaloWidth(0.0)
+
+                                textAnchor(TextAnchor.CENTER)
+                                textJustify(TextJustify.CENTER)
+
+                                textTranslate(listOf(8.0, -36.8))
+                                textTranslateAnchor(TextTranslateAnchor.VIEWPORT)
+
                                 textIgnorePlacement(true)
                                 textAllowOverlap(true)
                             }
                         )
 
+                        // Unclustered pins
                         style.addLayer(
                             symbolLayer(redUnclusteredLayerId, redSourceId) {
                                 filter(
                                     Expression.all(
                                         Expression.has("pinId"),
-                                        Expression.neq(
-                                            Expression.get("cluster"),
-                                            Expression.literal(true)
-                                        )
+                                        Expression.neq(Expression.get("cluster"), Expression.literal(true))
                                     )
                                 )
                                 iconImage("pin-red")
@@ -342,9 +382,10 @@ fun MapScreen() {
                         existingRedSource.featureCollection(redFC)
                     }
 
-                    // GREEN source + layers
+                    // =======================
+                    // GREEN source + layers (same params as RED)
+                    // =======================
                     val greenSourceId = "green-pins-source"
-                    val greenClusterLayerId = "green-clusters-layer"
                     val greenUnclusteredLayerId = "green-unclustered-layer"
 
                     val existingGreenSource = style.getSource(greenSourceId)
@@ -356,40 +397,54 @@ fun MapScreen() {
                                 featureCollection(greenFC)
                                 cluster(true)
                                 clusterRadius(50)
-                                clusterMaxZoom(14)
+                                clusterMaxZoom(50)
                                 clusterMinPoints(2)
                             }
                         )
 
+                        // CLUSTER icon layer
+                        val greenClusterIconLayerId = "green-clusters-icon-layer"
                         style.addLayer(
-                            symbolLayer(greenClusterLayerId, greenSourceId) {
+                            symbolLayer(greenClusterIconLayerId, greenSourceId) {
                                 filter(Expression.has("point_count"))
-                                iconImage("pin-green")
+
+                                iconImage("pin-green-cluster")
                                 iconAnchor(IconAnchor.BOTTOM)
                                 iconAllowOverlap(true)
-                                iconSize(0.1)
+                                iconSize(0.08)
+                            }
+                        )
+
+                        // CLUSTER text layer (text only, do not set iconImage here)
+                        val greenClusterTextLayerId = "green-clusters-text-layer"
+                        style.addLayer(
+                            symbolLayer(greenClusterTextLayerId, greenSourceId) {
+                                filter(Expression.has("point_count"))
 
                                 textField(Expression.get("point_count_abbreviated"))
                                 textSize(12.0)
                                 textColor("#2F9E44")
                                 textHaloColor("#FFFFFF")
                                 textHaloWidth(4.0)
-                                textAnchor(TextAnchor.TOP_RIGHT)
-                                textOffset(listOf(0.8, -0.8))
+
+                                textAnchor(TextAnchor.CENTER)
+                                textJustify(TextJustify.CENTER)
+
+                                textTranslate(listOf(8.0, -36.8))
+                                textTranslateAnchor(TextTranslateAnchor.VIEWPORT)
+
                                 textIgnorePlacement(true)
                                 textAllowOverlap(true)
                             }
                         )
 
+                        // Unclustered pins
                         style.addLayer(
                             symbolLayer(greenUnclusteredLayerId, greenSourceId) {
                                 filter(
                                     Expression.all(
                                         Expression.has("pinId"),
-                                        Expression.neq(
-                                            Expression.get("cluster"),
-                                            Expression.literal(true)
-                                        )
+                                        Expression.neq(Expression.get("cluster"), Expression.literal(true))
                                     )
                                 )
                                 iconImage("pin-green")
@@ -405,7 +460,7 @@ fun MapScreen() {
             }
         }
 
-        // SEARCH UI
+            // SEARCH UI
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)

@@ -9,8 +9,8 @@ import com.example.locationpins.data.repository.CreatePostRepository
 import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.SensitiveContentRepository
+import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.map.LocationManager
-import com.example.locationpins.ui.screen.newfeed.NewsFeedUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +25,8 @@ class CreatePostViewModel(
     private val createPostRepository: CreatePostRepository = CreatePostRepository(),
     private val sensitiveContentRepository: SensitiveContentRepository = SensitiveContentRepository(),
     private val postRepository: PostRepository = PostRepository(),
-    private val pinRepository: PinRepository = PinRepository()
+    private val pinRepository: PinRepository = PinRepository(),
+    private val tagRepository: TagRepository = TagRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatePostUiState())
@@ -118,9 +119,21 @@ class CreatePostViewModel(
                     imageUrl = imageUrl,
                     status = status
                 )
-                if (!insertRes) {
+                if (!insertRes.insertPostSuccess) {
                     onError("Tạo bài đăng thất bại")
                     return@launch
+                }
+
+                val labelRes = tagRepository.getGoogleLabelsTopK(imagePart, k = 3)
+                val tags = labelRes.tags
+
+                // (4) gửi tags lên backend để insert vào 3 bảng
+                if (tags.isNotEmpty()) {
+                    tagRepository.assignTags(
+                        postId = insertRes.postId,
+                        userId = userId,
+                        tags = tags
+                    )
                 }
 
                 onSuccess()

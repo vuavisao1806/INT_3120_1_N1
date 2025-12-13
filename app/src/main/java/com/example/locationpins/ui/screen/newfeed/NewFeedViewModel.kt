@@ -9,11 +9,13 @@ import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel cho màn hình News Feed
@@ -42,6 +44,7 @@ class NewsFeedViewModel(
 
             val userId = CurrentUser.currentUser!!.userId
             try {
+//                val result = withContext(Dispatchers.IO) {
                 val postDtos = postRepository.getNewsfeed(
                     userId = userId,
                     limit = _uiState.value.pageSize,
@@ -72,13 +75,16 @@ class NewsFeedViewModel(
                         likedMap[post.postId] = false
                     }
                 }
+//                    Pair(postsWithTags, likedMap)
+//                }
+//                val (postsWithTags, likedMap) = result
 
                 _uiState.update {
                     it.copy(
                         posts = postsWithTags,
                         isLoading = false,
                         currentPage = 0,
-                        hasReachedEnd = posts.size < it.pageSize,
+                        hasReachedEnd = postsWithTags.size < it.pageSize,
                         likedPosts = likedMap
                     )
                 }
@@ -109,9 +115,17 @@ class NewsFeedViewModel(
 
                 val posts = postDtos.toPosts()
 
+                val postsWithTags: List<Post> = posts.map { post ->
+                    val tags = tagRepository
+                        .getTagsByPostId(post.postId)
+                        .map { t -> t.name }
+
+                    post.copy(tags = tags)
+                }
+
                 // Load trạng thái like cho tất cả posts
                 val likedMap = mutableMapOf<Int, Boolean>()
-                posts.forEach { post ->
+                postsWithTags.forEach { post ->
                     try {
                         val isLiked = reactionRepository.checkReactPost(
                             postId = post.postId,
@@ -126,7 +140,7 @@ class NewsFeedViewModel(
 
                 _uiState.update {
                     it.copy(
-                        posts = posts,
+                        posts = postsWithTags,
                         isRefreshing = false,
                         currentPage = 0,
                         hasReachedEnd = posts.size < it.pageSize,

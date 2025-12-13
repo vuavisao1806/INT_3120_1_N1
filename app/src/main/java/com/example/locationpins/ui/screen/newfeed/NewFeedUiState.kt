@@ -28,7 +28,7 @@ data class NewsFeedUiState(
     val currentPage: Int = 0,
 
     // Số lượng posts mỗi trang
-    val pageSize: Int = 10,
+    val pageSize: Int = 5,
 
     // Map lưu trạng thái like của từng post (postId -> isLiked)
     val likedPosts: Map<Int, Boolean> = emptyMap(),
