@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from connection import get_database_connection
 from pydantic import BaseModel
+import random
+from math import atan2, degrees
 
 router = APIRouter(
     prefix="/pins",
@@ -190,5 +192,131 @@ def add_post_into_pin_by_coord(body: PinByCoordRequest):
                 is_new_pin=True
             )
 
+    finally:
+        connection.close()
+
+
+
+# ==================================================
+#   TÌM PIN NGẪU NHIÊN TRONG BÁN KÍNH (CHO GAME)
+# ==================================================
+
+class FindRandomPinRequest(BaseModel):
+    user_lat: float
+    user_lng: float
+    target_distance: int  # 50, 100, 200, 500 (meters)
+
+class RandomPinResponse(BaseModel):
+    pin_id: int
+    latitude: float
+    longitude: float
+    actual_distance: float  # Khoảng cách thực tế đến pin được chọn
+
+
+@router.post("/find-random")
+def find_random_pin(body: FindRandomPinRequest):
+    """
+    Tìm một pin ngẫu nhiên có khoảng cách gần với target_distance nhất
+    trong phạm vi ±50% của target_distance
+    """
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            # Tìm tất cả pins trong khoảng target_distance ±50%
+            min_distance = body.target_distance * 0.5
+            max_distance = body.target_distance * 1.5
+            
+            # Sử dụng GREATEST để tránh acos > 1 hoặc < -1 gây lỗi
+            cur.execute(
+                """
+                WITH distance_calc AS (
+                    SELECT 
+                        p.pin_id,
+                        p.latitude,
+                        p.longitude,
+                        (
+                            6371000 * acos(
+                                LEAST(1.0, GREATEST(-1.0,
+                                    cos(radians(%s)) * cos(radians(p.latitude)) *
+                                    cos(radians(p.longitude) - radians(%s)) +
+                                    sin(radians(%s)) * sin(radians(p.latitude))
+                                ))
+                            )
+                        ) AS distance_meters
+                    FROM pins p
+                )
+                SELECT 
+                    pin_id,
+                    latitude,
+                    longitude,
+                    distance_meters
+                FROM distance_calc
+                WHERE distance_meters BETWEEN %s AND %s
+                ORDER BY distance_meters;
+                """,
+                (
+                    body.user_lat, body.user_lng, body.user_lat,
+                    min_distance, max_distance
+                )
+            )
+            
+            pins = cur.fetchall()
+            
+            # Log để debug
+            print(f"[DEBUG] Target: {body.target_distance}m, Range: {min_distance:.0f}-{max_distance:.0f}m")
+            print(f"[DEBUG] Found {len(pins)} pins")
+           
+            if not pins:
+                # Nếu không tìm thấy pin nào trong phạm vi, tìm 1 pin gần nhất
+                print("[DEBUG] No pins in range, finding nearest...")
+                cur.execute(
+                    """
+                    WITH distance_calc AS (
+                        SELECT 
+                            p.pin_id,
+                            p.latitude,
+                            p.longitude,
+                            (
+                                6371000 * acos(
+                                    LEAST(1.0, GREATEST(-1.0,
+                                        cos(radians(%s)) * cos(radians(p.latitude)) *
+                                        cos(radians(p.longitude) - radians(%s)) +
+                                        sin(radians(%s)) * sin(radians(p.latitude))
+                                    ))
+                                )
+                            ) AS distance_meters
+                        FROM pins p
+                    )
+                    SELECT 
+                        pin_id,
+                        latitude,
+                        longitude,
+                        distance_meters
+                    FROM distance_calc
+                    ORDER BY distance_meters
+                    LIMIT 1;
+                    """,
+                    (body.user_lat, body.user_lng, body.user_lat)
+                )
+                pins = cur.fetchall()
+                
+                if pins:
+                    print(f"[DEBUG] Nearest pins")
+            
+            if not pins:
+                raise HTTPException(status_code=404, detail="Không tìm thấy pin nào trong hệ thống")
+            
+            # Chọn ngẫu nhiên một pin từ danh sách
+            selected_pin = random.choice(pins)
+            
+            print(f"[DEBUG] Selected pin {selected_pin['pin_id']} at {selected_pin['distance_meters']:.0f}m")
+            
+            return RandomPinResponse(
+                pin_id=selected_pin["pin_id"],
+                latitude=float(selected_pin["latitude"]),
+                longitude=float(selected_pin["longitude"]),
+                actual_distance=float(selected_pin["distance_meters"])
+            )
+            
     finally:
         connection.close()

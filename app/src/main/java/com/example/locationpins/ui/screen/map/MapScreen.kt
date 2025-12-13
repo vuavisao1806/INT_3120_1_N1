@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.locationpins.R
+import com.example.locationpins.ui.screen.pinDiscovery.PinDiscoveryScreen
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
@@ -68,6 +70,8 @@ fun MapScreen() {
     val viewModel: MapViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    var showDiscoveryGame by remember { mutableStateOf(false) }
 
     // 1) init LocationManager đúng 1 lần
     LaunchedEffect(Unit) {
@@ -436,7 +440,11 @@ fun MapScreen() {
                 // viewModel.onMyLocationClicked()?.let { point ->
                 //     mapViewportState.getMapboxMap()?.easeTo(CameraOptions.Builder().center(point).zoom(14.0).build())
                 // }
+            },
+            onClickDiscovery = {
+                showDiscoveryGame = true
             }
+
         )
 
         // BOTTOM SHEET
@@ -447,6 +455,21 @@ fun MapScreen() {
                 onStyleSelected = { styleUri ->
                     viewModel.onMapStyleSelected(styleUri)
                     viewModel.onHideBottomSheet()
+                }
+            )
+        }
+
+        if (showDiscoveryGame) {
+            PinDiscoveryScreen(
+                onDismiss = {
+                    showDiscoveryGame = false
+                },
+                onPinFound = { pinId ->
+                    showDiscoveryGame = false
+
+                    // TODO: Navigate to gallery screen với pinId
+                    // Bạn có thể dùng navController để navigate
+                    // navController.navigate("gallery/$pinId")
                 }
             )
         }
@@ -657,7 +680,8 @@ fun MapStyleBottomSheet(
 @Composable
 private fun BoxScope.MapControls(
     onClickStyle: () -> Unit,
-    onClickMyLocation: () -> Unit
+    onClickMyLocation: () -> Unit,
+    onClickDiscovery: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -665,6 +689,19 @@ private fun BoxScope.MapControls(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Pin Discovery FAB
+        FloatingActionButton(
+            onClick = onClickDiscovery,
+            containerColor = Color(0xFFFF9800),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Explore,
+                contentDescription = "Khám phá ghim",
+                tint = Color.White
+            )
+        }
+
         FloatingActionButton(
             onClick = onClickStyle,
             containerColor = Color.White,

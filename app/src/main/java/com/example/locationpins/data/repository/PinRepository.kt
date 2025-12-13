@@ -3,11 +3,13 @@ package com.example.locationpins.data.repository
 
 
 import com.example.locationpins.data.remote.RetrofitClient
+import com.example.locationpins.data.remote.dto.pins.FindRandomPinRequest
 import com.example.locationpins.data.remote.dto.pins.GetPinListByUserIdRequest
 import com.example.locationpins.data.remote.dto.pins.GetPinListInRadiusRequest
 import com.example.locationpins.data.remote.dto.pins.PinByCoordRequest
 import com.example.locationpins.data.remote.dto.pins.PinByCoordResponse
 import com.example.locationpins.data.remote.dto.pins.PinDto
+import com.example.locationpins.data.remote.dto.pins.RandomPinResponse
 
 
 class PinRepository {
@@ -43,6 +45,20 @@ class PinRepository {
                 centerLatitude = centerLatitude,
                 centerLongitude = centerLongitude,
                 radiusMeters = radiusMeters
+            )
+        )
+    }
+
+    suspend fun findRandomPin(
+        userLat: Double,
+        userLng: Double,
+        targetDistance: Int
+    ): RandomPinResponse {
+        return api.findRandomPin(
+            FindRandomPinRequest(
+                userLat = userLat,
+                userLng = userLng,
+                targetDistance = targetDistance
             )
         )
     }
