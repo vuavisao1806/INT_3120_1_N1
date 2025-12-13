@@ -5,16 +5,34 @@ import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
 import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
+import com.example.locationpins.data.remote.dto.post.InsertPostRequest
 import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.PostDto
-import com.example.locationpins.data.remote.dto.post.SensitiveTextRespond
-import okhttp3.MultipartBody
 
 
 class PostRepository {
 
     private val api = RetrofitClient.api
+
+    suspend fun insertPost(
+        pinId: Int,
+        userId: Int,
+        title: String,
+        content: String,
+        imageUrl: String,
+        status: String
+    ): Boolean {
+        val insertPostRequest = InsertPostRequest(
+            pinId = pinId,
+            userId = userId,
+            title = title,
+            body = content,
+            imageUrl = imageUrl,
+            status = status
+        )
+        return api.insertPost(insertPostRequest).insertPostSuccess
+    }
 
     suspend fun getPost(postId: Int): PostDto {
         return api.getPost(

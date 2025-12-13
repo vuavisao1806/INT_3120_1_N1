@@ -1,19 +1,24 @@
 package com.example.locationpins.data.remote.dto.post
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class InsertPostRequest(
-    val pin_id: Int,
-    val user_id: Int,
+    @SerialName("pin_id")
+    val pinId: Int,
+    @SerialName("user_id")
+    val userId: Int,
     val title: String,
     val body: String,
-    val image_url: String,
-    val status: String
+    @SerialName("image_url")
+    val imageUrl: String,
+    val status: String = "DEFAULT"
 )
 
 @Serializable
 data class InsertPostSuccess(
-    val insert_post_success: Boolean,
+    @SerialName("insert_post_success")
+    val insertPostSuccess: Boolean,
     val post_id: Int
 )

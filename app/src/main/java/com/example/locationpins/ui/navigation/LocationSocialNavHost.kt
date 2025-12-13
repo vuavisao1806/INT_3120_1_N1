@@ -12,14 +12,11 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.locationpins.data.model.User
-import com.example.locationpins.data.model.UserMock
 import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
 import com.example.locationpins.ui.screen.login.CurrentUser
-import com.example.locationpins.ui.screen.login.LoginScreen
 import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
@@ -60,7 +57,8 @@ fun LocationSocialNavHost(
             val postId = backStackEntry.arguments?.getString("postId")
             PostDetailScreen(
                 postId = postId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onClickUserName = { userId -> navController.navigate("user/${userId}") }
             )
         }
 
@@ -79,8 +77,7 @@ fun LocationSocialNavHost(
                 CreatePostScreen(
                     initialImageUri = capturedImageUri,
                     onNavigateBack = { navController.popBackStack() },
-                    user = CurrentUser.currentUser!!,
-                    pinId = 5,
+                    user = CurrentUser.currentUser!!
                 )
             }
         }
@@ -92,10 +89,14 @@ fun LocationSocialNavHost(
             })
         }
 
-        composable(route = TopLevelDestination.USER.route) {
+        composable(
+            route = "${TopLevelDestination.USER.route}/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType }
+            )) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: -1
             ProfileScreen(
-                user = CurrentUser.currentUser!!,
-                profileMode = ProfileMode.Self
+                userId = userId
             )
         }
 

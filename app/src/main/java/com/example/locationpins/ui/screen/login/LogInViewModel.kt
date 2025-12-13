@@ -123,9 +123,10 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
                             onSuccess(false)
                         }
 
-                        response.registerSuccess == true -> {  _uiState.update {
-                            it.copy(isLoading = true, errorMessage = "Người dùng đã tồn tại")
-                        }
+                        response.registerSuccess == true -> {
+                            _uiState.update {
+                                it.copy(isLoading = true, errorMessage = null)
+                            }
                             onSuccess(true)
                         }
                     }

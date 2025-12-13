@@ -100,3 +100,9 @@ data class IsFriendRespond(
     @SerialName("is_friend")
     val isFriend: Boolean
 )
+
+@Serializable
+data class GetUserRequest(
+    @SerialName("user_id")
+    val userId: Int
+)
