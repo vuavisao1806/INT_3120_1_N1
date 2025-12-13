@@ -14,5 +14,6 @@ data class InsertPostRequest(
 
 @Serializable
 data class InsertPostSuccess(
-    val insert_post_success: Boolean
+    val insert_post_success: Boolean,
+    val post_id: Int
 )

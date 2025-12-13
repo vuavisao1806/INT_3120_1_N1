@@ -119,6 +119,7 @@ class PostDetailViewModel(
                     Log.d("SENSITIVE DETECTION", "The content isn't allowed")
                     // TODO: Thêm hiệu ứng như kiểu cái viền đỏ xung quanh ô nhập hoặc hiện cảnh báo (aler)
                     // TODO: Mr. LDHA sẽ thực hiện
+                    // ToDo: nhấn nhiều làn comment bị gửi nhiều lần trùng nhau
                     return@launch
                 }
                 _uiState.update { it.copy(isSubmittingComment = true, error = null) }
