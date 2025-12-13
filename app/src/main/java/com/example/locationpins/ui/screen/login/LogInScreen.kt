@@ -33,8 +33,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.locationpins.data.repository.UserRepository
-import com.example.locationpins.ui.screen.gallery.GalleryStep
 
 enum class LoginMode {
     Login,
@@ -253,7 +251,7 @@ fun Header(greeting: String, content: String, iconSize: Dp = 100.dp) {
     ) {
 
         Image(
-            painter = painterResource(id = R.drawable.pin_red),
+            painter = painterResource(id = R.drawable.pin_red_cluster),
             contentDescription = "Pin đỏ",
             modifier = Modifier.size(iconSize)
         )
