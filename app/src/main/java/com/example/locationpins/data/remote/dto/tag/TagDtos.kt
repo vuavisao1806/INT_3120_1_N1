@@ -17,3 +17,20 @@ data class GetPostTagsRequest(
     @SerialName("post_id")
     val postId: Int
 )
+
+
+@Serializable
+data class GoogleLabelResponse(
+    @SerialName("tags")
+    val tags: List<String>
+)
+
+@Serializable
+data class AssignTagsRequest(
+    @SerialName("post_id")
+    val postId: Int,
+    @SerialName("user_id")
+    val userId: Int,
+    @SerialName("tags")
+    val tags: List<String>
+)

@@ -31,6 +31,8 @@ import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
 import com.example.locationpins.data.remote.dto.react.CheckPostReactResponse
 import com.example.locationpins.data.remote.dto.sensitive.CheckIsSensitiveText
 import com.example.locationpins.data.remote.dto.sensitive.IsSensitiveTextRespond
+import com.example.locationpins.data.remote.dto.tag.AssignTagsRequest
+import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
 import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
@@ -44,6 +46,7 @@ import retrofit2.http.Body
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -153,6 +156,19 @@ interface ApiService {
     suspend fun checkIsSensitiveImage(
         @Part file: MultipartBody.Part // Chờ nhận trực tiếp MultipartBody.Part
     ): SensitiveTextRespond
+
+    @Multipart
+    @POST("/tag/label_top3")
+    suspend fun getGoogleLabelsTopK(
+        @Part file: MultipartBody.Part,
+        @Query("k") k: Int = 3
+    ): GoogleLabelResponse
+
+
+    @POST("/tag/assign")
+    suspend fun assignTags(
+        @Body req: AssignTagsRequest
+    ): Unit
 
     @POST("/pins/get-or-create-by-coord")
     suspend fun getPinIdByCoordinates(

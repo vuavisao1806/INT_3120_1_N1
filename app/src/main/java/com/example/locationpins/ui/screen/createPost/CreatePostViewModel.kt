@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.remote.ApiService
+import com.example.locationpins.data.remote.dto.tag.AssignTagsRequest
 import com.example.locationpins.data.repository.CreatePostRepository
 import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
@@ -121,6 +123,20 @@ class CreatePostViewModel(
                 if (!insertRes) {
                     onError("Tạo bài đăng thất bại")
                     return@launch
+                }
+
+                val labelRes = apiService.getGoogleLabelsTopK(imagePart, k = 3)
+                val tags = labelRes.tags
+
+                // (4) gửi tags lên backend để insert vào 3 bảng
+                if (tags.isNotEmpty()) {
+                    apiService.assignTags(
+                        AssignTagsRequest(
+                            postId = insertRes.post_id,
+                            userId = userId,
+                            tags = tags
+                        )
+                    )
                 }
 
                 onSuccess()
