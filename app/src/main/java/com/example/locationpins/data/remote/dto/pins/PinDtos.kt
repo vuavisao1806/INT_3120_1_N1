@@ -47,3 +47,17 @@ data class PinByCoordResponse(
     val isNewPin: Boolean
 )
 
+@Serializable
+data class FindRandomPinRequest(
+    @SerialName("user_lat") val userLat: Double,
+    @SerialName("user_lng") val userLng: Double,
+    @SerialName("target_distance") val targetDistance: Int
+)
+
+@Serializable
+data class RandomPinResponse(
+    @SerialName("pin_id") val pinId: Int,
+    @SerialName("latitude") val latitude: Double,
+    @SerialName("longitude") val longitude: Double,
+    @SerialName("actual_distance") val actualDistance: Float
+)
