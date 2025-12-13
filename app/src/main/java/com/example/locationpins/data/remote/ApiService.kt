@@ -28,7 +28,7 @@ import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.SensitiveTextRespond
 import com.example.locationpins.data.remote.dto.post.UploadImageResponse
 import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
-import com.example.locationpins.data.remote.dto.react.CheckPostReactRespose
+import com.example.locationpins.data.remote.dto.react.CheckPostReactResponse
 import com.example.locationpins.data.remote.dto.sensitive.CheckIsSensitiveText
 import com.example.locationpins.data.remote.dto.sensitive.IsSensitiveTextRespond
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
@@ -131,7 +131,7 @@ interface ApiService {
     @POST("/posts/react/check")
     suspend fun checkPostReact(
         @Body request: CheckPostReactRequest
-    ): CheckPostReactRespose
+    ): CheckPostReactResponse
 
     @POST("/users/isfriend")
     suspend fun checkIsFriend(
