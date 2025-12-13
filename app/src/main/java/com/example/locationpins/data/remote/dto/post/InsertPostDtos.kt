@@ -20,5 +20,6 @@ data class InsertPostRequest(
 data class InsertPostSuccess(
     @SerialName("insert_post_success")
     val insertPostSuccess: Boolean,
-    val post_id: Int
+    @SerialName("post_id")
+    val postId: Int
 )
