@@ -16,6 +16,9 @@ router = APIRouter(
 # ==================================================
 
 
+from fastapi import HTTPException
+from pydantic import BaseModel
+
 class InsertPostRequest(BaseModel):
     pin_id: int
     user_id: int
@@ -23,26 +26,25 @@ class InsertPostRequest(BaseModel):
     body: str
     image_url: str
     status: str
-    
-    
+
 class InsertPostSuccess(BaseModel):
     insert_post_success: bool = True
-
-@router.post("/insert")
-def register(body: InsertPostRequest):
+    post_id: int
+@router.post("/insert", response_model=InsertPostSuccess)
+def insert_post(body: InsertPostRequest):
     connection = get_database_connection()
     try:
         with connection.cursor() as cur:
-            # Check username exists
             cur.execute(
                 """
                 INSERT INTO posts (pin_id, user_id, title, body, image_url, status)
                 VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING post_id
                 """,
-                (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status)
+                (body.pin_id, body.user_id, body.title, body.body, body.image_url, body.status),
             )
+            post_id = cur.fetchone()["post_id"]
 
-             # 2. Gắn user với pin trong user_pins nếu chưa có
             cur.execute(
                 """
                 INSERT INTO user_pins (user_id, pin_id)
@@ -51,17 +53,17 @@ def register(body: InsertPostRequest):
                 """,
                 (body.user_id, body.pin_id),
             )
-            
+
         connection.commit()
-        return InsertPostSuccess()
+        return InsertPostSuccess(post_id=post_id)
 
     except Exception as e:
         connection.rollback()
-        print("ERROR /posts/insert:", e)  # log ra console
-        # trả luôn lỗi chi tiết để debug
         raise HTTPException(status_code=500, detail=f"DB error: {e}")
     finally:
         connection.close()
+
+
 
 
 # ==================================================
