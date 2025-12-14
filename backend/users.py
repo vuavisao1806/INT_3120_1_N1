@@ -245,3 +245,34 @@ def is_friend(body: CheckIsFriend):
 
     finally:
         connection.close()
+
+
+class showContactRequest(BaseModel):
+    user_id: int
+
+
+@router.post("/contact_request")
+def showContact(body: showContactRequest):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT 
+                    u.user_id, 
+                    u.user_name, 
+                    u.avatar_url, 
+                    r.created_at 
+                FROM request_contact r
+                JOIN users u ON r.following_user_id = u.user_id
+                WHERE r.followed_user_id = %s
+                AND r.status = 'PENDING'
+                ORDER BY r.created_at DESC;
+                    """,
+                (body.user_id,)
+            )
+            contacts = cur.fetchall()
+            return contacts
+
+    finally:
+        connection.close()
