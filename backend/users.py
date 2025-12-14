@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from connection import get_database_connection
 from pydantic import BaseModel
 
@@ -243,5 +243,33 @@ def is_friend(body: CheckIsFriend):
                 status.is_friend = False
             return status
 
+    finally:
+        connection.close()
+
+class AcceptFriendRequest(BaseModel):
+    own_id: int
+    other_id: int
+
+
+class IsSuccessAcceptFriendResponse(BaseModel):
+    is_success_accept: bool = True
+
+@router.post("/accept-friend")
+def accept(body: AcceptFriendRequest):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO friends (user_id, friend_id)
+                VALUES (%s, %s), (%s, %s)
+                """,
+                (body.own_id, body.other_id, body.other_id, body.own_id,)
+            )
+        connection.commit()
+        return IsSuccessAcceptFriendResponse()
+    except Exception as e:
+        connection.rollback()
+        raise HTTPException(status_code=500, detail=f"The error occurs when handling accept friend request: {e}")
     finally:
         connection.close()
