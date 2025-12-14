@@ -70,7 +70,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen() {
+fun MapScreen(
+    modifier: Modifier = Modifier
+) {
     val viewModel: MapViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -471,7 +473,7 @@ fun MapScreen() {
                 query = uiState.query,
                 isSearching = uiState.isSearching,
                 onQueryChange = { viewModel.onQueryChange(it) },
-                onClear = { viewModel.onClearQuery() }
+                onClear = { viewModel.onClearQuery() },
             )
 
             if (uiState.suggestions.isNotEmpty() && !uiState.isSearching) {
@@ -525,7 +527,8 @@ fun MapScreen() {
                     // TODO: Navigate to gallery screen với pinId
                     // Bạn có thể dùng navController để navigate
                     // navController.navigate("gallery/$pinId")
-                }
+                },
+
             )
         }
     }
@@ -536,7 +539,8 @@ private fun MapSearchBar(
     query: String,
     isSearching: Boolean,
     onQueryChange: (String) -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column {
         OutlinedTextField(
