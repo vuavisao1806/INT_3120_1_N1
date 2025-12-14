@@ -1,7 +1,6 @@
 package com.example.locationpins.ui.screen.pinDiscovery
 
 import android.util.Log
-import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.locationpins.ui.component.SimpleCompass
 
 @Composable
 fun PinDiscoveryScreen(
@@ -34,11 +35,16 @@ fun PinDiscoveryScreen(
     viewModel: PinDiscoveryViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.initCompass(context)
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .padding(top = 50.dp)
     ) {
         // Close button
         IconButton(
@@ -70,7 +76,8 @@ fun PinDiscoveryScreen(
 
             GameState.Searching -> SearchingScreen(
                 currentDistance = uiState.currentDistance,
-                lastHint = uiState.lastHint
+                lastHint = uiState.lastHint,
+                compassRotation = uiState.compassRotation
             )
 
             GameState.Found -> FoundScreen(
@@ -244,20 +251,9 @@ private fun DistanceOption(
 @Composable
 private fun SearchingScreen(
     currentDistance: Float?,
-    lastHint: String?
+    lastHint: String?,
+    compassRotation: Float
 ) {
-    // Pulsing animation for radar effect
-    val infiniteTransition = rememberInfiniteTransition(label = "radar")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scale"
-    )
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -272,35 +268,11 @@ private fun SearchingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Animated radar icon
-            Box(
-                modifier = Modifier.size(120.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Outer rings
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .scale(scale)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1976D2).copy(alpha = 0.1f))
-                )
-
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1976D2).copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Explore,
-                        contentDescription = null,
-                        tint = Color(0xFF1976D2),
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            }
+            // La bàn hoạt động
+            SimpleCompass(
+                rotation = compassRotation,
+                size = 170.dp
+            )
 
             Text(
                 text = "Đang Tìm Kiếm...",
@@ -309,19 +281,8 @@ private fun SearchingScreen(
                 color = Color.Black
             )
 
-            // Distance display
-//            if (currentDistance != null) {
-//                Text(
-//                    text = "Khoảng cách: ${currentDistance.toInt()}m",
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.SemiBold,
-//                    color = Color(0xFF1976D2)
-//                )
-//            }
-
             Divider(color = Color.LightGray.copy(alpha = 0.3f))
 
-            // Hint display
             if (lastHint != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -349,7 +310,6 @@ private fun SearchingScreen(
         }
     }
 }
-
 @Composable
 private fun FoundScreen(
     onViewPin: () -> Unit,
