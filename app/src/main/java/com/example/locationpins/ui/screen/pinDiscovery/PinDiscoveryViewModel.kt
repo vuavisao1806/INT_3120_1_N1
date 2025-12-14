@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.*
 import kotlin.random.Random
+import android.content.Context
+import com.example.locationpins.ui.component.CompassSensor
 
 data class PinDiscoveryUiState(
     val gameState: GameState = GameState.Initial,
@@ -25,7 +27,8 @@ data class PinDiscoveryUiState(
     val lastHint: String? = null,
     val hintType: HintType? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val compassRotation: Float = 0f
 )
 
 sealed class GameState {
@@ -48,6 +51,9 @@ class PinDiscoveryViewModel(
 
     private var hintJob: Job? = null
     private var distanceCheckJob: Job? = null
+    private var compassUpdateJob: Job? = null
+
+    private var compassSensor: CompassSensor? = null
 
     companion object {
         private const val HINT_INTERVAL_MS = 5000L // 30 seconds
@@ -94,6 +100,7 @@ class PinDiscoveryViewModel(
                 // Bắt đầu timer hint và check distance (tất cả ở local)
                 startHintTimer()
                 startDistanceCheck()
+                startCompassUpdates()
 
             } catch (e: Exception) {
                 Log.e("PinDiscovery", "Error starting game: ${e.message}")
@@ -209,6 +216,8 @@ class PinDiscoveryViewModel(
     private fun onPinFound() {
         hintJob?.cancel()
         distanceCheckJob?.cancel()
+        compassUpdateJob?.cancel()
+        compassSensor?.stop()
 
         _uiState.update {
             it.copy(
@@ -269,6 +278,8 @@ class PinDiscoveryViewModel(
     fun resetGame() {
         hintJob?.cancel()
         distanceCheckJob?.cancel()
+        compassUpdateJob?.cancel()
+        compassSensor?.stop()
         _uiState.value = PinDiscoveryUiState()
     }
 
@@ -276,5 +287,28 @@ class PinDiscoveryViewModel(
         super.onCleared()
         hintJob?.cancel()
         distanceCheckJob?.cancel()
+        compassUpdateJob?.cancel()
+        compassSensor?.stop()
+    }
+
+    fun initCompass(context: Context) {
+        if (compassSensor == null) {
+            compassSensor = CompassSensor(context)
+            startCompassUpdates()
+        }
+    }
+
+    private fun startCompassUpdates() {
+        compassSensor?.start()
+
+        compassUpdateJob?.cancel()
+        compassUpdateJob = viewModelScope.launch {
+            compassSensor?.azimuth?.collect { deviceAzimuth ->
+                // Đơn giản chỉ cập nhật góc quay la bàn
+                _uiState.update {
+                    it.copy(compassRotation = -deviceAzimuth)  // Âm để kim chỉ Bắc
+                }
+            }
+        }
     }
 }
