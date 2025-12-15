@@ -150,10 +150,13 @@ def register(body: RegisterRequest):
 
 
 class UpdateUserByUserIdRequest(BaseModel):
-    user_id: str
+    user_id: int
+    name: str
     quotes: str
+    location: str
     avatar_url: str
-    contact_info: str
+    email: str
+    website: str
 
 
 class UpdateUserByUserIdSuccess(BaseModel):
@@ -171,12 +174,16 @@ def update(body: UpdateUserByUserIdRequest):
                 """
                 UPDATE users
                 SET
-                    quotes = %s ,
-                    avatar_url = %s,
-                    contact_info = %s
+                name=%s,
+                quotes = %s ,
+                avatar_url = %s,
+                location=%s,
+                user_email=%s,
+                website=%s
                 WHERE user_id = %s
                 """,
-                (body.quotes, body.avatar_url, body.contact_info, body.user_id)
+                (body.name, body.quotes, body.avatar_url,
+                 body.location, body.email, body.website, body.user_id)
             )
 
         connection.commit()
@@ -279,7 +286,6 @@ def showContactList(body: showContactRequest):
         connection.close()
 
 
-
 class RespondContactRequest(BaseModel):
     own_id: int
     other_id: int
@@ -314,21 +320,18 @@ def respondContact(body: RespondContactRequest):
                     body.other_id
                 )
             )
-        
-        
-            if cur.rowcount == 0:
-                return IsSuccessRespond(is_success= False)
 
-         
+            if cur.rowcount == 0:
+                return IsSuccessRespond(is_success=False)
 
             if body.isAccept:
                 cur.execute(
-                """
+                    """
                 INSERT INTO friends (user_id, friend_id)
                 VALUES (%s, %s), (%s, %s)
                 """,
-                (body.own_id, body.other_id, body.other_id, body.own_id,)
-            )
+                    (body.own_id, body.other_id, body.other_id, body.own_id,)
+                )
             connection.commit()
             return IsSuccessRespond(is_success=True)
 

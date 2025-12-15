@@ -11,6 +11,8 @@ import com.example.locationpins.data.remote.dto.user.RespondRequest
 import com.example.locationpins.data.remote.dto.user.RespondResponse
 import com.example.locationpins.data.remote.dto.user.ShowContactRequest
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
+import com.example.locationpins.data.remote.dto.user.UpdateProfileRequest
+import com.example.locationpins.data.remote.dto.user.UpdateProfileResponse
 import com.example.locationpins.data.remote.dto.user.UserDto
 
 // This is extremely bad code but whatever
@@ -70,5 +72,27 @@ class UserRepository {
 
     suspend fun respondContact(ownId: Int, otherId: Int, isAccept: Boolean): RespondResponse {
         return api.respondContact(RespondRequest(ownId, otherId, isAccept))
+    }
+
+    suspend fun updateProfile(
+        userId: Int,
+        name: String,
+        quotes: String,
+        avatarUrl: String?,
+        location: String,
+        userEmail: String,
+        website: String
+    ): UpdateProfileResponse {
+        return api.updateProfile(
+            UpdateProfileRequest(
+                userId,
+                name,
+                quotes,
+                avatarUrl,
+                location,
+                userEmail,
+                website
+            )
+        )
     }
 }

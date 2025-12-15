@@ -134,3 +134,28 @@ data class RespondRequest(
 data class RespondResponse(
     @SerialName("is_success") val isSuccess: Boolean
 )
+
+
+
+@Serializable
+data class UpdateProfileRequest(
+
+    @SerialName("user_id") val userId: Int,
+
+    @SerialName("name") val name: String,
+
+    @SerialName("quotes") val quotes: String?,
+
+    @SerialName("avatar_url") val avatarUrl: String?,
+
+    @SerialName("location") val location: String?,
+
+    @SerialName("email") val email: String?,
+
+    @SerialName("website") val website: String?
+)
+
+@Serializable
+data class UpdateProfileResponse(
+    @SerialName("update_user_by_user_id_success") val success: Boolean = true
+)

@@ -44,6 +44,8 @@ import com.example.locationpins.data.remote.dto.user.RespondRequest
 import com.example.locationpins.data.remote.dto.user.RespondResponse
 import com.example.locationpins.data.remote.dto.user.ShowContactRequest
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
+import com.example.locationpins.data.remote.dto.user.UpdateProfileRequest
+import com.example.locationpins.data.remote.dto.user.UpdateProfileResponse
 import com.example.locationpins.data.remote.dto.user.UserDto
 import okhttp3.MultipartBody
 import retrofit2.http.Body
@@ -184,6 +186,7 @@ interface ApiService {
         @Body body: FindRandomPinRequest
     ): RandomPinResponse
 
+
     @POST("/users/contact_request")
     suspend fun showContactRequest(
         @Body body: ShowContactRequest
@@ -193,6 +196,11 @@ interface ApiService {
     suspend fun respondContact(
         @Body body: RespondRequest
     ): RespondResponse
+
+    @POST("/users/update")
+    suspend fun updateProfile(
+        @Body request: UpdateProfileRequest
+    ): UpdateProfileResponse
 }
 
 

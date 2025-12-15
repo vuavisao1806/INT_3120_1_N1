@@ -38,6 +38,7 @@ import com.example.locationpins.ui.theme.LocationSocialTheme
 @Composable
 fun ProfileScreen(
     userId: Int,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel()
 ) {
@@ -58,7 +59,8 @@ fun ProfileScreen(
                 is ProfileMode.Self -> ProfileSelfView(
                     user,
                     onInvitesClick = { viewModel.onShowContactRequests() },
-                    onEditClick = {})
+                    onEditClick = onEditClick
+                )
 
                 is ProfileMode.Friend -> ProfileFriendView(user)
                 ProfileMode.Stranger -> ProfileStrangerView(
@@ -353,7 +355,8 @@ fun SelfActionRow(
 fun PreviewProfileScreen() {
     LocationSocialTheme {
         ProfileScreen(
-            1
+            1,
+            onEditClick = {}
         )
     }
 }
