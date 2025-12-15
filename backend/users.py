@@ -273,3 +273,28 @@ def accept(body: AcceptFriendRequest):
         raise HTTPException(status_code=500, detail=f"The error occurs when handling accept friend request: {e}")
     finally:
         connection.close()
+
+
+class UserFavoriteTagsRequest(BaseModel):
+    user_id: int
+    number_tags: int
+
+@router.post("/tags")
+def get_favorite_tags_by_user_id(body: UserFavoriteTagsRequest):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                SELECT ut.tag_id, t.name FROM users_tags AS ut
+                INNER JOIN tags AS t ON ut.tag_id = t.tag_id
+                WHERE user_id = %s
+                ORDER BY ut.cnt DESC
+                LIMIT %s;
+                """,
+                (body.user_id, body.number_tags)
+            )
+            tags = cur.fetchall()
+            return tags
+    finally:
+        connection.close()

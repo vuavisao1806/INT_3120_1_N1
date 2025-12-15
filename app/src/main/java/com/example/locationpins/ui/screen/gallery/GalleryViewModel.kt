@@ -1,11 +1,11 @@
 package com.example.locationpins.ui.screen.gallery
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.locationpins.data.remote.dto.pins.PinDto
-import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +36,8 @@ data class GalleryUiState(
 
 class GalleryViewModel(
     private val pinRepository: PinRepository = PinRepository(),
-    private val postRepository: PostRepository = PostRepository()
+    private val postRepository: PostRepository = PostRepository(),
+    private val tagRepository: TagRepository = TagRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GalleryUiState())
@@ -58,14 +59,15 @@ class GalleryViewModel(
 
             try {
                 // 1. Lấy tất cả pins của user
+                // TODO: pin.quantity không khớp với số lượng bài viết khi bấm vào
+                // Lý do là vì query đang count cnt (số lượng post tại pin đó)
+                // Còn khi bấm vào thì nó là số lượng bài mình tự đăng + số bài theo tag mình yêu thích nhất
                 val pins = postRepository.getPreviewPins(CurrentUser.currentUser!!.userId)
 
                 // 2. Với mỗi pin, lấy tất cả posts và đếm
                 val pinSummaries = pins.mapNotNull { pin ->
                     try {
                         // Lấy min image của pin để làm cover image
-
-
                         PinSummary(
                             pinId = pin.pinId,
                             coverImageUrl = pin.pinImage,
@@ -103,21 +105,39 @@ class GalleryViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // TODO: Tạo API endpoint mới để lấy tất cả posts theo pinId
-                // Hiện tại chỉ có 1 post per pin nên lấy luôn
                 val posts = postRepository.getPostByPin(pinId)
-                val postSumaries = posts.mapNotNull { post ->
+                Log.d("BEFORE: ", posts.size.toString())
+
+                if (CurrentUser.favoriteTags == null) {
+                    CurrentUser.favoriteTags = tagRepository.getFavoriteTagsByUserId(
+                        userId = CurrentUser.currentUser!!.userId,
+                        numberTags = 3
+                    )
+                }
+                val favoriteTags = CurrentUser.favoriteTags.orEmpty()
+
+                val favoriteTagsName: Set<String> = favoriteTags.map { it.name }.toSet()
+
+                val favoritePosts = posts.filter { post ->
+                    val tags: List<String> = tagRepository
+                        .getTagsByPostId(post.postId)
+                        .map { it.name }
+                    tags.any { it in favoriteTagsName } || post.userId == CurrentUser.currentUser!!.userId
+                }
+                Log.d("BEFORE: ", favoritePosts.size.toString())
+
+                val postSummaries = favoritePosts.map { post ->
                     PostSummary(
                         postId = post.postId,
                         imageUrl = post.imageUrl,
-                        reactionCount = post.reactionCount ?: 0,
+                        reactionCount = post.reactionCount,
                         commentCount = post.commentCount
                     )
                 }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        currentPinPosts = postSumaries
+                        currentPinPosts = postSummaries
                     )
                 }
 

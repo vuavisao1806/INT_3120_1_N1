@@ -33,6 +33,7 @@ import com.example.locationpins.data.remote.dto.sensitive.CheckIsSensitiveText
 import com.example.locationpins.data.remote.dto.sensitive.IsSensitiveTextRespond
 import com.example.locationpins.data.remote.dto.tag.AssignTagsRequest
 import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
+import com.example.locationpins.data.remote.dto.tag.UserFavoriteTagsRequest
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
 import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
@@ -180,6 +181,10 @@ interface ApiService {
         @Body body: FindRandomPinRequest
     ): RandomPinResponse
 
+    @POST("/users/tags")
+    suspend fun getFavoriteTagsByUserId(
+        @Body body: UserFavoriteTagsRequest
+    ): Set<TagDto>
 }
 
 
