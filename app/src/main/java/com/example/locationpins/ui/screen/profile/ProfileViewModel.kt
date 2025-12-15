@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.model.User
+import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.toUser
 import com.example.locationpins.data.repository.UserRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
@@ -125,5 +126,112 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
         }
     }
 
+    // Hàm mở danh sách
+    fun onShowContactRequests() {
+        viewModelScope.launch {
+            val response = userRepository.showContactRequest(
+                CurrentUser.currentUser!!.userId
 
+            )
+            _uiState.update {
+                it.copy(
+                    showContactRequests = true,
+                    pendingRequests = response
+                )
+            }
+        }
+    }
+
+    // Hàm đóng danh sách
+    fun onDismissContactRequests() {
+        _uiState.update { it.copy(showContactRequests = false) }
+    }
+
+    private val TAG = "ContactViewModel"
+
+    // Hàm chấp nhận
+    fun onAcceptContact(contact: ShowContactRespond) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Đang chấp nhận yêu cầu kết bạn với userId: ${contact.followingUserId}")
+
+                val response = userRepository.respondContact(
+                    CurrentUser.currentUser!!.userId,
+                    contact.followingUserId,
+                    true
+                )
+                if (response.isSuccess) {
+
+                    _uiState.update { currentState ->
+                        val updatedList = currentState.pendingRequests.map { item ->
+                            if (item.followingUserId == contact.followingUserId) {
+
+                                item.copy(status = "ACCEPTED")
+                            } else {
+                                item
+                            }
+                        }
+                        currentState.copy(pendingRequests = updatedList)
+                    }
+                } else {
+                    // Nếu thất bại trả về PENDING
+                    _uiState.update { currentState ->
+                        val revertedList = currentState.pendingRequests.map { item ->
+                            if (item.followingUserId == contact.followingUserId) item.copy(status = "PENDING")
+                            else item
+                        }
+                        currentState.copy(pendingRequests = revertedList)
+                    }
+                }
+
+                Log.d(TAG, "Chấp nhận thành công: $response")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi khi chấp nhận kết bạn: ${e.message}", e)
+
+            }
+        }
+    }
+
+    // Hàm từ chối
+    fun onRejectContact(contact: ShowContactRespond) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Đang từ chối yêu cầu kết bạn với userId: ${contact.followingUserId}")
+
+                val response = userRepository.respondContact(
+                    CurrentUser.currentUser!!.userId,
+
+                    contact.followingUserId,
+                    false
+                )
+                if (response.isSuccess) {
+
+                    _uiState.update { currentState ->
+                        val updatedList = currentState.pendingRequests.map { item ->
+                            if (item.followingUserId == contact.followingUserId) {
+                                item.copy(status = "CANCELED")
+                            } else {
+                                item
+                            }
+                        }
+                        currentState.copy(pendingRequests = updatedList)
+                    }
+                } else {
+                    // Nếu thất bại trả về PENDING
+                    _uiState.update { currentState ->
+                        val revertedList = currentState.pendingRequests.map { item ->
+                            if (item.followingUserId == contact.followingUserId) item.copy(status = "PENDING")
+                            else item
+                        }
+                        currentState.copy(pendingRequests = revertedList)
+                    }
+                }
+                Log.d(TAG, "Từ chối thành công: $response")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Lỗi khi từ chối kết bạn: ${e.message}", e)
+            }
+        }
+    }
 }

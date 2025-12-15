@@ -252,7 +252,7 @@ class showContactRequest(BaseModel):
 
 
 @router.post("/contact_request")
-def showContact(body: showContactRequest):
+def showContactList(body: showContactRequest):
     connection = get_database_connection()
     try:
         with connection.cursor() as cur:
@@ -261,7 +261,8 @@ def showContact(body: showContactRequest):
                     SELECT 
                     u.user_id, 
                     u.user_name, 
-                    u.avatar_url, 
+                    u.avatar_url,
+                    r.status, 
                     r.created_at 
                 FROM request_contact r
                 JOIN users u ON r.following_user_id = u.user_id
@@ -274,5 +275,66 @@ def showContact(body: showContactRequest):
             contacts = cur.fetchall()
             return contacts
 
+    finally:
+        connection.close()
+
+
+
+class RespondContactRequest(BaseModel):
+    own_id: int
+    other_id: int
+    isAccept: bool
+
+
+class IsSuccessRespond(BaseModel):
+    is_success: bool = True
+
+
+@router.post("/respond_contact")
+def respondContact(body: RespondContactRequest):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            new_status = 'CANCELED'
+            if body.isAccept:
+                new_status = 'ACCEPTED'
+
+            cur.execute(
+                """
+                UPDATE request_contact
+                SET status = %s
+                WHERE followed_user_id = %s 
+                AND following_user_id = %s    
+                AND status = 'PENDING';
+                """,
+
+                (
+                    new_status,
+                    body.own_id,
+                    body.other_id
+                )
+            )
+        
+        
+            if cur.rowcount == 0:
+                return IsSuccessRespond(is_success= False)
+
+         
+
+            if body.isAccept:
+                cur.execute(
+                """
+                INSERT INTO friends (user_id, friend_id)
+                VALUES (%s, %s), (%s, %s)
+                """,
+                (body.own_id, body.other_id, body.other_id, body.own_id,)
+            )
+            connection.commit()
+            return IsSuccessRespond(is_success=True)
+
+    except Exception as e:
+        connection.rollback()
+        print(f"Error: {e}")
+        return IsSuccessRespond(is_success=False)
     finally:
         connection.close()

@@ -106,3 +106,31 @@ data class GetUserRequest(
     @SerialName("user_id")
     val userId: Int
 )
+
+@Serializable
+data class ShowContactRequest(
+    @SerialName("user_id") val userId: Int
+)
+
+@Serializable
+data class ShowContactRespond(
+    @SerialName("user_id") val followingUserId: Int,
+    @SerialName("user_name") val userName: String,
+    @SerialName("created_at") val timeCreate: String,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("status") var status:String ="PENDING"
+)
+@Serializable
+data class RespondRequest(
+    @SerialName("own_id")
+    val ownId: Int,
+    @SerialName("other_id")
+    val otherId: Int,
+    @SerialName("isAccept")
+    val isAccept: Boolean
+)
+
+@Serializable
+data class RespondResponse(
+    @SerialName("is_success") val isSuccess: Boolean
+)

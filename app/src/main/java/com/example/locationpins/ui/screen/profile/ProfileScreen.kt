@@ -57,7 +57,7 @@ fun ProfileScreen(
             when (profileMode) {
                 is ProfileMode.Self -> ProfileSelfView(
                     user,
-                    onInvitesClick = {},
+                    onInvitesClick = { viewModel.onShowContactRequests() },
                     onEditClick = {})
 
                 is ProfileMode.Friend -> ProfileFriendView(user)
@@ -74,6 +74,19 @@ fun ProfileScreen(
                     onSend = { viewModel.onSendClick() },
                     onMessageChange = { viewModel.onMessageChange(it) },
                     message = viewModel.getMessage()
+                )
+            }
+
+            if (uiState.showContactRequests) {
+                ContactRequestsSheet(
+                    requests = uiState.pendingRequests, // Lấy list từ State
+                    onDismiss = { viewModel.onDismissContactRequests() },
+                    onAccept = {
+                        viewModel.onAcceptContact(it)
+                    },
+                    onReject = {
+                        viewModel.onRejectContact(it)
+                    }
                 )
             }
         }
@@ -333,6 +346,7 @@ fun SelfActionRow(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

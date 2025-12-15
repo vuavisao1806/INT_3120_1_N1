@@ -40,6 +40,10 @@ import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
+import com.example.locationpins.data.remote.dto.user.RespondRequest
+import com.example.locationpins.data.remote.dto.user.RespondResponse
+import com.example.locationpins.data.remote.dto.user.ShowContactRequest
+import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.UserDto
 import okhttp3.MultipartBody
 import retrofit2.http.Body
@@ -145,7 +149,7 @@ interface ApiService {
     suspend fun getUser(
         @Body request: GetUserRequest
     ): UserDto
-  
+
     @POST("/sensitive/text")
     suspend fun checkIsSensitiveText(
         @Body request: CheckIsSensitiveText
@@ -180,6 +184,15 @@ interface ApiService {
         @Body body: FindRandomPinRequest
     ): RandomPinResponse
 
+    @POST("/users/contact_request")
+    suspend fun showContactRequest(
+        @Body body: ShowContactRequest
+    ): List<ShowContactRespond>
+
+    @POST("/users/respond_contact")
+    suspend fun respondContact(
+        @Body body: RespondRequest
+    ): RespondResponse
 }
 
 

@@ -1,13 +1,16 @@
 package com.example.locationpins.data.repository
 
 import com.example.locationpins.data.remote.RetrofitClient
-import com.example.locationpins.data.remote.dto.react.CheckPostReactRequest
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
 import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.LoginRequest
 import com.example.locationpins.data.remote.dto.user.LoginResponse
 import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
+import com.example.locationpins.data.remote.dto.user.RespondRequest
+import com.example.locationpins.data.remote.dto.user.RespondResponse
+import com.example.locationpins.data.remote.dto.user.ShowContactRequest
+import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.UserDto
 
 // This is extremely bad code but whatever
@@ -58,5 +61,14 @@ class UserRepository {
         return api.getUser(
             GetUserRequest(userId = userId)
         )
+    }
+
+    suspend fun showContactRequest(userId: Int): List<ShowContactRespond> {
+        return api.showContactRequest(ShowContactRequest(userId))
+    }
+
+
+    suspend fun respondContact(ownId: Int, otherId: Int, isAccept: Boolean): RespondResponse {
+        return api.respondContact(RespondRequest(ownId, otherId, isAccept))
     }
 }
