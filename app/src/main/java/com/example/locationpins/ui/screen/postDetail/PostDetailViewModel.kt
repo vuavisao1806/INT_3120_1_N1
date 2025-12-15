@@ -105,10 +105,14 @@ class PostDetailViewModel(
     }
 
     fun onSendComment() {
+        if (_uiState.value.isSubmittingComment) return
+
         val currentUserId = CurrentUser.currentUser!!.userId
         Log.d("USER ID WHEN COMMENTING", currentUserId.toString())
         val text = _uiState.value.commentText.trim()
         if (text.isBlank()) return
+
+        _uiState.update { it.copy(isSubmittingComment = true, error = null) }
 
         viewModelScope.launch {
             try {
@@ -121,7 +125,6 @@ class PostDetailViewModel(
                     return@launch
                 }
                 _uiState.update { it.copy(isSubmittingComment = true, error = null) }
-
 
                 commentRepository.createComment(
                     postId = postId,

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.example.locationpins.data.repository.PinRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
 import com.mapbox.geojson.Point
 import com.mapbox.search.ApiType
 import com.mapbox.search.SearchEngine
@@ -50,7 +51,7 @@ class MapViewModel(
         observeUserLocation()
 
         // ✅ Load pin định kỳ
-        startPeriodicPinLoading(userId = 1)
+        startPeriodicPinLoading(userId = CurrentUser.currentUser!!.userId)
     }
 
     private fun observeUserLocation() {

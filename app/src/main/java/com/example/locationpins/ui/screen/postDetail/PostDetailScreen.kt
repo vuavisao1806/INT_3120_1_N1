@@ -14,16 +14,17 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag // Thêm import này
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
@@ -36,12 +37,25 @@ import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.utils.formatCount
 
+// Object chứa các ID để dùng trong test
+object PostDetailTestTags {
+    const val LOADING = "PostDetail_Loading"
+    const val ERROR_TEXT = "PostDetail_Error"
+    const val RETRY_BUTTON = "PostDetail_RetryBtn"
+    const val POST_CONTENT = "PostDetail_Content"
+    const val LIKE_BUTTON = "PostDetail_LikeBtn"
+    const val COMMENT_INPUT = "PostDetail_CommentInput"
+    const val SEND_BUTTON = "PostDetail_SendBtn"
+    const val COMMENT_ITEM = "PostDetail_CommentItem"
+}
+
 @Composable
 fun PostDetailScreen(
     postId: String?,
     onNavigateBack: () -> Unit,
     onClickUserName: (Int) -> Unit
 ) {
+    // ViewModel khởi tạo ở đây (Stateful)
     val viewModel = remember {
         PostDetailViewModel(
             postRepository = PostRepository(),
@@ -55,11 +69,44 @@ fun PostDetailScreen(
 
     val uiState by viewModel.uiState.collectAsState()
 
+    // Lấy avatar an toàn để truyền xuống dưới (Tránh crash khi test nếu chưa login)
+    val currentUserAvatar = CurrentUser.currentUser?.avatarUrl ?: ""
+
+    // Gọi đến hàm Stateless để hiển thị
+    PostDetailContent(
+        uiState = uiState,
+        currentUserAvatar = currentUserAvatar,
+        onClickUserName = onClickUserName,
+        onRetry = { viewModel.retry() },
+        onLikeClick = { viewModel.onLikeClick() },
+        onDeleteComment = { viewModel.onDeleteComment(it) },
+        onCommentTextChange = { viewModel.onCommentTextChange(it) },
+        onSendComment = { viewModel.onSendComment() }
+    )
+}
+
+/**
+ * Hàm này là Stateless (Không chứa ViewModel).
+ * Dùng hàm này để viết UI Test bằng cách truyền Fake Data vào uiState.
+ */
+@Composable
+fun PostDetailContent(
+    uiState: PostDetailUiState,
+    currentUserAvatar: String,
+    onClickUserName: (Int) -> Unit,
+    onRetry: () -> Unit,
+    onLikeClick: () -> Unit,
+    onDeleteComment: (Int) -> Unit,
+    onCommentTextChange: (String) -> Unit,
+    onSendComment: () -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             uiState.isLoading -> {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .testTag(PostDetailTestTags.LOADING) // Thêm tag
                 )
             }
 
@@ -73,10 +120,14 @@ fun PostDetailScreen(
                     Text(
                         text = uiState.error ?: "Đã xảy ra lỗi",
                         color = Color.Red,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.retry() }) {
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
+                    ) {
                         Text("Thử lại")
                     }
                 }
@@ -88,6 +139,7 @@ fun PostDetailScreen(
                         .fillMaxSize()
                         .background(Color(0xFFF5F5F5))
                         .padding(bottom = 64.dp)
+                        .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
                 ) {
                     // Post Header
                     item {
@@ -119,7 +171,7 @@ fun PostDetailScreen(
                             likes = uiState.post!!.reactionCount,
                             comments = uiState.post!!.commentCount,
                             isLiked = uiState.isLiked,
-                            onLikeClick = { viewModel.onLikeClick() }
+                            onLikeClick = onLikeClick
                         )
                     }
 
@@ -135,7 +187,7 @@ fun PostDetailScreen(
                     ) { comment ->
                         CommentItem(
                             comment = comment,
-                            onDeleteClick = { viewModel.onDeleteComment(comment.commentId) },
+                            onDeleteClick = { onDeleteComment(comment.commentId) },
                             onClickUser = onClickUserName
                         )
                     }
@@ -144,8 +196,9 @@ fun PostDetailScreen(
                 // Bottom Comment Input Box
                 BottomCommentInput(
                     commentText = uiState.commentText,
-                    onCommentChange = { viewModel.onCommentTextChange(it) },
-                    onSendClick = { viewModel.onSendComment() },
+                    userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
+                    onCommentChange = onCommentTextChange,
+                    onSendClick = onSendComment,
                     isSubmitting = uiState.isSubmittingComment,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
@@ -301,6 +354,7 @@ fun InteractionStats(
                         modifier = Modifier
                             .size(22.dp)
                             .clickable { onLikeClick() }
+                            .testTag(PostDetailTestTags.LIKE_BUTTON) // Thêm tag cho nút Like
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -364,7 +418,9 @@ fun CommentItem(
     onClickUser: (Int) -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(PostDetailTestTags.COMMENT_ITEM), // Thêm tag cho comment
         color = Color.White
     ) {
         Row(
@@ -425,6 +481,7 @@ fun CommentItem(
 @Composable
 fun BottomCommentInput(
     commentText: String,
+    userAvatarUrl: String, // Nhận URL từ tham số để dễ test
     onCommentChange: (String) -> Unit,
     onSendClick: () -> Unit,
     isSubmitting: Boolean,
@@ -443,7 +500,7 @@ fun BottomCommentInput(
         ) {
             // Avatar
             AsyncImage(
-                model = CurrentUser.currentUser!!.avatarUrl,
+                model = userAvatarUrl, // Dùng biến truyền vào
                 contentDescription = null,
                 modifier = Modifier
                     .size(36.dp)
@@ -457,7 +514,9 @@ fun BottomCommentInput(
             TextField(
                 value = commentText,
                 onValueChange = onCommentChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(PostDetailTestTags.COMMENT_INPUT), // Tag ô nhập
                 placeholder = {
                     Text(
                         text = "Viết bình luận...",
@@ -488,7 +547,8 @@ fun BottomCommentInput(
                         onSendClick()
                     }
                 },
-                enabled = commentText.isNotBlank() && !isSubmitting
+                enabled = commentText.isNotBlank() && !isSubmitting,
+                modifier = Modifier.testTag(PostDetailTestTags.SEND_BUTTON) // Tag nút gửi
             ) {
                 if (isSubmitting) {
                     CircularProgressIndicator(
