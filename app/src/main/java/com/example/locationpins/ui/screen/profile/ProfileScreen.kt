@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material3.*
@@ -38,6 +40,7 @@ import com.example.locationpins.ui.theme.LocationSocialTheme
 @Composable
 fun ProfileScreen(
     userId: Int,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel()
 ) {
@@ -57,13 +60,17 @@ fun ProfileScreen(
             when (profileMode) {
                 is ProfileMode.Self -> ProfileSelfView(
                     user,
-                    onInvitesClick = {},
-                    onEditClick = {})
+                    onInvitesClick = { viewModel.onShowContactRequests() },
+                    onEditClick = onEditClick
+                )
 
                 is ProfileMode.Friend -> ProfileFriendView(user)
                 ProfileMode.Stranger -> ProfileStrangerView(
                     user,
-                    onClick = { viewModel.onGetContactClick() })
+                    onGetContactClick = { viewModel.onGetContactClick() },
+                    onAcceptClick = { viewModel.onAcceptContact() },
+                    onRejectClick = { viewModel.onRejectContact() })
+
             }
             // Hiện form nhập yêu cầu liên hệ đối với người lạ
             if (uiState.showRequestContact) {
@@ -74,6 +81,19 @@ fun ProfileScreen(
                     onSend = { viewModel.onSendClick() },
                     onMessageChange = { viewModel.onMessageChange(it) },
                     message = viewModel.getMessage()
+                )
+            }
+
+            if (uiState.showContactRequests) {
+                ContactRequestsSheet(
+                    requests = uiState.pendingRequests, // Lấy list từ State
+                    onDismiss = { viewModel.onDismissContactRequests() },
+                    onAccept = {
+                        viewModel.onAcceptContact(it)
+                    },
+                    onReject = {
+                        viewModel.onRejectContact(it)
+                    }
                 )
             }
         }
@@ -147,13 +167,26 @@ fun ProfileFriendView(user: User?, modifier: Modifier = Modifier) {
 
 // Màn hình cho người lạ
 @Composable
-fun ProfileStrangerView(user: User?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ProfileStrangerView(
+    user: User?,
+    onGetContactClick: () -> Unit,
+    onAcceptClick: () -> Unit,
+    onRejectClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AvatarAndNameColumn(user)
-        GetContactButton(onClick = onClick)
+        when (user!!.status) {
+            "STRANGER" -> GetContactButton(onClick = onGetContactClick)
+            "SENT_REQUEST" -> GetSentContact()
+            "INCOMING_REQUEST" -> GetRespondRequestButton(
+                onAcceptClick = onAcceptClick,
+                onRejectClick = onRejectClick
+            )
+        }
         ParametersRow(user)
     }
 }
@@ -255,6 +288,85 @@ fun GetContactButton(
 }
 
 @Composable
+fun GetRespondRequestButton(
+    onAcceptClick: () -> Unit,
+    onRejectClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .padding(horizontal = 32.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+
+        Button(
+            onClick = onAcceptClick,
+            modifier = Modifier
+                .weight(1f)
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF1665D8),
+                contentColor = Color.White
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Đồng ý", fontWeight = FontWeight.SemiBold)
+        }
+
+
+        Button(
+            onClick = onRejectClick,
+            modifier = Modifier
+                .weight(1f)
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFF2F2F2),
+                contentColor = Color.Black
+            ),
+            elevation = null
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Từ chối", fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+fun GetSentContact(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(horizontal = 32.dp, vertical = 8.dp) // Padding ngoài giống hệt các nút khác
+            .fillMaxWidth()
+            .height(56.dp) // Chiều cao bằng nút Get Contact
+            .background(
+                color = Color(0xFFF2F2F2), // Màu nền xám nhạt
+                shape = RoundedCornerShape(16.dp) // Bo góc giống nút
+            ),
+        contentAlignment = Alignment.Center // Căn giữa chữ
+    ) {
+        Text(
+            text = "Đã gửi lời mời",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF828282) // Màu chữ xám đậm hơn nền một chút
+        )
+    }
+}
+
+@Composable
 fun ParametersRow(user: User?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
@@ -334,12 +446,14 @@ fun SelfActionRow(
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewProfileScreen() {
     LocationSocialTheme {
         ProfileScreen(
-            1
+            1,
+            onEditClick = {}
         )
     }
 }
@@ -391,7 +505,9 @@ fun PreviewStranger() {
                 website = "https://linhnguyen.dev",
                 quantityContact = 5
             ),
-            onClick = {}
+            onRejectClick = {},
+            onAcceptClick = {},
+            onGetContactClick = {}
         )
     }
 }

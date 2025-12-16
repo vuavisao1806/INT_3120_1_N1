@@ -29,6 +29,10 @@ class UserSchema(BaseModel):
     name: str | None = None
     phone_num: str | None = None
     website: str | None = None
+    total_pin: int = 0
+    total_reaction: int = 0
+    total_comment: int = 0,
+    total_contact: int = 0
 
 
 class LoginResponse(BaseModel):
@@ -67,9 +71,47 @@ def login(body: LoginRequest):
                 user=None
             )
 
-        # --- Trường hợp Thành công ---
         user.pop("password", None)
 
+        user_id = user["user_id"]
+
+        with connection.cursor() as cur:
+            # Query tính toán số liệu
+            query_stats = """
+                SELECT 
+                    -- Đếm số pin người dùng đã lưu
+                    (SELECT COUNT(*) FROM user_pins WHERE user_id = %s) AS total_pin,
+                    
+                    -- Đếm tổng số reaction trên tất cả bài viết của người dùng
+                    (
+                        SELECT COUNT(*)
+                        FROM reactions r
+                        JOIN posts p ON r.post_id = p.post_id
+                        WHERE p.user_id = %s
+                    ) AS total_reaction,
+                    
+                    -- Đếm tổng số comment trên tất cả bài viết của người dùng
+                    (
+                        SELECT COUNT(*)
+                        FROM comments c
+                        JOIN posts p ON c.post_id = p.post_id
+                        WHERE p.user_id = %s
+                    ) AS total_comment,
+                    (
+                       SELECT COUNT(*) 
+                        FROM request_contact 
+                        WHERE followed_user_id = %s 
+                        AND status = 'PENDING'
+                    ) as total_contact;
+            """
+
+            # Thực thi query, truyền user_id vào 3 vị trí %s
+            cur.execute(query_stats, (user_id, user_id, user_id, user_id))
+            stats = cur.fetchone()
+
+            # Nếu lấy được số liệu, cập nhật vào dictionary user
+            if stats:
+                user.update(stats)
         return LoginResponse(
             success=True,
             user=user
@@ -150,10 +192,13 @@ def register(body: RegisterRequest):
 
 
 class UpdateUserByUserIdRequest(BaseModel):
-    user_id: str
+    user_id: int
+    name: str
     quotes: str
+    location: str
     avatar_url: str
-    contact_info: str
+    email: str
+    website: str
 
 
 class UpdateUserByUserIdSuccess(BaseModel):
@@ -171,12 +216,16 @@ def update(body: UpdateUserByUserIdRequest):
                 """
                 UPDATE users
                 SET
-                    quotes = %s ,
-                    avatar_url = %s,
-                    contact_info = %s
+                name=%s,
+                quotes = %s ,
+                avatar_url = %s,
+                location=%s,
+                user_email=%s,
+                website=%s
                 WHERE user_id = %s
                 """,
-                (body.quotes, body.avatar_url, body.contact_info, body.user_id)
+                (body.name, body.quotes, body.avatar_url,
+                 body.location, body.email, body.website, body.user_id)
             )
 
         connection.commit()
@@ -187,7 +236,8 @@ def update(body: UpdateUserByUserIdRequest):
 
 
 class GetUserByUserIdRequest(BaseModel):
-    user_id: int
+    current_user_id: int
+    got_user_id: int
 
 
 class GetUserByUserIdInvalid(BaseModel):
@@ -198,19 +248,69 @@ class GetUserByUserIdInvalid(BaseModel):
 def get(body: GetUserByUserIdRequest):
     connection = get_database_connection()
     try:
+        # === BƯỚC 1: LẤY INFO USER ===
         with connection.cursor() as cur:
             cur.execute(
                 "SELECT * FROM users WHERE user_id = %s;",
-                (body.user_id,)
+                (body.got_user_id,) # <--- SỬA: Phải dùng got_user_id
             )
             user = cur.fetchone()
 
         if user is None:
             return GetUserByUserIdInvalid()
 
-        # Xóa password khi trả về
         user.pop("password", None)
 
+        # === BƯỚC 2: LẤY SỐ LIỆU (STATS) ===
+        with connection.cursor() as cur:
+            query_stats = """
+                SELECT 
+                    (SELECT COUNT(*) FROM user_pins WHERE user_id = %s) AS total_pin,
+                    
+                    (SELECT COUNT(*) FROM reactions r
+                     JOIN posts p ON r.post_id = p.post_id
+                     WHERE p.user_id = %s) AS total_reaction,
+                    
+                    (SELECT COUNT(*) FROM comments c
+                     JOIN posts p ON c.post_id = p.post_id
+                     WHERE p.user_id = %s) AS total_comment,
+                     
+                     -- Sửa: Nên đếm số bạn bè (Friends) thay vì đếm Request Pending
+                    (SELECT COUNT(*) FROM request_contact WHERE followed_user_id = %s AND status = 'PENDING') as total_contact
+            """
+            # <--- SỬA: Truyền body.got_user_id vào cả 4 vị trí
+            cur.execute(query_stats, (body.got_user_id, body.got_user_id, 
+                                      body.got_user_id, body.got_user_id))
+            quantity = cur.fetchone()
+            if quantity:
+                user.update(quantity)
+
+        # === BƯỚC 3: CHECK QUAN HỆ ===
+        with connection.cursor() as cur:
+            query_relation = """
+                SELECT 
+                    CASE 
+                        WHEN %s = %s THEN 'SELF'
+                        WHEN EXISTS (SELECT 1 FROM friends WHERE user_id = %s AND friend_id = %s) THEN 'FRIEND'
+                        WHEN EXISTS (SELECT 1 FROM request_contact WHERE following_user_id = %s AND followed_user_id = %s AND status = 'PENDING') THEN 'SENT_REQUEST'
+                        WHEN EXISTS (SELECT 1 FROM request_contact WHERE following_user_id = %s AND followed_user_id = %s AND status = 'PENDING') THEN 'INCOMING_REQUEST'
+                        ELSE 'STRANGER'
+                    END AS relationship_status;
+            """
+            # Tham số truyền vào phải đúng thứ tự logic CASE WHEN
+            params = (
+                body.current_user_id, body.got_user_id,      # SELF
+                body.current_user_id, body.got_user_id,      # FRIEND
+                body.current_user_id, body.got_user_id,      # SENT (Mình gửi)
+                body.got_user_id, body.current_user_id       # INCOMING (Họ gửi - lưu ý ngược lại)
+            )
+            
+            cur.execute(query_relation, params)
+            stats = cur.fetchone()
+
+            if stats:
+                user.update(stats) # Gộp kết quả 'relationship_status' vào user
+        
         return user
 
     finally:
@@ -246,35 +346,127 @@ def is_friend(body: CheckIsFriend):
     finally:
         connection.close()
 
-class AcceptFriendRequest(BaseModel):
-    own_id: int
-    other_id: int
+
+class showContactRequest(BaseModel):
+    user_id: int
 
 
-class IsSuccessAcceptFriendResponse(BaseModel):
-    is_success_accept: bool = True
-
-@router.post("/accept-friend")
-def accept(body: AcceptFriendRequest):
+@router.post("/contact_request")
+def showContactList(body: showContactRequest):
     connection = get_database_connection()
     try:
         with connection.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO friends (user_id, friend_id)
-                VALUES (%s, %s), (%s, %s)
-                """,
-                (body.own_id, body.other_id, body.other_id, body.own_id,)
+                    SELECT 
+                    u.user_id, 
+                    u.user_name, 
+                    u.avatar_url,
+                    r.status, 
+                    r.created_at 
+                FROM request_contact r
+                JOIN users u ON r.following_user_id = u.user_id
+                WHERE r.followed_user_id = %s
+                AND r.status = 'PENDING'
+                ORDER BY r.created_at DESC;
+                    """,
+                (body.user_id,)
             )
-        connection.commit()
-        return IsSuccessAcceptFriendResponse()
-    except Exception as e:
-        connection.rollback()
-        raise HTTPException(status_code=500, detail=f"The error occurs when handling accept friend request: {e}")
+            contacts = cur.fetchall()
+            return contacts
+
     finally:
         connection.close()
 
 
+class RespondContactRequest(BaseModel):
+    own_id: int
+    other_id: int
+    isAccept: bool
+
+
+class IsSuccessRespond(BaseModel):
+    is_success: bool = True
+
+
+@router.post("/respond_contact")
+def respondContact(body: RespondContactRequest):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            new_status = 'CANCELED'
+            if body.isAccept:
+                new_status = 'ACCEPTED'
+
+            cur.execute(
+                """
+                UPDATE request_contact
+                SET status = %s
+                WHERE followed_user_id = %s 
+                AND following_user_id = %s    
+                AND status = 'PENDING';
+                """,
+
+                (
+                    new_status,
+                    body.own_id,
+                    body.other_id
+                )
+            )
+
+            if cur.rowcount == 0:
+                return IsSuccessRespond(is_success=False)
+
+            if body.isAccept:
+                cur.execute(
+                    """
+                INSERT INTO friends (user_id, friend_id)
+                VALUES (%s, %s), (%s, %s)
+                """,
+                    (body.own_id, body.other_id, body.other_id, body.own_id,)
+                )
+            connection.commit()
+            return IsSuccessRespond(is_success=True)
+
+    except Exception as e:
+        connection.rollback()
+        print(f"Error: {e}")
+        return IsSuccessRespond(is_success=False)
+    finally:
+        connection.close()
+
+
+class SendContactRequestSchema(BaseModel):
+    following_user_id: int
+    followed_user_id: int
+    message: str = ""
+
+
+class SendContactResult(BaseModel):
+    is_success: bool
+
+
+@router.post("/send_contact")
+def sendContact(body: SendContactRequestSchema):
+    connection = get_database_connection()
+    try:
+        with connection.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO request_contact 
+                (following_user_id, followed_user_id, message, status, created_at)
+                VALUES (%s, %s, %s, 'PENDING', NOW())
+                RETURNING request_id;
+                    """,
+                (body.following_user_id, body.followed_user_id, body.message)
+            )
+            if cur.rowcount == 0:
+                return SendContactResult(is_success=False)
+        connection.commit()
+        return SendContactResult(is_success=True)
+    finally:
+        connection.close()
+      
 class UserFavoriteTagsRequest(BaseModel):
     user_id: int
     number_tags: int
