@@ -98,7 +98,8 @@ fun LocationSocialNavHost(
             val userId = backStackEntry.arguments?.getInt("userId") ?: -1
             ProfileScreen(
                 userId = userId,
-                onEditClick = { navController.navigate("edit_profile") }
+                onEditClick = { navController.navigate("edit_profile") },
+                onProfileClick = {userId -> navController.navigate("user/${userId}")}
             )
         }
 
