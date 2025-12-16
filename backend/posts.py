@@ -521,6 +521,48 @@ def get_preview_pins(body: GetPostByPinIdRequest):
             return pins
     finally:
         conn.close()
+        
+class GetPostByPinIdRequestFromMapScreen(BaseModel):
+    pin_id: int
+    limit: int = 20  # Số bài viết tối đa mỗi lần load
+    offset: int = 0  # Để phân trang
+
+@router.post("/pinId/mapScreen")
+def get_preview_pins(body: GetPostByPinIdRequestFromMapScreen):
+    conn = get_database_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    p.post_id,
+                    p.pin_id,
+                    p.title,
+                    p.body,
+                    p.image_url,
+                    p.user_id,
+                    p.status,
+                    p.created_at,
+                    p.reaction_count,
+                    p.comment_count,
+                    u.user_name,
+                    u.avatar_url
+                FROM posts p
+                JOIN users u ON u.user_id = p.user_id
+                WHERE p.pin_id IN (
+                    SELECT pin_id
+                    FROM user_pins
+                    WHERE pin_id = %s
+                )
+                ORDER BY p.created_at DESC
+                LIMIT %s OFFSET %s;
+                """,
+                (body.pin_id, body.limit, body.offset)
+            )
+            posts = cur.fetchall()
+            return posts
+    finally:
+        conn.close()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")

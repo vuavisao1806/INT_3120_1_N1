@@ -1,8 +1,10 @@
 package com.example.locationpins.data.repository
 
+import android.util.Log
 import com.example.locationpins.data.remote.RetrofitClient
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
+import com.example.locationpins.data.remote.dto.post.GetPostByPinIdRequestFromMapScreenRequest
 import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostRequest
@@ -57,6 +59,20 @@ class PostRepository {
         )
     }
 
+    suspend fun getPostByPinIdRequestFromMapScreen(
+        pinId: Int,
+        limit: Int = 20,
+        offset: Int = 0
+    ): List<PostDto> {
+        Log.d("MapDebuggg123", "Clicked pinId=$pinId")
+        return api.getPostByPinIdRequestFromMapScreen(
+            GetPostByPinIdRequestFromMapScreenRequest(
+                pinId = pinId,
+                limit = limit,
+                offset = offset
+            )
+        )
+    }
     suspend fun getPreviewPins(userId:Int): List<PinPreview>{
         return api.getPinPreview(GetPinPreviewRequest(userId))
     }

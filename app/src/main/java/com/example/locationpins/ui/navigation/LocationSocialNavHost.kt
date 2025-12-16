@@ -16,6 +16,7 @@ import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
+import com.example.locationpins.ui.screen.listpostfrommapscreen.ListPostFromMapScreen
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
@@ -45,9 +46,8 @@ fun LocationSocialNavHost(
             )
         }
 
-        composable(route = TopLevelDestination.MAP.route) {
-            MapScreen()
-        }
+
+
         composable(
             route = "post_detail/{postId}",
             arguments = listOf(
@@ -59,6 +59,34 @@ fun LocationSocialNavHost(
                 postId = postId,
                 onNavigateBack = { navController.popBackStack() },
                 onClickUserName = { userId -> navController.navigate("user/${userId}") }
+            )
+        }
+
+        // 1. MapScreen: Nơi gọi navigate
+        composable(route = TopLevelDestination.MAP.route) {
+            MapScreen(
+                onPinPress = { pinId ->
+                    navController.navigate("pin_feed/${pinId}")
+                }
+            )
+        }
+
+        // 2. PinFeed: Nơi khai báo và nhận dữ liệu (Giống hệt post_detail)
+        composable(
+            route = "pin_feed/{pinId}",
+            arguments = listOf(
+                navArgument("pinId") { type = NavType.IntType } // Khai báo nhận Int
+            )
+        ) { backStackEntry ->
+            // Lấy ID từ trên đường dẫn xuống
+            val pinId = backStackEntry.arguments?.getInt("pinId") ?: -1
+            // Gọi cái Wrapper đã viết ở Bước 1
+            ListPostFromMapScreen(
+                pinId = pinId,
+                onPostPress = { post ->
+                    // Vẫn cho phép bấm vào bài viết để xem chi tiết
+                    navController.navigate("post_detail/${post.postId}")
+                },
             )
         }
 
