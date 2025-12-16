@@ -42,6 +42,8 @@ import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
 import com.example.locationpins.data.remote.dto.user.RespondRequest
 import com.example.locationpins.data.remote.dto.user.RespondResponse
+import com.example.locationpins.data.remote.dto.user.SendContactRequest
+import com.example.locationpins.data.remote.dto.user.SendContactResult
 import com.example.locationpins.data.remote.dto.user.ShowContactRequest
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.UpdateProfileRequest
@@ -201,6 +203,11 @@ interface ApiService {
     suspend fun updateProfile(
         @Body request: UpdateProfileRequest
     ): UpdateProfileResponse
+
+    @POST("/users/send_contact")
+    suspend fun sendContact(
+        @Body request: SendContactRequest
+    ): SendContactResult
 }
 
 

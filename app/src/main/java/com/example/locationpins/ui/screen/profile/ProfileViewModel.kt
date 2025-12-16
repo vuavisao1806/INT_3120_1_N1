@@ -30,25 +30,20 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
         viewModelScope.launch {
 
             try {
-                val userDto = userRepository.getUser(userId)
+                val userDto = userRepository.getUser(CurrentUser.currentUser!!.userId, userId)
 
                 val currentUserId = CurrentUser.currentUser?.userId
                 Log.e("ProfileViewModel", "Current user id: $currentUserId")
                 if (userDto != null) {
                     val user = userDto.toUser()
-                    val mode = if (currentUserId != null) {
-                        when {
-                            userDto.userId == currentUserId -> ProfileMode.Self
-                            userRepository.isFriend(
-                                userDto.userId,
-                                currentUserId
-                            ) -> ProfileMode.Friend
 
-                            else -> ProfileMode.Stranger
-                        }
-                    } else {
-                        ProfileMode.Stranger
+                    val mode = when (user.status) {
+                        "SELF" -> ProfileMode.Self
+                        "FRIEND" -> ProfileMode.Friend
+
+                        else -> ProfileMode.Stranger
                     }
+
                     _uiState.update {
                         it.copy(
                             user = user,
@@ -117,12 +112,25 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
     }
 
     fun onSendClick() {
-        val msg = _uiState.value.requestMessage.trim()
-        if (msg.isBlank()) return
-        _uiState.update { current ->
-            current.copy(
-                showRequestContact = false,
-            )
+        viewModelScope.launch {
+            val msg = _uiState.value.requestMessage.trim()
+            val followedUserId = _uiState.value.user!!.userId
+            val response =
+                userRepository.sendContact(CurrentUser.currentUser!!.userId, followedUserId, msg)
+            _uiState.update { current ->
+                current.copy(
+                    showRequestContact = false,
+                )
+            }
+            if (response.isSuccess) {
+                val updatedUser = _uiState.value.user!!.copy(status = "SENT_REQUEST")
+                _uiState.update { current ->
+                    current.copy(
+                        user = updatedUser
+                    )
+                }
+            }
+
         }
     }
 
@@ -150,6 +158,27 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
     private val TAG = "ContactViewModel"
 
     // Hàm chấp nhận
+    fun onAcceptContact() {
+        viewModelScope.launch {
+            Log.d(TAG, "Đang chấp nhận yêu cầu kết bạn với userId: ${_uiState.value.user!!.userId}")
+
+            val response = userRepository.respondContact(
+                CurrentUser.currentUser!!.userId,
+                _uiState.value.user!!.userId,
+                true
+            )
+            if (response.isSuccess) {
+                val updateUser = _uiState.value.user!!.copy(status = "FRIEND")
+                _uiState.update {
+                    it.copy(
+                        profileMode = ProfileMode.Friend,
+                        user = updateUser
+                    )
+                }
+            }
+        }
+    }
+
     fun onAcceptContact(contact: ShowContactRespond) {
         viewModelScope.launch {
             try {
@@ -171,7 +200,14 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
                                 item
                             }
                         }
-                        currentState.copy(pendingRequests = updatedList)
+                        val currentCount = CurrentUser.currentUser?.quantityContact ?: 0
+                        val newCount = if (currentCount > 0) currentCount - 1 else 0
+
+                        val updatedUser = CurrentUser.currentUser?.copy(quantityContact = newCount)
+                        currentState.copy(
+                            pendingRequests = updatedList,
+                            user = updatedUser
+                        )
                     }
                 } else {
                     // Nếu thất bại trả về PENDING
@@ -194,6 +230,28 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
     }
 
     // Hàm từ chối
+    fun onRejectContact() {
+        viewModelScope.launch {
+            Log.d(TAG, "Đang từ chối yêu cầu kết bạn với userId: ${_uiState.value.user!!.userId}")
+
+            val response = userRepository.respondContact(
+                CurrentUser.currentUser!!.userId,
+
+                _uiState.value.user!!.userId,
+                false
+            )
+            if (response.isSuccess) {
+                val updateUser = _uiState.value.user!!.copy(status = "STRANGER")
+                _uiState.update {
+                    it.copy(
+                        profileMode = ProfileMode.Stranger,
+                        user = updateUser
+                    )
+                }
+            }
+        }
+    }
+
     fun onRejectContact(contact: ShowContactRespond) {
         viewModelScope.launch {
             try {
@@ -215,10 +273,17 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
                                 item
                             }
                         }
-                        currentState.copy(pendingRequests = updatedList)
+                        val currentCount = CurrentUser.currentUser?.quantityContact ?: 0
+                        val newCount = if (currentCount > 0) currentCount - 1 else 0
+
+                        val updatedUser = CurrentUser.currentUser?.copy(quantityContact = newCount)
+                        currentState.copy(
+                            pendingRequests = updatedList,
+                            user = updatedUser
+                        )
                     }
                 } else {
-                    // Nếu thất bại trả về PENDING
+
                     _uiState.update { currentState ->
                         val revertedList = currentState.pendingRequests.map { item ->
                             if (item.followingUserId == contact.followingUserId) item.copy(status = "PENDING")

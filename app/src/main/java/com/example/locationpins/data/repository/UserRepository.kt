@@ -9,11 +9,14 @@ import com.example.locationpins.data.remote.dto.user.RegisterRequest
 import com.example.locationpins.data.remote.dto.user.RegisterResponse
 import com.example.locationpins.data.remote.dto.user.RespondRequest
 import com.example.locationpins.data.remote.dto.user.RespondResponse
+import com.example.locationpins.data.remote.dto.user.SendContactRequest
+import com.example.locationpins.data.remote.dto.user.SendContactResult
 import com.example.locationpins.data.remote.dto.user.ShowContactRequest
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.UpdateProfileRequest
 import com.example.locationpins.data.remote.dto.user.UpdateProfileResponse
 import com.example.locationpins.data.remote.dto.user.UserDto
+import com.mapbox.base.common.logger.model.Message
 
 // This is extremely bad code but whatever
 const val DEFAULT_AVATAR_URL =
@@ -59,9 +62,9 @@ class UserRepository {
         ).isFriend
     }
 
-    suspend fun getUser(userId: Int): UserDto {
+    suspend fun getUser(currentUserId: Int, gotUserId: Int): UserDto {
         return api.getUser(
-            GetUserRequest(userId = userId)
+            GetUserRequest(currentUserId = currentUserId, gotUserId = gotUserId)
         )
     }
 
@@ -94,5 +97,13 @@ class UserRepository {
                 website
             )
         )
+    }
+
+    suspend fun sendContact(
+        followingUserId: Int,
+        followedUserId: Int,
+        message: String = ""
+    ): SendContactResult {
+        return api.sendContact(SendContactRequest(followingUserId, followedUserId, message))
     }
 }
