@@ -10,6 +10,9 @@ import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,44 +47,44 @@ class NewsFeedViewModel(
 
             val userId = CurrentUser.currentUser!!.userId
             try {
-//                val result = withContext(Dispatchers.IO) {
-                val postDtos =
-                    postRepository.getNewsfeed(
-                        userId = userId,
-                        limit = _uiState.value.pageSize,
-                        offset = 0
-                    )
-
-                val posts = postDtos.toPosts()
-
-                val postsWithTags: List<Post> = posts.map { post ->
-                    val tags = tagRepository
-                        .getTagsByPostId(post.postId)
-                        .map { t -> t.name }
-
-                    post.copy(tags = tags)
-                }
-
-                // Load trạng thái like cho tất cả posts
-                val likedMap = mutableMapOf<Int, Boolean>()
-                postsWithTags.forEach { post ->
-                    try {
-                        val isLiked = reactionRepository.checkReactPost(
-                            postId = post.postId,
-                            userId = userId
+                val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
+                    val postDtos =
+                        postRepository.getNewsfeed(
+                            userId = userId,
+                            limit = _uiState.value.pageSize,
+                            offset = 0
                         )
-                        likedMap[post.postId] = isLiked
-                    } catch (e: Exception) {
-                        Log.e(
-                            "NewsFeedViewModel",
-                            "Error checking reaction for post ${post.postId}: ${e.message}"
-                        )
-                        likedMap[post.postId] = false
+
+                    val posts = postDtos.toPosts()
+
+                    coroutineScope {
+                        val results = posts.map { post ->
+                            async(Dispatchers.IO) {
+                                val tags = tagRepository
+                                    .getTagsByPostId(post.postId)
+                                    .map { t -> t.name }
+
+                                val liked = runCatching {
+                                    reactionRepository.checkReactPost(
+                                        postId = post.postId,
+                                        userId = userId
+                                    )
+                                }.onFailure { error ->
+                                    Log.e(
+                                        "NewsFeedViewModel",
+                                        "Error checking reaction for post ${post.postId}: ${error.message}"
+                                    )
+                                }.getOrDefault(false)
+
+                                Pair(post.copy(tags = tags), liked)
+                            }
+                        }.awaitAll()
+                        val postsWithTags: List<Post> = results.map { it.first }
+                        val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
+
+                        Pair(postsWithTags, likedMap)
                     }
                 }
-//                    Pair(postsWithTags, likedMap)
-//                }
-//                val (postsWithTags, likedMap) = result
 
                 _uiState.update {
                     it.copy(
@@ -110,38 +113,44 @@ class NewsFeedViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
 
+            val userId = CurrentUser.currentUser!!.userId
             try {
-                val postDtos = postRepository.getNewsfeed(
-                    userId = CurrentUser.currentUser!!.userId,
-                    limit = _uiState.value.pageSize,
-                    offset = 0
-                )
-
-                val posts = postDtos.toPosts()
-
-                val postsWithTags: List<Post> = posts.map { post ->
-                    val tags = tagRepository
-                        .getTagsByPostId(post.postId)
-                        .map { t -> t.name }
-
-                    post.copy(tags = tags)
-                }
-
-                // Load trạng thái like cho tất cả posts
-                val likedMap = mutableMapOf<Int, Boolean>()
-                postsWithTags.forEach { post ->
-                    try {
-                        val isLiked = reactionRepository.checkReactPost(
-                            postId = post.postId,
-                            userId = CurrentUser.currentUser!!.userId
+                val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
+                    val postDtos =
+                        postRepository.getNewsfeed(
+                            userId = userId,
+                            limit = _uiState.value.pageSize,
+                            offset = 0
                         )
-                        likedMap[post.postId] = isLiked
-                    } catch (e: Exception) {
-                        Log.e(
-                            "NewsFeedViewModel",
-                            "Error checking reaction for post ${post.postId}: ${e.message}"
-                        )
-                        likedMap[post.postId] = false
+
+                    val posts = postDtos.toPosts()
+
+                    coroutineScope {
+                        val results = posts.map { post ->
+                            async(Dispatchers.IO) {
+                                val tags = tagRepository
+                                    .getTagsByPostId(post.postId)
+                                    .map { t -> t.name }
+
+                                val liked = runCatching {
+                                    reactionRepository.checkReactPost(
+                                        postId = post.postId,
+                                        userId = userId
+                                    )
+                                }.onFailure { error ->
+                                    Log.e(
+                                        "NewsFeedViewModel",
+                                        "Error checking reaction for post ${post.postId}: ${error.message}"
+                                    )
+                                }.getOrDefault(false)
+
+                                Pair(post.copy(tags = tags), liked)
+                            }
+                        }.awaitAll()
+                        val postsWithTags: List<Post> = results.map { it.first }
+                        val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
+
+                        Pair(postsWithTags, likedMap)
                     }
                 }
 
@@ -150,7 +159,7 @@ class NewsFeedViewModel(
                         posts = postsWithTags,
                         isRefreshing = false,
                         currentPage = 0,
-                        hasReachedEnd = posts.size < it.pageSize,
+                        hasReachedEnd = postsWithTags.size < it.pageSize,
                         likedPosts = likedMap
                     )
                 }
@@ -176,43 +185,57 @@ class NewsFeedViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingMore = true) }
 
+            val userId = CurrentUser.currentUser!!.userId
             try {
                 val nextPage = _uiState.value.currentPage + 1
                 val offset = nextPage * _uiState.value.pageSize
 
-                val newPostDtos = postRepository.getNewsfeed(
-                    userId = CurrentUser.currentUser!!.userId,
-                    limit = _uiState.value.pageSize,
-                    offset = offset
-                )
-
-                val newPosts = newPostDtos.toPosts()
-
-                // Load trạng thái like cho posts mới
-                val newLikedMap = _uiState.value.likedPosts.toMutableMap()
-                newPosts.forEach { post ->
-                    try {
-                        val isLiked = reactionRepository.checkReactPost(
-                            postId = post.postId,
-                            userId = CurrentUser.currentUser!!.userId
+                val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
+                    val postDtos =
+                        postRepository.getNewsfeed(
+                            userId = userId,
+                            limit = _uiState.value.pageSize,
+                            offset = offset
                         )
-                        newLikedMap[post.postId] = isLiked
-                    } catch (e: Exception) {
-                        Log.e(
-                            "NewsFeedViewModel",
-                            "Error checking reaction for post ${post.postId}: ${e.message}"
-                        )
-                        newLikedMap[post.postId] = false
+
+                    val posts = postDtos.toPosts()
+
+                    coroutineScope {
+                        val results = posts.map { post ->
+                            async(Dispatchers.IO) {
+                                val tags = tagRepository
+                                    .getTagsByPostId(post.postId)
+                                    .map { t -> t.name }
+
+                                val liked = runCatching {
+                                    reactionRepository.checkReactPost(
+                                        postId = post.postId,
+                                        userId = userId
+                                    )
+                                }.onFailure { error ->
+                                    Log.e(
+                                        "NewsFeedViewModel",
+                                        "Error checking reaction for post ${post.postId}: ${error.message}"
+                                    )
+                                }.getOrDefault(false)
+
+                                Pair(post.copy(tags = tags), liked)
+                            }
+                        }.awaitAll()
+                        val postsWithTags: List<Post> = results.map { it.first }
+                        val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
+
+                        Pair(postsWithTags, likedMap)
                     }
                 }
 
                 _uiState.update {
                     it.copy(
-                        posts = it.posts + newPosts,
+                        posts = it.posts + postsWithTags,
                         isLoadingMore = false,
                         currentPage = nextPage,
-                        hasReachedEnd = newPosts.size < it.pageSize,
-                        likedPosts = newLikedMap
+                        hasReachedEnd = postsWithTags.size < it.pageSize,
+                        likedPosts = likedMap
                     )
                 }
             } catch (e: Exception) {

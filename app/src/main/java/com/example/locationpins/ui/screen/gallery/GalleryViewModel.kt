@@ -7,6 +7,10 @@ import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,9 +47,6 @@ class GalleryViewModel(
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
-    // Mock user ID - trong thực tế lấy từ session/auth
-
-
     init {
         loadPinsWithPosts()
     }
@@ -59,9 +60,6 @@ class GalleryViewModel(
 
             try {
                 // 1. Lấy tất cả pins của user
-                // TODO: pin.quantity không khớp với số lượng bài viết khi bấm vào
-                // Lý do là vì query đang count cnt (số lượng post tại pin đó)
-                // Còn khi bấm vào thì nó là số lượng bài mình tự đăng + số bài theo tag mình yêu thích nhất
                 val pins = postRepository.getPreviewPins(CurrentUser.currentUser!!.userId)
 
                 // 2. Với mỗi pin, lấy tất cả posts và đếm
@@ -118,11 +116,16 @@ class GalleryViewModel(
 
                 val favoriteTagsName: Set<String> = favoriteTags.map { it.name }.toSet()
 
-                val favoritePosts = posts.filter { post ->
-                    val tags: List<String> = tagRepository
-                        .getTagsByPostId(post.postId)
-                        .map { it.name }
-                    tags.any { it in favoriteTagsName } || post.userId == CurrentUser.currentUser!!.userId
+                val tagsByPostId: Map<Int, List<String>> = coroutineScope {
+                    posts.map { post ->
+                        async(Dispatchers.IO) {
+                            post.postId to tagRepository.getTagsByPostId(post.postId).map { it.name }
+                        }
+                    }.awaitAll().toMap()
+                }
+
+                val favoritePosts = posts.sortedByDescending { post ->
+                    tagsByPostId[post.postId].orEmpty().any { it in favoriteTagsName }
                 }
                 Log.d("BEFORE: ", favoritePosts.size.toString())
 
