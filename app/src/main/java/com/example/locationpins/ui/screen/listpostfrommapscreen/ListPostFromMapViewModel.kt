@@ -1,4 +1,4 @@
-package com.example.locationpins.ui.screen.newfeed
+package com.example.locationpins.ui.screen.listpostfrommapscreen
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -9,26 +9,25 @@ import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * ViewModel cho màn hình News Feed
  */
-class NewsFeedViewModel(
+class ListPostFromMapViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
     private val reactionRepository: ReactionRepository = ReactionRepository(),
+    private val pinId: Int
 ) : ViewModel() {
 
     // uiState private
-    private val _uiState = MutableStateFlow(NewsFeedUiState())
-    val uiState: StateFlow<NewsFeedUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ListPostFromMapUiState())
+    val uiState: StateFlow<ListPostFromMapUiState> = _uiState.asStateFlow()
 
     init {
         // Load dữ liệu ban đầu
@@ -45,12 +44,11 @@ class NewsFeedViewModel(
             val userId = CurrentUser.currentUser!!.userId
             try {
 //                val result = withContext(Dispatchers.IO) {
-                val postDtos =
-                    postRepository.getNewsfeed(
-                        userId = userId,
-                        limit = _uiState.value.pageSize,
-                        offset = 0
-                    )
+                val postDtos = postRepository.getPostByPinIdRequestFromMapScreen(
+                    pinId = pinId, // Lấy từ constructor
+                    limit = _uiState.value.pageSize,
+                    offset = 0
+                )
 
                 val posts = postDtos.toPosts()
 
@@ -79,9 +77,7 @@ class NewsFeedViewModel(
                         likedMap[post.postId] = false
                     }
                 }
-//                    Pair(postsWithTags, likedMap)
-//                }
-//                val (postsWithTags, likedMap) = result
+                Log.d("MapDebuggg", postsWithTags.size.toString())
 
                 _uiState.update {
                     it.copy(
@@ -180,8 +176,8 @@ class NewsFeedViewModel(
                 val nextPage = _uiState.value.currentPage + 1
                 val offset = nextPage * _uiState.value.pageSize
 
-                val newPostDtos = postRepository.getNewsfeed(
-                    userId = CurrentUser.currentUser!!.userId,
+                val newPostDtos = postRepository.getPostByPinIdRequestFromMapScreen(
+                    pinId = pinId,
                     limit = _uiState.value.pageSize,
                     offset = offset
                 )

@@ -14,6 +14,7 @@ import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.example.locationpins.data.remote.dto.pins.RandomPinResponse
 import com.example.locationpins.data.remote.dto.post.GetNewsfeedRequest
 import com.example.locationpins.data.remote.dto.post.GetPinPreviewRequest
+import com.example.locationpins.data.remote.dto.post.GetPostByPinIdRequestFromMapScreenRequest
 import com.example.locationpins.data.remote.dto.post.GetPostByPinRequest
 import com.example.locationpins.data.remote.dto.post.GetPostRequest
 import com.example.locationpins.data.remote.dto.post.InsertPostRequest
@@ -189,6 +190,10 @@ interface ApiService {
         @Body body: FindRandomPinRequest
     ): RandomPinResponse
 
+    @POST("/posts/pinId/mapScreen")
+    suspend fun getPostByPinIdRequestFromMapScreen(
+        @Body body: GetPostByPinIdRequestFromMapScreenRequest
+    ): List<PostDto>
 
     @POST("/users/contact_request")
     suspend fun showContactRequest(
