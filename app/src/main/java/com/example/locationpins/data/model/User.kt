@@ -14,6 +14,7 @@ data class User(
     val userEmail: String,
     val phoneNumber: String?,
     val website: String?,
+    val status: String="SELF"
 )
 object UserMock {
     val sampleUser = listOf(

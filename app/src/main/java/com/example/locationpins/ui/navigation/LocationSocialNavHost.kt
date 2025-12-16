@@ -22,6 +22,7 @@ import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
+import com.example.locationpins.ui.screen.profile.EditProfileScreen
 import com.example.locationpins.ui.screen.profile.ProfileMode
 import com.example.locationpins.ui.screen.profile.ProfileScreen
 
@@ -124,7 +125,8 @@ fun LocationSocialNavHost(
             )) { backStackEntry ->
             val userId = backStackEntry.arguments?.getInt("userId") ?: -1
             ProfileScreen(
-                userId = userId
+                userId = userId,
+                onEditClick = { navController.navigate("edit_profile") }
             )
         }
 
@@ -137,6 +139,12 @@ fun LocationSocialNavHost(
                         }
                     }
                 })
+        }
+
+        composable(route = TopLevelDestination.EDIT_PROFILE.route) {
+            EditProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }
