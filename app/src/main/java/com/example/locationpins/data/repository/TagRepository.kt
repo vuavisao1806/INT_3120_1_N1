@@ -5,6 +5,7 @@ import com.example.locationpins.data.remote.dto.tag.AssignTagsRequest
 import com.example.locationpins.data.remote.dto.tag.GetPostTagsRequest
 import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
 import com.example.locationpins.data.remote.dto.tag.TagDto
+import com.example.locationpins.data.remote.dto.tag.UserFavoriteTagsRequest
 import okhttp3.MultipartBody
 
 class TagRepository {
@@ -29,6 +30,15 @@ class TagRepository {
                 postId = postId,
                 userId = userId,
                 tags = tags
+            )
+        )
+    }
+
+    suspend fun getFavoriteTagsByUserId(userId: Int, numberTags: Int = 3): Set<TagDto> {
+        return api.getFavoriteTagsByUserId(
+            body = UserFavoriteTagsRequest(
+                userId = userId,
+                numberTags = numberTags
             )
         )
     }

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.model.User
+import com.example.locationpins.data.remote.dto.tag.TagDto
 import com.example.locationpins.data.remote.dto.user.toUser
 import com.example.locationpins.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -155,5 +156,6 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
 
 object CurrentUser {
     var currentUser: User? = null
+    var favoriteTags: Set<TagDto>? = null // Currently, we can't log out, so favoriteTags will never be redefined to null after assigning
 }
 

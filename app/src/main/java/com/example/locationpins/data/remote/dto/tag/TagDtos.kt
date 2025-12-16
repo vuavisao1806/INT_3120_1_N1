@@ -34,3 +34,11 @@ data class AssignTagsRequest(
     @SerialName("tags")
     val tags: List<String>
 )
+
+@Serializable
+data class UserFavoriteTagsRequest(
+    @SerialName("user_id")
+    val userId: Int,
+    @SerialName("number_tags")
+    val numberTags: Int
+)

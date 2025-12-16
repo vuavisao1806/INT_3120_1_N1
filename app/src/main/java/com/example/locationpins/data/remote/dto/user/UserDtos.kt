@@ -3,6 +3,7 @@ package com.example.locationpins.data.remote.dto.user
 import com.example.locationpins.data.model.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.io.Serial
 
 @Serializable
 data class LoginRequest(
