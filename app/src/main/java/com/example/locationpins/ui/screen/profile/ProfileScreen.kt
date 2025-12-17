@@ -41,6 +41,7 @@ import com.example.locationpins.ui.theme.LocationSocialTheme
 fun ProfileScreen(
     userId: Int,
     onEditClick: () -> Unit,
+    onProfileClick:(Int)-> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel()
 ) {
@@ -93,7 +94,8 @@ fun ProfileScreen(
                     },
                     onReject = {
                         viewModel.onRejectContact(it)
-                    }
+                    },
+                    onShowProfileClick = onProfileClick
                 )
             }
         }
@@ -453,7 +455,8 @@ fun PreviewProfileScreen() {
     LocationSocialTheme {
         ProfileScreen(
             1,
-            onEditClick = {}
+            onEditClick = {},
+            onProfileClick = {}
         )
     }
 }

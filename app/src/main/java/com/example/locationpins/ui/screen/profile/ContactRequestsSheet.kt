@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.profile
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,12 +49,13 @@ import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 fun ContactRequestItem(
     request: ShowContactRespond,
     onAccept: () -> Unit,
-    onReject: () -> Unit
+    onReject: () -> Unit,
+    onShowProfileClick:()-> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp).clickable(){onShowProfileClick()},
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 1. Avatar
@@ -84,7 +86,7 @@ fun ContactRequestItem(
                 Text(
                     text = request.userName,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = request.timeCreate, // Ví dụ: "2 giờ trước"
@@ -153,7 +155,8 @@ fun ContactRequestsSheet(
     requests: List<ShowContactRespond>,
     onDismiss: () -> Unit,
     onAccept: (ShowContactRespond) -> Unit,
-    onReject: (ShowContactRespond) -> Unit
+    onReject: (ShowContactRespond) -> Unit,
+    onShowProfileClick: (Int) -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -186,7 +189,8 @@ fun ContactRequestsSheet(
                     ContactRequestItem(
                         request = user,
                         onAccept = { onAccept(user) },
-                        onReject = { onReject(user) }
+                        onReject = { onReject(user) },
+                        onShowProfileClick = {onShowProfileClick(user.followingUserId)}
                     )
                     Divider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
                 }
