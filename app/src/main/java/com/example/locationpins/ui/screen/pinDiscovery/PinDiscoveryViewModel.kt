@@ -56,7 +56,7 @@ class PinDiscoveryViewModel(
     private var compassSensor: CompassSensor? = null
 
     companion object {
-        private const val HINT_INTERVAL_MS = 5000L // 30 seconds
+        private const val HINT_INTERVAL_MS = 5000L // 5 seconds
         private const val DISTANCE_CHECK_INTERVAL_MS = 3000L // 3 seconds
         private const val SUCCESS_THRESHOLD_METERS = 10f
     }
