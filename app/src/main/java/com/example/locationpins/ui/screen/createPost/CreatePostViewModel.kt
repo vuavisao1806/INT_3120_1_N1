@@ -13,11 +13,14 @@ import com.example.locationpins.data.repository.SensitiveContentRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.map.LocationManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -65,42 +68,45 @@ class CreatePostViewModel(
                 // 1. Convert Uri -> Multipart
                 val imagePart = uriToMultipart(context, imageUri, "file")
 
-                // 1.1. Check sensitive image
-                try {
-                    val isSensitive = sensitiveContentRepository.isSensitiveImage(imagePart)
-
-                    if (isSensitive) {
-                        onError("Hình ảnh chứa nội dung nhạy cảm. Không thể tải lên.")
-                        return@launch
+                val (_isSensitiveImage, _isSensitiveTitle, _isSensitiveContent) = supervisorScope {
+                    val isSensitiveImage = async(Dispatchers.IO) {
+                        runCatching { sensitiveContentRepository.isSensitiveImage(imagePart) }
                     }
+                    val isSensitiveTitle = async(Dispatchers.IO) {
+                        runCatching { sensitiveContentRepository.isSensitiveText(text = title) }
+                    }
+                    val isSensitiveContent = async(Dispatchers.IO) {
+                        runCatching { sensitiveContentRepository.isSensitiveText(text = content) }
+                    }
+                    Triple(isSensitiveImage.await(), isSensitiveTitle.await(), isSensitiveContent.await())
+                }
 
-                } catch (e: Exception) {
-                    onError("Lỗi khi kiểm tra nội dung hình ảnh: ${e.message}")
+                // 1.1. Check sensitive image
+                val isSensitiveImage = _isSensitiveImage.getOrElse { error ->
+                    onError("Lỗi khi kiểm tra nội dung hình ảnh: ${error.message}")
+                    return@launch
+                }
+                if (isSensitiveImage) {
+                    onError("Hình ảnh chứa nội dung nhạy cảm. Không thể tải lên.")
                     return@launch
                 }
 
                 // 1.2. Check sensitive text
-                try {
-                    val isSensitive: Boolean = sensitiveContentRepository.isSensitiveText(text = title)
-                    if (isSensitive) {
-                        Log.d("SENSITIVE DETECTION", "The content on the title isn't allowed")
-                        onError("Tiêu đề bài viết chứa nội dung nhạy cảm. Không thể tải lên.")
-                        return@launch
-                    }
-                } catch (e: Exception) {
-                    onError("Lỗi khi kiểm tra nội dung tiêu đề bài viết: ${e.message}")
+                val isSensitiveTitle = _isSensitiveTitle.getOrElse { error ->
+                    onError("Lỗi khi kiểm tra nội dung tiêu đề bài viết: ${error.message}")
+                    return@launch
+                }
+                if (isSensitiveTitle) {
+                    onError("Tiêu đề bài viết chứa nội dung nhạy cảm. Không thể tải lên.")
                     return@launch
                 }
 
-                try {
-                    val isSensitive: Boolean = sensitiveContentRepository.isSensitiveText(text = content)
-                    if (isSensitive) {
-                        Log.d("SENSITIVE DETECTION", "The content isn't allowed")
-                        onError("Bài viết chứa nội dung nhạy cảm. Không thể tải lên.")
-                        return@launch
-                    }
-                } catch (e: Exception) {
-                    onError("Lỗi khi kiểm tra nội dung bài viết: ${e.message}")
+                val isSensitiveContent = _isSensitiveContent.getOrElse { error ->
+                    onError("Lỗi khi kiểm tra nội dung bài viết: ${error.message}")
+                    return@launch
+                }
+                if (isSensitiveContent) {
+                    onError("Bài viết chứa nội dung nhạy cảm. Không thể tải lên.")
                     return@launch
                 }
 
@@ -114,21 +120,32 @@ class CreatePostViewModel(
                 val imageUrl = uploadRes.url
 
                 // 3. Gọi /posts/insert
-                val insertRes = postRepository.insertPost(
-                    pinId = getSelfPinIdByCoordinates(),
-                    userId = userId,
-                    title = title,
-                    content = content,
-                    imageUrl = imageUrl,
-                    status = status
-                )
+                val (insertRes, labelRes) = supervisorScope {
+                    val insertRes = async {
+                        postRepository.insertPost(
+                            pinId = getSelfPinIdByCoordinates(),
+                            userId = userId,
+                            title = title,
+                            content = content,
+                            imageUrl = imageUrl,
+                            status = status
+                        )
+                    }
+
+                    val labelRes = async {
+                        runCatching { tagRepository.getGoogleLabelsTopK(imagePart, k = 3) }
+                    }
+
+                    Pair(insertRes.await(), labelRes.await())
+                }
+
                 if (!insertRes.insertPostSuccess) {
                     onError("Tạo bài đăng thất bại")
                     return@launch
                 }
 
-                val labelRes = tagRepository.getGoogleLabelsTopK(imagePart, k = 3)
-                val tags = labelRes.tags
+//                val labelRes = tagRepository.getGoogleLabelsTopK(imagePart, k = 3)
+                val tags = labelRes.getOrNull()?.tags.orEmpty()
 
                 // (4) gửi tags lên backend để insert vào 3 bảng
                 if (tags.isNotEmpty()) {
@@ -139,7 +156,7 @@ class CreatePostViewModel(
                     )
                 }
 
-                badgeRepository.checkAndAwardBadges(CurrentUser.currentUser!!.userId)
+//                badgeRepository.checkAndAwardBadges(CurrentUser.currentUser!!.userId)
 
                 onSuccess()
             } catch (e: Exception) {

@@ -121,6 +121,22 @@ fun ProfileScreen(
     }
 }
 
+
+// Màn hình cho bạn bè
+@Composable
+fun ProfileFriendView(
+    user: User?,
+    badges: List<Badge>,
+    modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AvatarAndNameColumn(user)
+        InfoUserRow(user)
+        ParametersRow(user)
+    }
+}
 // Màn hình cho bản thân
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -134,38 +150,6 @@ fun ProfileSelfView(
     modifier: Modifier = Modifier
 ) {
     val bgColor = MaterialTheme.colorScheme.background
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(bgColor)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(bgColor)
-                .padding(horizontal = 24.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Profile",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                SelfActionRow(
-                    pendingInvites = user?.quantityContact ?: 0,
-                    onInvitesClick = onInvitesClick,
-                    onEditClick = onEditClick
-                )
-            }
-        }
-    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),
@@ -180,6 +164,32 @@ fun ProfileSelfView(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(bgColor)
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Profile",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        SelfActionRow(
+                            pendingInvites = user?.quantityContact ?: 0,
+                            onInvitesClick = onInvitesClick,
+                            onEditClick = onEditClick
+                        )
+                    }
+                }
                 AvatarAndNameColumn(user, badges = badges)
                 InfoUserRow(user)
                 ParametersRow(user)
@@ -211,22 +221,6 @@ fun ProfileSelfView(
                 )
             }
         }
-    }
-}
-
-// Màn hình cho bạn bè
-@Composable
-fun ProfileFriendView(
-    user: User?,
-    badges: List<Badge>,
-    modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AvatarAndNameColumn(user)
-        InfoUserRow(user)
-        ParametersRow(user)
     }
 }
 
