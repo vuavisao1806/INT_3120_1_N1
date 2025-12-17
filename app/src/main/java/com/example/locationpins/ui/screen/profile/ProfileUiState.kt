@@ -1,6 +1,7 @@
 package com.example.locationpins.ui.screen.profile
 
 
+import com.example.locationpins.data.model.Badge
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 
@@ -16,5 +17,8 @@ data class ProfileUiState(
     val requestMessage: String = "",
     val isLoading: Boolean=false,
     val showContactRequests: Boolean = false, // Trạng thái hiển thị BottomSheet
-    val pendingRequests: List<ShowContactRespond> = emptyList() // Danh sách người gửi yêu cầu
+    val pendingRequests: List<ShowContactRespond> = emptyList(), // Danh sách người gửi yêu cầu
+    val badges: List<Badge> = emptyList(),
+    val showBadgeDialog: Boolean = false,
+    val selectedBadge: Badge? = null,
 )

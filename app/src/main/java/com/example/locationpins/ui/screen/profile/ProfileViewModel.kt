@@ -13,11 +13,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.locationpins.data.repository.BadgeRepository
+import com.example.locationpins.data.mapper.toBadges
+import com.example.locationpins.data.model.Badge
 
-class ProfileViewModel(private val userRepository: UserRepository = UserRepository()) :
+class ProfileViewModel(
+    private val userRepository: UserRepository = UserRepository(),
+    private val badgeRepository: BadgeRepository = BadgeRepository()) :
     ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+
+
+
 
     /** gọi khi màn hình nhận user + mode */
     fun setUser(userId: Int) {
@@ -43,14 +52,25 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
 
                         else -> ProfileMode.Stranger
                     }
+                    // Load badges
+                    val badges = try {
+                        badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
+
+                    } catch (e: Exception) {
+                        Log.e("ProfileViewModel", "Error loading badges: ${e.message}")
+                        emptyList()
+                    }
+
 
                     _uiState.update {
                         it.copy(
                             user = user,
                             profileMode = mode,
+                            badges = badges,
                             isLoading = false
                         )
                     }
+
 
                 } else {
                     // Trường hợp API trả về 200 OK nhưng không có user (userDto null)
@@ -298,5 +318,45 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
                 Log.e(TAG, "Lỗi khi từ chối kết bạn: ${e.message}", e)
             }
         }
+    }
+
+    // Kiểm tra và cấp huy hiệu mới
+    fun checkNewBadges() {
+
+        val userId = CurrentUser.currentUser?.userId ?: return
+        viewModelScope.launch {
+            try {
+                val result = badgeRepository.checkAndAwardBadges(userId)
+
+                // Nếu có huy hiệu mới, hiển thị dialog
+                if (result.newlyEarned.isNotEmpty()) {
+                    val firstBadge = result.newlyEarned.first()
+                    _uiState.update {
+                        it.copy(
+                            showBadgeDialog = true,
+                            selectedBadge = Badge(
+                                badgeId = firstBadge.badgeId,
+                                name = firstBadge.name,
+                                description = firstBadge.description,
+                                iconName = firstBadge.iconName,
+                                tier = firstBadge.tier,
+                                isEarned = true
+                            )
+                        )
+                    }
+
+                    // Reload badges sau khi cấp
+                    val badges = badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
+                    Log.d("Badge","Profile check"+ badges.size.toString())
+                    _uiState.update { it.copy(badges = badges) }
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Error checking badges: ${e.message}")
+            }
+        }
+    }
+
+    fun dismissBadgeDialog() {
+        _uiState.update { it.copy(showBadgeDialog = false, selectedBadge = null) }
     }
 }

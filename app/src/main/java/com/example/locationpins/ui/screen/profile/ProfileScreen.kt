@@ -1,5 +1,6 @@
 package com.example.locationpins.ui.screen.profile
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,8 @@ import coil.request.ImageRequest
 import com.example.locationpins.R
 import com.example.locationpins.data.model.User
 import com.example.locationpins.ui.theme.LocationSocialTheme
+import com.example.locationpins.ui.component.BadgeRow
+import com.example.locationpins.data.model.Badge
 
 @Composable
 fun ProfileScreen(
@@ -58,19 +61,23 @@ fun ProfileScreen(
             // Hiển thị loading khi đang gọi API
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
+            val badges = uiState.badges
             when (profileMode) {
                 is ProfileMode.Self -> ProfileSelfView(
                     user,
                     onInvitesClick = { viewModel.onShowContactRequests() },
-                    onEditClick = onEditClick
+                    onEditClick = onEditClick,
+                    badges = badges,
                 )
 
-                is ProfileMode.Friend -> ProfileFriendView(user)
+                is ProfileMode.Friend -> ProfileFriendView(user, badges = badges)
                 ProfileMode.Stranger -> ProfileStrangerView(
                     user,
                     onGetContactClick = { viewModel.onGetContactClick() },
                     onAcceptClick = { viewModel.onAcceptContact() },
-                    onRejectClick = { viewModel.onRejectContact() })
+                    onRejectClick = { viewModel.onRejectContact() },
+                    badges = badges)
+
 
             }
             // Hiện form nhập yêu cầu liên hệ đối với người lạ
@@ -109,6 +116,7 @@ fun ProfileSelfView(
     user: User?,
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit,
+    badges: List<Badge>,
     modifier: Modifier = Modifier
 ) {
     val bgColor = MaterialTheme.colorScheme.background
@@ -148,7 +156,7 @@ fun ProfileSelfView(
             }
         }
 
-        item { AvatarAndNameColumn(user) }
+        item { AvatarAndNameColumn(user, badges = badges) }
         item { InfoUserRow(user) }
         item { ParametersRow(user) }
     }
@@ -156,7 +164,10 @@ fun ProfileSelfView(
 
 // Màn hình cho bạn bè
 @Composable
-fun ProfileFriendView(user: User?, modifier: Modifier = Modifier) {
+fun ProfileFriendView(
+    user: User?,
+    badges: List<Badge>,
+    modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -174,6 +185,7 @@ fun ProfileStrangerView(
     onGetContactClick: () -> Unit,
     onAcceptClick: () -> Unit,
     onRejectClick: () -> Unit,
+    badges: List<Badge>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -194,7 +206,11 @@ fun ProfileStrangerView(
 }
 
 @Composable
-fun AvatarAndNameColumn(user: User?) {
+fun AvatarAndNameColumn(
+    user: User?,
+    badges: List<Badge> = emptyList(),
+    onBadgeClick: (Badge) -> Unit = {}
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -227,6 +243,14 @@ fun AvatarAndNameColumn(user: User?) {
             color = Color.Gray
         )
 
+        Log.d("Badge",badges.size.toString())
+        if (badges.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            BadgeRow(
+                badges = badges.take(5), // Hiển thị tối đa 5 badges
+                onBadgeClick = onBadgeClick
+            )
+        }
 
         user?.quote?.let {
             Spacer(Modifier.height(8.dp))
@@ -482,8 +506,9 @@ fun PreviewSelf() {
                 quantityContact = 5
             ),
             onInvitesClick = {},
-            onEditClick = {}
-
+            onEditClick = {},
+            badges = TODO(),
+            modifier = TODO(),
         )
     }
 }
@@ -510,7 +535,9 @@ fun PreviewStranger() {
             ),
             onRejectClick = {},
             onAcceptClick = {},
-            onGetContactClick = {}
+            onGetContactClick = {},
+            badges = TODO(),
+            modifier = TODO()
         )
     }
 }
