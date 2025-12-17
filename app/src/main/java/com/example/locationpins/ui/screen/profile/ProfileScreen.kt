@@ -79,7 +79,7 @@ fun ProfileScreen(
                     onEditClick = onEditClick,
                     badges = badges,
                     onPressPost = onPressPost,
-                    uiState = uiState
+                    currentPosts = uiState.currentPosts
                 )
 
                 is ProfileMode.Friend -> ProfileFriendView(user, badges = badges)
@@ -130,7 +130,7 @@ fun ProfileSelfView(
     onEditClick: () -> Unit,
     badges: List<Badge>,
     onPressPost: (PostSummary) -> Unit,
-    uiState: ProfileUiState,
+    currentPosts: List<PostSummary>,
     modifier: Modifier = Modifier
 ) {
     val bgColor = MaterialTheme.colorScheme.background
@@ -165,61 +165,53 @@ fun ProfileSelfView(
                 )
             }
         }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item(
+            span = { GridItemSpan(maxLineSpan) }
         ) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    AvatarAndNameColumn(user)
-                    InfoUserRow(user)
-                    ParametersRow(user)
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-
-
-            val posts = uiState.currentPosts
-            if (posts.isEmpty()) {
-
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Chưa có bài viết nào",
-                            color = Color.Gray
-                        )
-                    }
-                }
-            } else {
-
-                items(uiState.currentPosts) { post ->
-                    PostGridItemWithStats(
-                        post = post,
-                        onClick = { onPressPost(post) }
-                    )
-                }
+                AvatarAndNameColumn(user, badges = badges)
+                InfoUserRow(user)
+                ParametersRow(user)
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        item { AvatarAndNameColumn(user, badges = badges) }
-        item { InfoUserRow(user) }
-        item { ParametersRow(user) }
-    }
+        if (currentPosts.isEmpty()) {
 
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Chưa có bài viết nào",
+                        color = Color.Gray
+                    )
+                }
+            }
+        } else {
+
+            items(currentPosts) { post ->
+                PostGridItemWithStats(
+                    post = post,
+                    onClick = { onPressPost(post) }
+                )
+            }
+        }
+    }
 }
 
 // Màn hình cho bạn bè
@@ -607,10 +599,11 @@ fun PreviewSelf() {
                 website = "https://linhnguyen.dev",
                 quantityContact = 5
             ),
+            onPressPost = {},
             onInvitesClick = {},
             onEditClick = {},
             badges = TODO(),
-            modifier = TODO(),
+            currentPosts = emptyList()
         )
     }
 }
