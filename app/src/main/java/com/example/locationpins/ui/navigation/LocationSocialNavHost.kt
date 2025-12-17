@@ -127,8 +127,10 @@ fun LocationSocialNavHost(
             ProfileScreen(
                 userId = userId,
                 onEditClick = { navController.navigate("edit_profile") },
-                onProfileClick = {userId -> navController.navigate("user/${userId}")}
-            )
+                onProfileClick = {userId -> navController.navigate("user/${userId}")},
+                onPressPost = { post ->
+                    navController.navigate("post_detail/${post.postId}")
+                })
         }
 
         composable(route = TopLevelDestination.LOGIN.route) {

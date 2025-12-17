@@ -6,15 +6,26 @@ import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.toUser
+import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.data.repository.UserRepository
+import com.example.locationpins.ui.screen.gallery.PostSummary
 import com.example.locationpins.ui.screen.login.CurrentUser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ProfileViewModel(private val userRepository: UserRepository = UserRepository()) :
+class ProfileViewModel(
+    private val userRepository: UserRepository = UserRepository(),
+    private val postRepository: PostRepository = PostRepository(),
+    private val tagRepository: TagRepository = TagRepository()
+) :
     ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -40,7 +51,6 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
                     val mode = when (user.status) {
                         "SELF" -> ProfileMode.Self
                         "FRIEND" -> ProfileMode.Friend
-
                         else -> ProfileMode.Stranger
                     }
 
@@ -299,4 +309,63 @@ class ProfileViewModel(private val userRepository: UserRepository = UserReposito
             }
         }
     }
+
+    fun loadPostsForSelf(userId: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            try {
+                val posts = postRepository.getPostByUser(userId)
+                Log.d("BEFORE: ", posts.size.toString())
+
+                if (CurrentUser.favoriteTags == null) {
+                    CurrentUser.favoriteTags = tagRepository.getFavoriteTagsByUserId(
+                        userId = CurrentUser.currentUser!!.userId,
+                        numberTags = 3
+                    )
+                }
+                val favoriteTags = CurrentUser.favoriteTags.orEmpty()
+
+                val favoriteTagsName: Set<String> = favoriteTags.map { it.name }.toSet()
+
+                val tagsByPostId: Map<Int, List<String>> = coroutineScope {
+                    posts.map { post ->
+                        async(Dispatchers.IO) {
+                            post.postId to tagRepository.getTagsByPostId(post.postId)
+                                .map { it.name }
+                        }
+                    }.awaitAll().toMap()
+                }
+
+                val favoritePosts = posts.sortedByDescending { post ->
+                    tagsByPostId[post.postId].orEmpty().any { it in favoriteTagsName }
+                }
+                Log.d("BEFORE: ", favoritePosts.size.toString())
+
+                val postSummaries = favoritePosts.map { post ->
+                    PostSummary(
+                        postId = post.postId,
+                        imageUrl = post.imageUrl,
+                        reactionCount = post.reactionCount,
+                        commentCount = post.commentCount
+                    )
+                }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        currentPosts = postSummaries
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Không thể tải bài đăng: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
 }

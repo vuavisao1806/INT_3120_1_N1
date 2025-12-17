@@ -171,3 +171,8 @@ data class SendContactRequest(
 data class SendContactResult(
     @SerialName("is_success") val isSuccess: Boolean = true
 )
+
+@Serializable
+data class GetPostByUserRequest(
+    @SerialName("user_id") val userId:Int
+)
