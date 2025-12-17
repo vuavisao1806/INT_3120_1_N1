@@ -34,7 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -58,13 +60,12 @@ fun ContactRequestItem(
             .padding(horizontal = 16.dp, vertical = 12.dp).clickable(){onShowProfileClick()},
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Avatar
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(request.avatarUrl)
                 .crossfade(true)
                 .build(),
-            error = painterResource(R.drawable.ic_launcher_background), // Thay ảnh lỗi của bạn
+            error = painterResource(R.drawable.ic_launcher_background),
             placeholder = painterResource(R.drawable.ic_launcher_background),
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -76,9 +77,8 @@ fun ContactRequestItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 2. Thông tin và Nút bấm
+
         Column(modifier = Modifier.weight(1f)) {
-            // Tên và Thời gian
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -89,16 +89,25 @@ fun ContactRequestItem(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = request.timeCreate, // Ví dụ: "2 giờ trước"
+                    text = request.timeCreate,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     fontSize = 11.sp
                 )
             }
-
+            if (!request.message.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "“${request.message}”",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontStyle = FontStyle.Italic,
+                    color = Color(0xFF444444),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Spacer(modifier = Modifier.height(6.dp))
 
-            // 3. Logic hiển thị Nút hoặc Text trạng thái
             when (request.status) {
                 "PENDING" -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -131,7 +140,7 @@ fun ContactRequestItem(
                     Text(
                         text = "Đã chấp nhận",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF1665D8), // Màu xanh
+                        color = Color(0xFF1665D8),
                         fontWeight = FontWeight.Medium
                     )
                 }

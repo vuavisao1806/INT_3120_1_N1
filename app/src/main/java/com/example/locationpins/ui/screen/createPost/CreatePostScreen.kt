@@ -42,7 +42,7 @@ enum class CreatePostStep {
 @Composable
 fun CreatePostScreen(
     initialImageUri: Uri?,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     user: User
 ) {
@@ -77,7 +77,7 @@ fun CreatePostScreen(
                             navigationIcon = {
                                 IconButton(
                                     enabled = !isPosting,
-                                    onClick = onNavigateBack
+                                    onClick = {onNavigateBack(false)}
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
@@ -104,7 +104,7 @@ fun CreatePostScreen(
                                                     "Đăng bài thành công",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
-                                                onNavigateBack()
+                                                onNavigateBack(true)
                                             },
                                             onError = { msg ->
                                                 isPosting = false

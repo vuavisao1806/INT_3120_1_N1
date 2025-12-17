@@ -664,3 +664,26 @@ async def upload_image(file: UploadFile = File(...)):
         "url": public_url,   # URL duy nhất bạn cần
         "path": file_path,   # nếu muốn lưu DB sau này
     }
+
+class GetPostByUserRequest(BaseModel):
+    user_id:int
+
+
+@router.post("/postByUser")
+def getPostByUser(body: GetPostByUserRequest):
+    conn = get_database_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT
+                    *
+                FROM posts p
+                WHERE p.user_id = %s;
+                """,
+                (body.user_id,)
+            )
+            posts = cur.fetchall()
+            return posts
+    finally:
+        conn.close()

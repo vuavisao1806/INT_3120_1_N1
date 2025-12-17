@@ -4,6 +4,7 @@ package com.example.locationpins.ui.screen.profile
 import com.example.locationpins.data.model.Badge
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
+import com.example.locationpins.ui.screen.gallery.PostSummary
 
 sealed interface ProfileMode {
     data object Self : ProfileMode
@@ -21,4 +22,6 @@ data class ProfileUiState(
     val badges: List<Badge> = emptyList(),
     val showBadgeDialog: Boolean = false,
     val selectedBadge: Badge? = null,
+    val currentPosts:List<PostSummary> = emptyList(),
+    val error: String?=null
 )
