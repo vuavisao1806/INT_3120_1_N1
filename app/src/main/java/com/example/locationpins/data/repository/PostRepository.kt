@@ -49,13 +49,15 @@ class PostRepository {
     suspend fun getNewsfeed(
         userId: Int,
         limit: Int = 20,
-        offset: Int = 0
+        offset: Int = 0,
+        tagName: String? = null
     ): List<PostDto> {
         return api.getNewsfeed(
             GetNewsfeedRequest(
                 userId = userId,
                 limit = limit,
-                offset = offset
+                offset = offset,
+                tagName = tagName,
             )
         )
     }

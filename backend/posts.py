@@ -436,44 +436,79 @@ class GetNewsfeedRequest(BaseModel):
     user_id: int
     limit: int = 20  # Số bài viết tối đa mỗi lần load
     offset: int = 0  # Để phân trang
+    tag_name: str | None = None  # Tên tag để lọc (optional)
 
 @router.post("/newsfeed")
 def get_newsfeed(body: GetNewsfeedRequest):
     conn = get_database_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(
-                """
-                SELECT
-                    p.post_id,
-                    p.pin_id,
-                    p.title,
-                    p.body,
-                    p.image_url,
-                    p.user_id,
-                    p.status,
-                    p.created_at,
-                    p.reaction_count,
-                    p.comment_count,
-                    u.user_name,
-                    u.avatar_url
-                FROM posts p
-                JOIN users u ON u.user_id = p.user_id
-                WHERE p.pin_id IN (
-                    SELECT pin_id
-                    FROM user_pins
-                    WHERE user_id = %s
+            # Nếu có tag_name, lọc theo tag
+            if body.tag_name:
+                cur.execute(
+                    """
+                    SELECT
+                        p.post_id,
+                        p.pin_id,
+                        p.title,
+                        p.body,
+                        p.image_url,
+                        p.user_id,
+                        p.status,
+                        p.created_at,
+                        p.reaction_count,
+                        p.comment_count,
+                        u.user_name,
+                        u.avatar_url
+                    FROM posts p
+                    JOIN users u ON u.user_id = p.user_id
+                    JOIN post_tags pt ON p.post_id = pt.post_id
+                    JOIN tags t ON pt.tag_id = t.tag_id
+                    WHERE p.pin_id IN (
+                        SELECT pin_id
+                        FROM user_pins
+                        WHERE user_id = %s
+                    )
+                    AND t.name = %s
+                    ORDER BY p.created_at DESC
+                    LIMIT %s OFFSET %s;
+                    """,
+                    (body.user_id, body.tag_name, body.limit, body.offset)
                 )
-                ORDER BY p.created_at DESC
-                LIMIT %s OFFSET %s;
-                """,
-                (body.user_id, body.limit, body.offset)
-            )
+            else:
+                # Không lọc tag, lấy tất cả
+                cur.execute(
+                    """
+                    SELECT
+                        p.post_id,
+                        p.pin_id,
+                        p.title,
+                        p.body,
+                        p.image_url,
+                        p.user_id,
+                        p.status,
+                        p.created_at,
+                        p.reaction_count,
+                        p.comment_count,
+                        u.user_name,
+                        u.avatar_url
+                    FROM posts p
+                    JOIN users u ON u.user_id = p.user_id
+                    WHERE p.pin_id IN (
+                        SELECT pin_id
+                        FROM user_pins
+                        WHERE user_id = %s
+                    )
+                    ORDER BY p.created_at DESC
+                    LIMIT %s OFFSET %s;
+                    """,
+                    (body.user_id, body.limit, body.offset)
+                )
+
             posts = cur.fetchall()
             return posts
     finally:
         conn.close()
-
 class GetPreviewPinsRequest(BaseModel):
     user_id: int
 

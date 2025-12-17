@@ -50,7 +50,10 @@ data class GetNewsfeedRequest(
     val limit: Int = 20,
 
     @SerialName("offset")
-    val offset: Int = 0
+    val offset: Int = 0,
+
+    @SerialName("tag_name")
+    val tagName: String? = null
 )
 
 @Serializable

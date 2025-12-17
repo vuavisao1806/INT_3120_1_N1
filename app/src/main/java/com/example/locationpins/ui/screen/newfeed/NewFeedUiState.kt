@@ -34,5 +34,7 @@ data class NewsFeedUiState(
     val likedPosts: Map<Int, Boolean> = emptyMap(),
 
     // Set các postId đang được xử lý react (để disable button)
-    val reactingPostIds: Set<Int> = emptySet()
+    val reactingPostIds: Set<Int> = emptySet(),
+
+    val filterTag: String? = null
 )

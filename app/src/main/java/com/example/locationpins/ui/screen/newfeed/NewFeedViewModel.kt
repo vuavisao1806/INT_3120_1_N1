@@ -20,40 +20,35 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * ViewModel cho màn hình News Feed
- */
 class NewsFeedViewModel(
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository(),
     private val reactionRepository: ReactionRepository = ReactionRepository(),
 ) : ViewModel() {
 
-    // uiState private
     private val _uiState = MutableStateFlow(NewsFeedUiState())
     val uiState: StateFlow<NewsFeedUiState> = _uiState.asStateFlow()
 
     init {
-        // Load dữ liệu ban đầu
         loadInitialPosts()
     }
 
     /**
-     * Load posts lần đầu tiên
+     * Load posts lần đầu tiên (có thể có hoặc không có tag filter)
      */
-    fun loadInitialPosts() {
+    fun loadInitialPosts(tagName: String? = null) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, error = null, filterTag = tagName) }
 
             val userId = CurrentUser.currentUser!!.userId
             try {
                 val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
-                    val postDtos =
-                        postRepository.getNewsfeed(
-                            userId = userId,
-                            limit = _uiState.value.pageSize,
-                            offset = 0
-                        )
+                    val postDtos = postRepository.getNewsfeed(
+                        userId = userId,
+                        limit = _uiState.value.pageSize,
+                        offset = 0,
+                        tagName = tagName  // Truyền tag filter
+                    )
 
                     val posts = postDtos.toPosts()
 
@@ -79,6 +74,7 @@ class NewsFeedViewModel(
                                 Pair(post.copy(tags = tags), liked)
                             }
                         }.awaitAll()
+
                         val postsWithTags: List<Post> = results.map { it.first }
                         val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
 
@@ -92,7 +88,8 @@ class NewsFeedViewModel(
                         isLoading = false,
                         currentPage = 0,
                         hasReachedEnd = postsWithTags.size < it.pageSize,
-                        likedPosts = likedMap
+                        likedPosts = likedMap,
+                        filterTag = tagName
                     )
                 }
             } catch (e: Exception) {
@@ -107,21 +104,37 @@ class NewsFeedViewModel(
     }
 
     /**
-     * Refresh toàn bộ feed
+     * Set tag filter và reload
+     */
+    fun filterByTag(tagName: String) {
+        loadInitialPosts(tagName)
+    }
+
+    /**
+     * Xóa filter tag và về newfeed bình thường
+     */
+    fun clearTagFilter() {
+        loadInitialPosts(null)
+    }
+
+    /**
+     * Refresh toàn bộ feed (giữ nguyên filter tag nếu có)
      */
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
 
             val userId = CurrentUser.currentUser!!.userId
+            val currentTag = _uiState.value.filterTag  // Giữ tag hiện tại
+
             try {
                 val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
-                    val postDtos =
-                        postRepository.getNewsfeed(
-                            userId = userId,
-                            limit = _uiState.value.pageSize,
-                            offset = 0
-                        )
+                    val postDtos = postRepository.getNewsfeed(
+                        userId = userId,
+                        limit = _uiState.value.pageSize,
+                        offset = 0,
+                        tagName = currentTag  // Giữ tag filter
+                    )
 
                     val posts = postDtos.toPosts()
 
@@ -147,6 +160,7 @@ class NewsFeedViewModel(
                                 Pair(post.copy(tags = tags), liked)
                             }
                         }.awaitAll()
+
                         val postsWithTags: List<Post> = results.map { it.first }
                         val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
 
@@ -175,7 +189,7 @@ class NewsFeedViewModel(
     }
 
     /**
-     * Load thêm posts khi scroll đến cuối
+     * Load thêm posts khi scroll đến cuối (giữ tag filter)
      */
     fun loadMorePosts() {
         if (_uiState.value.isLoadingMore || _uiState.value.hasReachedEnd) {
@@ -186,17 +200,19 @@ class NewsFeedViewModel(
             _uiState.update { it.copy(isLoadingMore = true) }
 
             val userId = CurrentUser.currentUser!!.userId
+            val currentTag = _uiState.value.filterTag  // Giữ tag filter
+
             try {
                 val nextPage = _uiState.value.currentPage + 1
                 val offset = nextPage * _uiState.value.pageSize
 
                 val (postsWithTags, likedMap) = withContext(Dispatchers.IO) {
-                    val postDtos =
-                        postRepository.getNewsfeed(
-                            userId = userId,
-                            limit = _uiState.value.pageSize,
-                            offset = offset
-                        )
+                    val postDtos = postRepository.getNewsfeed(
+                        userId = userId,
+                        limit = _uiState.value.pageSize,
+                        offset = offset,
+                        tagName = currentTag  // Giữ tag filter
+                    )
 
                     val posts = postDtos.toPosts()
 
@@ -222,6 +238,7 @@ class NewsFeedViewModel(
                                 Pair(post.copy(tags = tags), liked)
                             }
                         }.awaitAll()
+
                         val postsWithTags: List<Post> = results.map { it.first }
                         val likedMap = results.associate { it.first.postId to it.second }.toMutableMap()
 
@@ -249,28 +266,20 @@ class NewsFeedViewModel(
         }
     }
 
-    suspend fun checkPostReact(postId: Int): Boolean {
-        return reactionRepository.checkReactPost(
-            postId = postId,
-            userId = CurrentUser.currentUser!!.userId
-        )
-    }
-
     /**
      * React/Unreact một post
      */
     fun toggleReact(postId: Int) {
         val currentState = _uiState.value
 
-        // Kiểm tra nếu post đang được xử lý thì không làm gì
         if (currentState.reactingPostIds.contains(postId)) {
             return
         }
 
         val isCurrentlyLiked = currentState.likedPosts[postId] ?: false
         val userId = CurrentUser.currentUser!!.userId
+
         viewModelScope.launch {
-            // Thêm postId vào set đang xử lý
             _uiState.update { state ->
                 state.copy(
                     reactingPostIds = state.reactingPostIds + postId
@@ -278,7 +287,6 @@ class NewsFeedViewModel(
             }
 
             try {
-                // Optimistic update: Cập nhật UI trước
                 _uiState.update { state ->
                     val updatedPosts = state.posts.map { post ->
                         if (post.postId == postId) {
@@ -299,7 +307,6 @@ class NewsFeedViewModel(
                     )
                 }
 
-                // Gọi API
                 if (isCurrentlyLiked) {
                     reactionRepository.cancelReactPost(
                         postId = postId,
@@ -315,12 +322,11 @@ class NewsFeedViewModel(
             } catch (e: Exception) {
                 Log.e("NewsFeedViewModel", "Error toggling reaction: ${e.message}")
 
-                // Revert lại nếu có lỗi
                 _uiState.update { state ->
                     val revertedPosts = state.posts.map { post ->
                         if (post.postId == postId) {
                             val currentCount = post.reactCount as Int
-                            val offset = if (isCurrentlyLiked) 1 else -1 // Đảo ngược offset
+                            val offset = if (isCurrentlyLiked) 1 else -1
                             post.copy(reactCount = currentCount + offset)
                         } else {
                             post
@@ -337,7 +343,6 @@ class NewsFeedViewModel(
                     )
                 }
             } finally {
-                // Xóa postId khỏi set đang xử lý
                 _uiState.update { state ->
                     state.copy(
                         reactingPostIds = state.reactingPostIds - postId
