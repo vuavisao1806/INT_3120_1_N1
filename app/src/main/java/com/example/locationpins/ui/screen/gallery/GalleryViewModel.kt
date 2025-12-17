@@ -32,7 +32,8 @@ data class PostSummary(
 )
 
 data class GalleryUiState(
-    val isLoading: Boolean = true,
+    val isLoadingPin: Boolean = true,
+    val isLoadingPost: Boolean = true,
     val error: String? = null,
     val pinSummaries: List<PinSummary> = emptyList(),
     val currentPinPosts: List<PostSummary> = emptyList()
@@ -56,7 +57,7 @@ class GalleryViewModel(
      */
     fun loadPinsWithPosts() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoadingPin = true, error = null) }
 
             try {
                 // 1. Lấy tất cả pins của user
@@ -79,7 +80,7 @@ class GalleryViewModel(
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isLoadingPin = false,
                         pinSummaries = pinSummaries
                     )
                 }
@@ -87,7 +88,7 @@ class GalleryViewModel(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isLoadingPin = false,
                         error = "Không thể tải gallery: ${e.message}"
                     )
                 }
@@ -100,7 +101,7 @@ class GalleryViewModel(
      */
     fun loadPostsForPin(pinId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoadingPost = true, error = null) }
 
             try {
                 val posts = postRepository.getPostByPin(pinId)
@@ -139,7 +140,7 @@ class GalleryViewModel(
                 }
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isLoadingPost = false,
                         currentPinPosts = postSummaries
                     )
                 }
@@ -147,7 +148,7 @@ class GalleryViewModel(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        isLoadingPost = false,
                         error = "Không thể tải bài đăng: ${e.message}"
                     )
                 }

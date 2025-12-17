@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import com.example.locationpins.R
 import com.example.locationpins.data.model.Post
 import com.example.locationpins.data.remote.dto.pins.PinDto
@@ -75,6 +76,7 @@ fun MapScreen(
     onPinPress: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val navController = rememberNavController()
     val viewModel: MapViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -86,7 +88,6 @@ fun MapScreen(
         LocationManager.init(context)
     }
 
-
     // 2) Xin quyền + nếu granted => báo cho LocationManager bắt đầu update
     RequestLocationPermission(
         onGranted = { LocationManager.onPermissionGranted() },
@@ -95,12 +96,20 @@ fun MapScreen(
 
     val mapViewportState = rememberMapViewportState {
         setCameraOptions {
-            zoom(14.0)
+            zoom(1.0)
             center(Point.fromLngLat(105.0, 21.0))
             pitch(0.0)
         }
-    }
 
+    }
+    LaunchedEffect(Unit) {
+        mapViewportState.transitionToFollowPuckState(
+            followPuckViewportStateOptions = FollowPuckViewportStateOptions.Builder()
+                .zoom(14.0)
+                .pitch(0.0)
+                .build()
+        )
+    }
     // Khi ViewModel set cameraCoordinate (search chọn địa điểm), UI move camera
     LaunchedEffect(uiState.cameraCoordinate) {
         val coord = uiState.cameraCoordinate ?: return@LaunchedEffect
@@ -146,11 +155,13 @@ fun MapScreen(
                 mapboxMap.loadStyleUri(uiState.currentStyleUri) { style ->
 
                     // --- B2: Thêm lại Vùng cho phép (Allowed Area) ---
-                    val allowedCenter: Point? = uiState.userLocation
+                    val allowedCenter = LocationManager.location.value
                     val allowedRadiusMeters = 100000.0
 
                     if (allowedCenter != null) {
-                        val center = allowedCenter
+                        val lon = allowedCenter.longitude
+                        val lat = allowedCenter.latitude
+                        val center = Point.fromLngLat(lon, lat)
                         val sourceId = "allowed-area-source"
                         val layerId = "allowed-area-layer"
 
