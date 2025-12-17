@@ -13,6 +13,7 @@ import com.example.locationpins.data.remote.dto.post.PinPreview
 import com.example.locationpins.data.remote.dto.post.PostByPinResponse
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
+import com.example.locationpins.data.remote.dto.user.GetPostByUserRequest
 import okhttp3.MultipartBody
 
 
@@ -73,10 +74,16 @@ class PostRepository {
             )
         )
     }
-    suspend fun getPreviewPins(userId:Int): List<PinPreview>{
+
+    suspend fun getPreviewPins(userId: Int): List<PinPreview> {
         return api.getPinPreview(GetPinPreviewRequest(userId))
     }
+
     suspend fun getPostByPin(pinId: Int): List<PostByPinResponse> {
         return api.getPostByPin(GetPostByPinRequest(pinId))
+    }
+
+    suspend fun getPostByUser(userId: Int): List<PostByPinResponse> {
+        return api.getPostByUser(GetPostByUserRequest(userId))
     }
 }

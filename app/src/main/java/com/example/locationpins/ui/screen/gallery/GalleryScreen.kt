@@ -236,7 +236,7 @@ private fun PinGridItem(
 }
 
 @Composable
-private fun PostListView(
+fun PostListView(
     posts: List<PostSummary>,
     pinSummary: PinSummary?,
     onPostPress: (PostSummary) -> Unit,
@@ -297,7 +297,7 @@ private fun PostListView(
 }
 
 @Composable
-private fun PostGridItemWithStats(
+fun PostGridItemWithStats(
     post: PostSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
