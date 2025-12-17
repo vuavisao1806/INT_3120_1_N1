@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.model.UserMock
@@ -53,6 +55,11 @@ fun CreatePostScreen(
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var isPosting by remember { mutableStateOf(false) }
+
+    val shape = RoundedCornerShape(24.dp)
+    val fallbackBrush = Brush.linearGradient(
+        colors = listOf(Color(0xFF667EEA), Color(0xFF764BA2))
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         when (step) {
@@ -146,16 +153,27 @@ fun CreatePostScreen(
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .background(
-                                        brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                                            colors = listOf(
-                                                Color(0xFF667EEA),
-                                                Color(0xFF764BA2)
-                                            )
-                                        )
+                                    .clip(shape)
+                            ) {
+                                val url = user.avatarUrl?.trim().orEmpty()
+
+                                if (url.isNotEmpty()) {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = "User avatar",
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clip(shape),
+                                        contentScale = ContentScale.Crop
                                     )
-                            )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .background(fallbackBrush)
+                                    )
+                                }
+                            }
 
                             Column {
                                 Text(

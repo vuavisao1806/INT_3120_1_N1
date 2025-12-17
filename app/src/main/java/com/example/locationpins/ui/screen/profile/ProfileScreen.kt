@@ -1,5 +1,6 @@
 package com.example.locationpins.ui.screen.profile
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,6 +45,8 @@ import com.example.locationpins.ui.screen.gallery.PostListView
 import com.example.locationpins.ui.screen.gallery.PostSummary
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.theme.LocationSocialTheme
+import com.example.locationpins.ui.component.BadgeRow
+import com.example.locationpins.data.model.Badge
 
 @Composable
 fun ProfileScreen(
@@ -68,21 +71,25 @@ fun ProfileScreen(
             // Hiển thị loading khi đang gọi API
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
+            val badges = uiState.badges
             when (profileMode) {
                 is ProfileMode.Self -> ProfileSelfView(
                     user,
                     onInvitesClick = { viewModel.onShowContactRequests() },
                     onEditClick = onEditClick,
+                    badges = badges,
                     onPressPost = onPressPost,
                     uiState = uiState
                 )
 
-                is ProfileMode.Friend -> ProfileFriendView(user)
+                is ProfileMode.Friend -> ProfileFriendView(user, badges = badges)
                 ProfileMode.Stranger -> ProfileStrangerView(
                     user,
                     onGetContactClick = { viewModel.onGetContactClick() },
                     onAcceptClick = { viewModel.onAcceptContact() },
-                    onRejectClick = { viewModel.onRejectContact() })
+                    onRejectClick = { viewModel.onRejectContact() },
+                    badges = badges)
+
 
             }
             // Hiện form nhập yêu cầu liên hệ đối với người lạ
@@ -121,6 +128,7 @@ fun ProfileSelfView(
     user: User?,
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit,
+    badges: List<Badge>,
     onPressPost: (PostSummary) -> Unit,
     uiState: ProfileUiState,
     modifier: Modifier = Modifier
@@ -206,13 +214,20 @@ fun ProfileSelfView(
                 }
             }
         }
+
+        item { AvatarAndNameColumn(user, badges = badges) }
+        item { InfoUserRow(user) }
+        item { ParametersRow(user) }
     }
 
 }
 
 // Màn hình cho bạn bè
 @Composable
-fun ProfileFriendView(user: User?, modifier: Modifier = Modifier) {
+fun ProfileFriendView(
+    user: User?,
+    badges: List<Badge>,
+    modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -230,6 +245,7 @@ fun ProfileStrangerView(
     onGetContactClick: () -> Unit,
     onAcceptClick: () -> Unit,
     onRejectClick: () -> Unit,
+    badges: List<Badge>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -250,7 +266,11 @@ fun ProfileStrangerView(
 }
 
 @Composable
-fun AvatarAndNameColumn(user: User?) {
+fun AvatarAndNameColumn(
+    user: User?,
+    badges: List<Badge> = emptyList(),
+    onBadgeClick: (Badge) -> Unit = {}
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -283,6 +303,14 @@ fun AvatarAndNameColumn(user: User?) {
             color = Color.Gray
         )
 
+        Log.d("Badge",badges.size.toString())
+        if (badges.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            BadgeRow(
+                badges = badges.take(5), // Hiển thị tối đa 5 badges
+                onBadgeClick = onBadgeClick
+            )
+        }
 
         user?.quote?.let {
             Spacer(Modifier.height(8.dp))
@@ -563,28 +591,27 @@ fun PreviewProfileScreen() {
 @Composable
 fun PreviewSelf() {
     LocationSocialTheme {
-//        ProfileSelfView(
-//            user = User(
-//                userId = 1,
-//                userName = "linhnguyen",
-//                location = "Hồ Chí Minh, Việt Nam",
-//                avatarUrl = "https://example.com/avatar/linh.png",
-//                quote = "Sống là trải nghiệm.",
-//                name = "Nguyễn Thị Linh",
-//                quantityPin = 34,
-//                quantityReact = 1280,
-//                quantityComment = 256,
-//                userEmail = "linh.nguyen@example.com",
-//                phoneNumber = "+84 912 345 678",
-//                website = "https://linhnguyen.dev",
-//                quantityContact = 5
-//            ),
-//            onInvitesClick = {},
-//            onEditClick = {},
-//            onPressPost = {},
-//            uiState =
-//
-//        )
+        ProfileSelfView(
+            user = User(
+                userId = 1,
+                userName = "linhnguyen",
+                location = "Hồ Chí Minh, Việt Nam",
+                avatarUrl = "https://example.com/avatar/linh.png",
+                quote = "Sống là trải nghiệm.",
+                name = "Nguyễn Thị Linh",
+                quantityPin = 34,
+                quantityReact = 1280,
+                quantityComment = 256,
+                userEmail = "linh.nguyen@example.com",
+                phoneNumber = "+84 912 345 678",
+                website = "https://linhnguyen.dev",
+                quantityContact = 5
+            ),
+            onInvitesClick = {},
+            onEditClick = {},
+            badges = TODO(),
+            modifier = TODO(),
+        )
     }
 }
 
@@ -610,7 +637,9 @@ fun PreviewStranger() {
             ),
             onRejectClick = {},
             onAcceptClick = {},
-            onGetContactClick = {}
+            onGetContactClick = {},
+            badges = TODO(),
+            modifier = TODO()
         )
     }
 }

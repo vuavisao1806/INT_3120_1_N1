@@ -1,6 +1,13 @@
 package com.example.locationpins.data.remote
 
 
+import com.example.locationpins.data.remote.dto.badge.BadgeDto
+import com.example.locationpins.data.remote.dto.badge.BadgeProgressDto
+import com.example.locationpins.data.remote.dto.badge.CheckAndAwardBadgesRequest
+import com.example.locationpins.data.remote.dto.badge.CheckBadgesResponse
+import com.example.locationpins.data.remote.dto.badge.GetBadgeProgressRequest
+import com.example.locationpins.data.remote.dto.badge.GetEarnedBadgesRequest
+import com.example.locationpins.data.remote.dto.badge.GetUserBadgesRequest
 import com.example.locationpins.data.remote.dto.comment.CancelCommentRequest
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.comment.CreateCommentRequest
@@ -220,6 +227,18 @@ interface ApiService {
         @Body body: UserFavoriteTagsRequest
     ): Set<TagDto>
 
+    @POST("/badges/user")
+    suspend fun getUserBadges(@Body body: GetUserBadgesRequest): List<BadgeDto>
+
+    @POST("/badges/earned")
+    suspend fun getEarnedBadges(@Body body: GetEarnedBadgesRequest): List<BadgeDto>
+
+    @POST("/badges/check")
+    suspend fun checkAndAwardBadges(@Body body: CheckAndAwardBadgesRequest): CheckBadgesResponse
+
+    @POST("/badges/progress")
+    suspend fun getBadgeProgress(@Body body: GetBadgeProgressRequest): List<BadgeProgressDto>
+  
     @POST("/posts/postByUser")
     suspend fun getPostByUser(
         @Body request: GetPostByUserRequest

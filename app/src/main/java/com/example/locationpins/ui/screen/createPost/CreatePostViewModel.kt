@@ -5,11 +5,13 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.repository.BadgeRepository
 import com.example.locationpins.data.repository.CreatePostRepository
 import com.example.locationpins.data.repository.PinRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.SensitiveContentRepository
 import com.example.locationpins.data.repository.TagRepository
+import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.map.LocationManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,8 @@ class CreatePostViewModel(
     private val sensitiveContentRepository: SensitiveContentRepository = SensitiveContentRepository(),
     private val postRepository: PostRepository = PostRepository(),
     private val pinRepository: PinRepository = PinRepository(),
-    private val tagRepository: TagRepository = TagRepository()
+    private val tagRepository: TagRepository = TagRepository(),
+    private val badgeRepository: BadgeRepository = BadgeRepository(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreatePostUiState())
@@ -135,6 +138,8 @@ class CreatePostViewModel(
                         tags = tags
                     )
                 }
+
+                badgeRepository.checkAndAwardBadges(CurrentUser.currentUser!!.userId)
 
                 onSuccess()
             } catch (e: Exception) {
