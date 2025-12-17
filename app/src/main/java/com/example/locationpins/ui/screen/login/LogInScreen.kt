@@ -7,7 +7,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.locationpins.ui.theme.LocationSocialTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -94,9 +96,11 @@ fun LoginScreen(
 ) {
 
     val uiState by viewModel.uiState.collectAsState()
-
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(horizontal = 32.dp, vertical = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

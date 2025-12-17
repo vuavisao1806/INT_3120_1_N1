@@ -55,12 +55,19 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
     }
 
     fun login(onResult: (Boolean) -> Unit) {
+        val userName = _uiState.value.username
+        val password = _uiState.value.password
+        if (userName.isBlank() || password.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Vui lòng nhập tên đăng nhập và mật khẩu") }
+            onResult(false)
+            return
+        }
         viewModelScope.launch {
             _uiState.update { curent -> curent.copy(isLoading = true, errorMessage = null) }
 
 
-            val userName = _uiState.value.username
-            val password = _uiState.value.password
+
+
             try {
                 Log.d("LOGIN_DEBUG", "Đang gọi API tới Server...")
                 val response = userRepository.login(userName, password)
@@ -91,14 +98,21 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
     }
 
     fun register(onSuccess: (Boolean) -> Unit) {
+
+        val username = _uiState.value.username
+        val name = _uiState.value.name
+        val password = _uiState.value.password
+        val confirmPassword = _uiState.value.confirmPassword
+        val email = _uiState.value.email
+        if (username.isBlank() || name.isBlank() || password.isBlank() || email.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Vui lòng điền đầy đủ thông tin") }
+            onSuccess(false)
+            return
+        }
         viewModelScope.launch {
             _uiState.update { curent -> curent.copy(isLoading = true, errorMessage = null) }
 
-            val username = _uiState.value.username
-            val name = _uiState.value.name
-            val password = _uiState.value.password
-            val confirmPassword = _uiState.value.confirmPassword
-            val email = _uiState.value.email
+
             try {
 
                 Log.d("REGISTER_DEBUG", "Đang gọi API tới Server...")
@@ -156,6 +170,7 @@ class LoginViewModel(private val userRepository: UserRepository = UserRepository
 
 object CurrentUser {
     var currentUser: User? = null
-    var favoriteTags: Set<TagDto>? = null // Currently, we can't log out, so favoriteTags will never be redefined to null after assigning
+    var favoriteTags: Set<TagDto>? =
+        null // Currently, we can't log out, so favoriteTags will never be redefined to null after assigning
 }
 
