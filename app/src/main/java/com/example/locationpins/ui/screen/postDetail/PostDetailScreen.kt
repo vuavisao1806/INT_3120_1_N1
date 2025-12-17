@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
@@ -53,7 +55,8 @@ object PostDetailTestTags {
 fun PostDetailScreen(
     postId: String?,
     onNavigateBack: () -> Unit,
-    onClickUserName: (Int) -> Unit
+    onClickUserName: (Int) -> Unit,
+    navController: NavHostController,
 ) {
     // ViewModel khởi tạo ở đây (Stateful)
     val viewModel = remember {
@@ -72,6 +75,8 @@ fun PostDetailScreen(
     // Lấy avatar an toàn để truyền xuống dưới (Tránh crash khi test nếu chưa login)
     val currentUserAvatar = CurrentUser.currentUser?.avatarUrl ?: ""
 
+
+
     // Gọi đến hàm Stateless để hiển thị
     PostDetailContent(
         uiState = uiState,
@@ -81,7 +86,13 @@ fun PostDetailScreen(
         onLikeClick = { viewModel.onLikeClick() },
         onDeleteComment = { viewModel.onDeleteComment(it) },
         onCommentTextChange = { viewModel.onCommentTextChange(it) },
-        onSendComment = { viewModel.onSendComment() }
+        onSendComment = { viewModel.onSendComment() },
+        onTagPress = { tag ->
+            // Navigate về newfeed với tag filter
+            navController.navigate("newfeed?tag=$tag") {
+                popUpTo("newfeed") { inclusive = true }
+            }
+        }
     )
 }
 
@@ -98,7 +109,8 @@ fun PostDetailContent(
     onLikeClick: () -> Unit,
     onDeleteComment: (Int) -> Unit,
     onCommentTextChange: (String) -> Unit,
-    onSendComment: () -> Unit
+    onSendComment: () -> Unit,
+    onTagPress: (String) -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -161,7 +173,10 @@ fun PostDetailContent(
                     // Tags
                     if (uiState.tags.isNotEmpty()) {
                         item {
-                            TagsRow(uiState.tags)
+                            TagsRow(
+                                uiState.tags,
+                                onTagPress = onTagPress
+                            )
                         }
                     }
 
@@ -288,9 +303,11 @@ fun PostImage(imageUrl: String) {
         )
     }
 }
-
 @Composable
-fun TagsRow(tags: List<TagDto>) {
+fun TagsRow(
+    tags: List<TagDto>,
+    onTagPress: (String) -> Unit = {}
+) {
     val tagColor = Color(0xFF1976D2)
 
     Surface(
@@ -308,7 +325,7 @@ fun TagsRow(tags: List<TagDto>) {
                     shape = RoundedCornerShape(16.dp),
                     color = Color.Transparent,
                     border = BorderStroke(1.dp, tagColor),
-                    modifier = Modifier
+                    modifier = Modifier.clickable { onTagPress(tag.name) }
                 ) {
                     Text(
                         text = tag.name,

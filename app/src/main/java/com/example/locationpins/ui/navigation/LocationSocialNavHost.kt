@@ -38,15 +38,24 @@ fun LocationSocialNavHost(
         startDestination = TopLevelDestination.LOGIN.route,
         modifier = modifier
     ) {
-        composable(route = TopLevelDestination.NEWFEED.route) {
+        composable(
+            route = "${TopLevelDestination.NEWFEED.route}?tag={tag}",
+            arguments = listOf(
+                navArgument("tag") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val tag = backStackEntry.arguments?.getString("tag")
             NewsFeedScreen(
+                initialTag = tag,
                 onPostPress = { post ->
-                    // Navigate tới PostDetail với postId
                     navController.navigate("post_detail/${post.postId}")
                 }
             )
         }
-
 
 
         composable(
@@ -59,7 +68,8 @@ fun LocationSocialNavHost(
             PostDetailScreen(
                 postId = postId,
                 onNavigateBack = { navController.popBackStack() },
-                onClickUserName = { userId -> navController.navigate("user/${userId}") }
+                onClickUserName = { userId -> navController.navigate("user/${userId}") },
+                navController = navController
             )
         }
 
