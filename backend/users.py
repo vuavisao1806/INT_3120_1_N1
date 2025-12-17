@@ -363,7 +363,8 @@ def showContactList(body: showContactRequest):
                     u.user_name, 
                     u.avatar_url,
                     r.status, 
-                    r.created_at 
+                    r.created_at,
+                    r.message 
                 FROM request_contact r
                 JOIN users u ON r.following_user_id = u.user_id
                 WHERE r.followed_user_id = %s

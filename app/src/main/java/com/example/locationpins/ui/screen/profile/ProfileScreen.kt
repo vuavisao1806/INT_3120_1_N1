@@ -350,24 +350,64 @@ fun GetSentContact(
 ) {
     Box(
         modifier = modifier
-            .padding(horizontal = 32.dp, vertical = 8.dp) // Padding ngoài giống hệt các nút khác
+            .padding(horizontal = 32.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .height(56.dp) // Chiều cao bằng nút Get Contact
+            .height(56.dp)
             .background(
-                color = Color(0xFFF2F2F2), // Màu nền xám nhạt
-                shape = RoundedCornerShape(16.dp) // Bo góc giống nút
+                color = Color(0xFFF2F2F2),
+                shape = RoundedCornerShape(16.dp)
             ),
-        contentAlignment = Alignment.Center // Căn giữa chữ
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "Đã gửi lời mời",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF828282) // Màu chữ xám đậm hơn nền một chút
+            color = Color(0xFF828282)
         )
     }
 }
 
+@Composable
+fun RequestMessageCard(message: String?) {
+    if (!message.isNullOrBlank()) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 32.dp, vertical = 4.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Lời nhắn:",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color(0xFFF5F7FA),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "\"$message\"",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    ),
+                    color = Color(0xFF4A4A4A),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
 @Composable
 fun ParametersRow(user: User?, modifier: Modifier = Modifier) {
     Row(

@@ -117,7 +117,8 @@ data class ShowContactRespond(
     @SerialName("user_name") val userName: String,
     @SerialName("created_at") val timeCreate: String,
     @SerialName("avatar_url") val avatarUrl: String? = null,
-    @SerialName("status") var status: String = "PENDING"
+    @SerialName("status") var status: String = "PENDING",
+    @SerialName("message") val message: String?
 )
 
 @Serializable
