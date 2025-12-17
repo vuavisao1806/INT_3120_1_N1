@@ -117,7 +117,8 @@ data class ShowContactRespond(
     @SerialName("user_name") val userName: String,
     @SerialName("created_at") val timeCreate: String,
     @SerialName("avatar_url") val avatarUrl: String? = null,
-    @SerialName("status") var status: String = "PENDING"
+    @SerialName("status") var status: String = "PENDING",
+    @SerialName("message") val message: String?
 )
 
 @Serializable
@@ -169,4 +170,9 @@ data class SendContactRequest(
 @Serializable
 data class SendContactResult(
     @SerialName("is_success") val isSuccess: Boolean = true
+)
+
+@Serializable
+data class GetPostByUserRequest(
+    @SerialName("user_id") val userId:Int
 )

@@ -43,6 +43,7 @@ import com.example.locationpins.data.remote.dto.tag.AssignTagsRequest
 import com.example.locationpins.data.remote.dto.tag.GoogleLabelResponse
 import com.example.locationpins.data.remote.dto.tag.UserFavoriteTagsRequest
 import com.example.locationpins.data.remote.dto.user.CheckIsFriendRequest
+import com.example.locationpins.data.remote.dto.user.GetPostByUserRequest
 import com.example.locationpins.data.remote.dto.user.GetUserRequest
 import com.example.locationpins.data.remote.dto.user.IsFriendRespond
 import com.example.locationpins.data.remote.dto.user.LoginRequest
@@ -237,6 +238,11 @@ interface ApiService {
 
     @POST("/badges/progress")
     suspend fun getBadgeProgress(@Body body: GetBadgeProgressRequest): List<BadgeProgressDto>
+  
+    @POST("/posts/postByUser")
+    suspend fun getPostByUser(
+        @Body request: GetPostByUserRequest
+    ):List<PostByPinResponse>
 }
 
 

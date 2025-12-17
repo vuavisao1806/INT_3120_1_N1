@@ -7,6 +7,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,6 +40,10 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.locationpins.R
 import com.example.locationpins.data.model.User
+import com.example.locationpins.ui.screen.gallery.PostGridItemWithStats
+import com.example.locationpins.ui.screen.gallery.PostListView
+import com.example.locationpins.ui.screen.gallery.PostSummary
+import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.theme.LocationSocialTheme
 import com.example.locationpins.ui.component.BadgeRow
 import com.example.locationpins.data.model.Badge
@@ -44,7 +52,8 @@ import com.example.locationpins.data.model.Badge
 fun ProfileScreen(
     userId: Int,
     onEditClick: () -> Unit,
-    onProfileClick:(Int)-> Unit,
+    onProfileClick: (Int) -> Unit,
+    onPressPost: (PostSummary) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel()
 ) {
@@ -52,6 +61,7 @@ fun ProfileScreen(
     // lưu user vào viewModel
     LaunchedEffect(userId) {
         viewModel.setUser(userId)
+        viewModel.loadPostsForSelf(CurrentUser.currentUser!!.userId)
     }
     val user = uiState.user
     val profileMode = uiState.profileMode
@@ -68,6 +78,8 @@ fun ProfileScreen(
                     onInvitesClick = { viewModel.onShowContactRequests() },
                     onEditClick = onEditClick,
                     badges = badges,
+                    onPressPost = onPressPost,
+                    uiState = uiState
                 )
 
                 is ProfileMode.Friend -> ProfileFriendView(user, badges = badges)
@@ -117,40 +129,87 @@ fun ProfileSelfView(
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit,
     badges: List<Badge>,
+    onPressPost: (PostSummary) -> Unit,
+    uiState: ProfileUiState,
     modifier: Modifier = Modifier
 ) {
     val bgColor = MaterialTheme.colorScheme.background
-    LazyColumn(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(bgColor),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(bgColor)
     ) {
-
-        stickyHeader {
-            Box(
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(bgColor)
+                .padding(horizontal = 24.dp)
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(bgColor)
-                    .padding(horizontal = 24.dp)
+                    .padding(top = 16.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Profile",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                Text(
+                    text = "Profile",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-                    SelfActionRow(
-                        pendingInvites = user?.quantityContact ?: 0,
-                        onInvitesClick = onInvitesClick,
-                        onEditClick = onEditClick
+                SelfActionRow(
+                    pendingInvites = user?.quantityContact ?: 0,
+                    onInvitesClick = onInvitesClick,
+                    onEditClick = onEditClick
+                )
+            }
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            item(
+                span = { GridItemSpan(maxLineSpan) }
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    AvatarAndNameColumn(user)
+                    InfoUserRow(user)
+                    ParametersRow(user)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+
+            val posts = uiState.currentPosts
+            if (posts.isEmpty()) {
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Chưa có bài viết nào",
+                            color = Color.Gray
+                        )
+                    }
+                }
+            } else {
+
+                items(uiState.currentPosts) { post ->
+                    PostGridItemWithStats(
+                        post = post,
+                        onClick = { onPressPost(post) }
                     )
                 }
             }
@@ -160,6 +219,7 @@ fun ProfileSelfView(
         item { InfoUserRow(user) }
         item { ParametersRow(user) }
     }
+
 }
 
 // Màn hình cho bạn bè
@@ -374,21 +434,62 @@ fun GetSentContact(
 ) {
     Box(
         modifier = modifier
-            .padding(horizontal = 32.dp, vertical = 8.dp) // Padding ngoài giống hệt các nút khác
+            .padding(horizontal = 32.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .height(56.dp) // Chiều cao bằng nút Get Contact
+            .height(56.dp)
             .background(
-                color = Color(0xFFF2F2F2), // Màu nền xám nhạt
-                shape = RoundedCornerShape(16.dp) // Bo góc giống nút
+                color = Color(0xFFF2F2F2),
+                shape = RoundedCornerShape(16.dp)
             ),
-        contentAlignment = Alignment.Center // Căn giữa chữ
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "Đã gửi lời mời",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF828282) // Màu chữ xám đậm hơn nền một chút
+            color = Color(0xFF828282)
         )
+    }
+}
+
+@Composable
+fun RequestMessageCard(message: String?) {
+    if (!message.isNullOrBlank()) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 32.dp, vertical = 4.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Lời nhắn:",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color(0xFFF5F7FA),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "\"$message\"",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    ),
+                    color = Color(0xFF4A4A4A),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
     }
 }
 
@@ -480,7 +581,8 @@ fun PreviewProfileScreen() {
         ProfileScreen(
             1,
             onEditClick = {},
-            onProfileClick = {}
+            onProfileClick = {},
+            onPressPost = {}
         )
     }
 }
