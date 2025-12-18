@@ -94,6 +94,9 @@ fun PostDetailScreen(
             navController.navigate("newfeed?tag=$tag") {
                 popUpTo("newfeed") { inclusive = true }
             }
+        },
+        onExpandCommentClick = { commentId ->
+            viewModel.toggleExpandComment(commentId)
         }
     )
 }
@@ -116,11 +119,13 @@ fun PostDetailContent(
     onCommentTextChange: (String) -> Unit,
     onSendComment: () -> Unit,
     onTagPress: (String) -> Unit = {},
+    onExpandCommentClick: (Int) -> Unit
 ) {
     // 1. Khởi tạo SnackbarHostState
     val snackbarHostState = remember { SnackbarHostState() }
-    val threadRows = remember(uiState.comments) { buildThreadRows(uiState.comments) }
-
+    val threadRows = remember(uiState.comments, uiState.expandedCommentIds) {
+        buildThreadRows(uiState.comments, uiState.expandedCommentIds)
+    }
     // 2. Lắng nghe lỗi từ uiState để hiển thị Snackbar
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorMessage ->
@@ -241,13 +246,16 @@ fun PostDetailContent(
                             }
 
                             // Comments List
-                            items(
-                                items = threadRows,
-                                key = { it.comment.commentId }
-                            ) { row ->
+                            // Trong LazyColumn -> items:
+                            items(items = threadRows, key = { it.comment.commentId }) { row ->
+                                // Kiểm tra xem comment hiện tại có "con" hay không
+                                val hasChildren = uiState.comments.any { it.childOfCommentId == row.comment.commentId }
                                 CommentItem(
                                     comment = row.comment,
                                     level = row.level,
+                                    isExpanded = uiState.expandedCommentIds.contains(row.comment.commentId),
+                                    hasChildren = hasChildren,
+                                    onExpandClick = { onExpandCommentClick(row.comment.commentId) }, // Truyền xuống item
                                     onReplyCommentClick = onReplyCommentClick,
                                     onDeleteClick = { onDeleteComment(row.comment.commentId) },
                                     onClickUser = onClickUserName
@@ -484,7 +492,10 @@ fun CommentsSectionHeader() {
 fun CommentItem(
     comment: CommentDto,
     level: Int,
+    isExpanded: Boolean, // Thêm để biết đang đóng hay mở
+    hasChildren: Boolean, // Biết để hiện nút "Xem thêm"
     onReplyCommentClick: (CommentDto) -> Unit,
+    onExpandClick: () -> Unit, // Callback khi nhấn xem thêm
     onDeleteClick: () -> Unit,
     onClickUser: (Int) -> Unit
 ) {
@@ -551,6 +562,18 @@ fun CommentItem(
                         fontSize = 12.sp,
                         color = Color.Gray,
                         modifier = Modifier.clickable { onReplyCommentClick(comment) }
+                    )
+                }
+
+                if (level == 0 && hasChildren) {
+                    Text(
+                        text = if (isExpanded) "Ẩn bớt" else "Xem câu trả lời...",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
+                            .clickable { onExpandClick() }
                     )
                 }
             }
@@ -674,22 +697,23 @@ fun BottomCommentInput(
 
 private data class ThreadRow(val comment: CommentDto, val level: Int) // level 0/1
 
-private fun buildThreadRows(comments: List<CommentDto>): List<ThreadRow> {
+private fun buildThreadRows(
+    comments: List<CommentDto>,
+    expandedIds: Set<Int> // Truyền thêm biến này vào
+): List<ThreadRow> {
     val parents = comments.filter { it.childOfCommentId == null }
-    val childrenByParent = LinkedHashMap<Int, MutableList<CommentDto>>()
-
-    comments.forEach { comment ->
-        val parentCommentId = comment.childOfCommentId
-        if (parentCommentId != null) {
-            childrenByParent.getOrPut(parentCommentId) { mutableListOf() }.add(comment)
-        }
-    }
+    val childrenByParent = comments.filter { it.childOfCommentId != null }
+        .groupBy { it.childOfCommentId!! }
 
     val out = mutableListOf<ThreadRow>()
     for (p in parents) {
         out += ThreadRow(p, 0)
-        childrenByParent[p.commentId]?.forEach { child ->
-            out += ThreadRow(child, 1)
+
+        // Chỉ thêm comment con nếu cha nó đang được "mở"
+        if (expandedIds.contains(p.commentId)) {
+            childrenByParent[p.commentId]?.forEach { child ->
+                out += ThreadRow(child, 1)
+            }
         }
     }
     return out

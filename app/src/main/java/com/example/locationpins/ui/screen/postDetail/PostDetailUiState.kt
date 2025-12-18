@@ -12,5 +12,6 @@ data class PostDetailUiState(
     val commentText: String = "",
     val isSubmittingComment: Boolean = false,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val expandedCommentIds: Set<Int> = emptySet()
 )
