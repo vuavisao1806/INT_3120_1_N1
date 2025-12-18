@@ -1,7 +1,6 @@
 package com.example.locationpins.ui.screen.createPost
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,6 +32,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.model.UserMock
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
+import kotlinx.coroutines.launch
 
 enum class CreatePostStep {
     Editing,
@@ -44,11 +45,13 @@ fun CreatePostScreen(
     initialImageUri: Uri?,
     onNavigateBack: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: CreatePostViewModel = viewModel(),
     user: User
 ) {
     val context = LocalContext.current
 
-    val viewModel: CreatePostViewModel = viewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     var step by remember { mutableStateOf(CreatePostStep.Editing) }
     var currentImageUri by remember { mutableStateOf(initialImageUri) }
@@ -65,6 +68,7 @@ fun CreatePostScreen(
         when (step) {
             CreatePostStep.Editing -> {
                 Scaffold(
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                     topBar = {
                         TopAppBar(
                             title = {
@@ -77,7 +81,7 @@ fun CreatePostScreen(
                             navigationIcon = {
                                 IconButton(
                                     enabled = !isPosting,
-                                    onClick = {onNavigateBack(false)}
+                                    onClick = { onNavigateBack(false) }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
@@ -99,23 +103,26 @@ fun CreatePostScreen(
                                             status = "active",
                                             onSuccess = {
                                                 isPosting = false
-                                                Toast.makeText(
-                                                    context,
-                                                    "Đăng bài thành công",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        message = "Đăng bài thành công",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                }
                                                 onNavigateBack(true)
                                             },
                                             onError = { msg ->
                                                 isPosting = false
-                                                Toast.makeText(
-                                                    context,
-                                                    msg,
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        message = msg,
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                }
                                             }
                                         )
                                     },
+                                    modifier = Modifier.testTag("submitButton"),
                                     enabled = !isPosting && currentImageUri != null && title.isNotBlank()
                                 ) {
                                     Icon(
@@ -155,7 +162,7 @@ fun CreatePostScreen(
                                     .size(48.dp)
                                     .clip(shape)
                             ) {
-                                val url = user.avatarUrl?.trim().orEmpty()
+                                val url = user.avatarUrl.trim()
 
                                 if (url.isNotEmpty()) {
                                     AsyncImage(
@@ -266,7 +273,8 @@ fun CreatePostScreen(
                             onValueChange = { title = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 16.dp)
+                                .testTag("titleField"),
                             placeholder = {
                                 Text(
                                     "Tiêu đề bài đăng...",
@@ -292,7 +300,8 @@ fun CreatePostScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
-                                .weight(1f, fill = false),
+                                .weight(1f, fill = false)
+                                .testTag("contentField"),
                             placeholder = {
                                 Text(
                                     "Viết nội dung cho bài đăng...",

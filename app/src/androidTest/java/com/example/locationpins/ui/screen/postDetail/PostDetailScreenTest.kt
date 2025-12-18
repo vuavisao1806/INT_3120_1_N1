@@ -1,13 +1,23 @@
-package com.example.locationpins
+package com.example.locationpins.ui.screen.postDetail
 
-import com.example.locationpins.ui.screen.postDetail.PostDetailContent
-import com.example.locationpins.ui.screen.postDetail.PostDetailUiState
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.tag.TagDto
-import com.example.locationpins.ui.screen.postDetail.PostDetailTestTags
+import com.example.locationpins.data.repository.BadgeRepository
+import com.example.locationpins.data.repository.CreatePostRepository
+import com.example.locationpins.data.repository.PinRepository
+import com.example.locationpins.data.repository.PostRepository
+import com.example.locationpins.data.repository.SensitiveContentRepository
+import com.example.locationpins.data.repository.TagRepository
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -63,7 +73,7 @@ val mockComments = listOf(
 class PostDetailScreenTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     // ==========================================
     // NHÓM 1: KIỂM TRA TRẠNG THÁI HIỂN THỊ (STATE)

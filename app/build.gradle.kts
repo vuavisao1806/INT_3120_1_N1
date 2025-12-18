@@ -9,6 +9,13 @@ android {
     namespace = "com.example.locationpins"
     compileSdk = 36
 
+    packaging {
+        resources {
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.locationpins"
         minSdk = 26
@@ -78,6 +85,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation("io.mockk:mockk-android:1.13.12")
+
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

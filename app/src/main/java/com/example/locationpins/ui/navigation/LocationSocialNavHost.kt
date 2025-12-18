@@ -23,7 +23,6 @@ import com.example.locationpins.ui.screen.map.MapScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
 import com.example.locationpins.ui.screen.profile.EditProfileScreen
-import com.example.locationpins.ui.screen.profile.ProfileMode
 import com.example.locationpins.ui.screen.profile.ProfileScreen
 
 @Composable
