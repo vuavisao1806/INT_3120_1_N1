@@ -76,7 +76,6 @@ fun PostDetailScreen(
     val currentUserAvatar = CurrentUser.currentUser?.avatarUrl ?: ""
 
 
-
     // Gọi đến hàm Stateless để hiển thị
     PostDetailContent(
         onNavigateBack = onNavigateBack,
@@ -118,141 +117,160 @@ fun PostDetailContent(
     onSendComment: () -> Unit,
     onTagPress: (String) -> Unit = {},
 ) {
+    // 1. Khởi tạo SnackbarHostState
+    val snackbarHostState = remember { SnackbarHostState() }
     val threadRows = remember(uiState.comments) { buildThreadRows(uiState.comments) }
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Quay lại",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Text(
-                text = "Bài viết chi tiết",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
+
+    // 2. Lắng nghe lỗi từ uiState để hiển thị Snackbar
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { errorMessage ->
+            snackbarHostState.showSnackbar(
+                message = errorMessage,
+                duration = SnackbarDuration.Short
             )
+            // Sau khi hiện xong có thể gọi một hàm xóa error trong ViewModel
+            // để tránh hiện lại khi recompose (Tùy chọn)
         }
-        Box(modifier = Modifier.fillMaxSize()) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .testTag(PostDetailTestTags.LOADING) // Thêm tag
+    }
+    Scaffold(
+        // 3. Đưa SnackbarHost vào Scaffold
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Quay lại",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-
-                uiState.error != null && uiState.post == null -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = uiState.error,
-                            color = Color.Red,
-                            fontSize = 16.sp,
-                            modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
+                Text(
+                    text = "Bài viết chi tiết",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .testTag(PostDetailTestTags.LOADING) // Thêm tag
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = onRetry,
-                            modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
-                        ) {
-                            Text("Thử lại")
-                        }
                     }
-                }
 
-                uiState.post != null -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFFF5F5F5))
-                            .padding(bottom = 64.dp)
-                            .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
-                    ) {
-                        // Post Header
-                        item {
-                            PostHeader(uiState.post, onClickUserName = onClickUserName)
-                        }
-
-                        // Post Content
-                        item {
-                            PostContent(uiState.post.body)
-                        }
-
-                        // Post Image
-                        uiState.post.imageUrl.let { imageUrl ->
-                            item {
-                                PostImage(imageUrl)
+                    uiState.error != null && uiState.post == null -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = uiState.error,
+                                color = Color.Red,
+                                fontSize = 16.sp,
+                                modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = onRetry,
+                                modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
+                            ) {
+                                Text("Thử lại")
                             }
                         }
+                    }
 
-                        // Tags
-                        if (uiState.tags.isNotEmpty()) {
+                    uiState.post != null -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFFF5F5F5))
+                                .padding(bottom = 64.dp)
+                                .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
+                        ) {
+                            // Post Header
                             item {
-                                TagsRow(
-                                    uiState.tags,
-                                    onTagPress = onTagPress
+                                PostHeader(uiState.post, onClickUserName = onClickUserName)
+                            }
+
+                            // Post Content
+                            item {
+                                PostContent(uiState.post.body)
+                            }
+
+                            // Post Image
+                            uiState.post.imageUrl.let { imageUrl ->
+                                item {
+                                    PostImage(imageUrl)
+                                }
+                            }
+
+                            // Tags
+                            if (uiState.tags.isNotEmpty()) {
+                                item {
+                                    TagsRow(
+                                        uiState.tags,
+                                        onTagPress = onTagPress
+                                    )
+                                }
+                            }
+
+                            // Like & Comment Count
+                            item {
+                                InteractionStats(
+                                    likes = uiState.post.reactionCount,
+                                    comments = uiState.post.commentCount,
+                                    isLiked = uiState.isLiked,
+                                    onLikeClick = onLikeClick
+                                )
+                            }
+
+                            // Comments Section Header
+                            item {
+                                CommentsSectionHeader()
+                            }
+
+                            // Comments List
+                            items(
+                                items = threadRows,
+                                key = { it.comment.commentId }
+                            ) { row ->
+                                CommentItem(
+                                    comment = row.comment,
+                                    level = row.level,
+                                    onReplyCommentClick = onReplyCommentClick,
+                                    onDeleteClick = { onDeleteComment(row.comment.commentId) },
+                                    onClickUser = onClickUserName
                                 )
                             }
                         }
 
-                        // Like & Comment Count
-                        item {
-                            InteractionStats(
-                                likes = uiState.post.reactionCount,
-                                comments = uiState.post.commentCount,
-                                isLiked = uiState.isLiked,
-                                onLikeClick = onLikeClick
-                            )
-                        }
+                        // Bottom Comment Input Box
+                        BottomCommentInput(
+                            commentText = uiState.commentText,
+                            parentComment = uiState.onParentComment,
+                            userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
+                            onCommentChange = onCommentTextChange,
+                            onReplyCommentCancel = onReplyCommentCancel,
+                            onSendClick = onSendComment,
+                            isSubmitting = uiState.isSubmittingComment,
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
 
-                        // Comments Section Header
-                        item {
-                            CommentsSectionHeader()
-                        }
-
-                        // Comments List
-                        items(
-                            items = threadRows,
-                            key = { it.comment.commentId }
-                        ) { row ->
-                            CommentItem(
-                                comment = row.comment,
-                                level = row.level,
-                                onReplyCommentClick = onReplyCommentClick,
-                                onDeleteClick = { onDeleteComment(row.comment.commentId) },
-                                onClickUser = onClickUserName
-                            )
-                        }
-                    }
-
-                    // Bottom Comment Input Box
-                    BottomCommentInput(
-                        commentText = uiState.commentText,
-                        parentComment = uiState.onParentComment,
-                        userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
-                        onCommentChange = onCommentTextChange,
-                        onReplyCommentCancel = onReplyCommentCancel,
-                        onSendClick = onSendComment,
-                        isSubmitting = uiState.isSubmittingComment,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
-
-                    // Show error snackbar if needed
-                    uiState.error?.let { error ->
-                        LaunchedEffect(error) {
+                        // Show error snackbar if needed
+                        uiState.error?.let { error ->
+                            LaunchedEffect(error) {
+                            }
                         }
                     }
                 }
@@ -336,6 +354,7 @@ fun PostImage(imageUrl: String) {
         )
     }
 }
+
 @Composable
 fun TagsRow(
     tags: List<TagDto>,
