@@ -69,7 +69,6 @@ class CreatePostViewModel(
     ) {
         viewModelScope.launch {
             try {
-                // 1. Convert Uri -> Multipart
                 val imagePart = uriToMultipart(context, imageUri, "file")
 
                 val (_isSensitiveImage, _isSensitiveTitle, _isSensitiveContent) = supervisorScope {
@@ -85,7 +84,6 @@ class CreatePostViewModel(
                     Triple(isSensitiveImage.await(), isSensitiveTitle.await(), isSensitiveContent.await())
                 }
 
-                // 1.1. Check sensitive image
                 val isSensitiveImage = _isSensitiveImage.getOrElse { error ->
                     onError("Lỗi khi kiểm tra nội dung hình ảnh: ${error.message}")
                     return@launch
@@ -95,7 +93,6 @@ class CreatePostViewModel(
                     return@launch
                 }
 
-                // 1.2. Check sensitive text
                 val isSensitiveTitle = _isSensitiveTitle.getOrElse { error ->
                     onError("Lỗi khi kiểm tra nội dung tiêu đề bài viết: ${error.message}")
                     return@launch
@@ -114,7 +111,6 @@ class CreatePostViewModel(
                     return@launch
                 }
 
-                // 2. Upload ảnh
                 val uploadRes = createPostRepository.uploadImage(imagePart)
                 if (!uploadRes.success) {
                     onError("Upload ảnh thất bại")
@@ -123,7 +119,6 @@ class CreatePostViewModel(
 
                 val imageUrl = uploadRes.url
 
-                // 3. Gọi /posts/insert
                 val (insertRes, labelRes) = supervisorScope {
                     val insertRes = async {
                         postRepository.insertPost(
@@ -148,10 +143,8 @@ class CreatePostViewModel(
                     return@launch
                 }
 
-//                val labelRes = tagRepository.getGoogleLabelsTopK(imagePart, k = 3)
                 val tags = labelRes.getOrNull()?.tags.orEmpty()
 
-                // (4) gửi tags lên backend để insert vào 3 bảng
                 if (tags.isNotEmpty()) {
                     tagRepository.assignTags(
                         postId = insertRes.postId,

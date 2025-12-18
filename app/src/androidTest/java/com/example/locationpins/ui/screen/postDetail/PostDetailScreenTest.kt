@@ -67,16 +67,12 @@ class PostDetailScreenTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-    // Kiểm tra trạng thái hiển thị
     @Test
     fun state_Loading_ShowsProgressIndicator() {
-        // Given: State đang loading (Mặc định isLoading = true)
         val state = PostDetailUiState(isLoading = true)
 
-        // When
         setContentWithState(state)
 
-        // Then
         composeTestRule.onNodeWithTag(PostDetailTestTags.LOADING).assertIsDisplayed()
         composeTestRule.onNodeWithTag(PostDetailTestTags.POST_CONTENT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(PostDetailTestTags.ERROR_TEXT).assertDoesNotExist()
@@ -84,7 +80,6 @@ class PostDetailScreenTest {
 
     @Test
     fun state_Error_ShowsMessageAndRetryButton() {
-        // Given: State bị lỗi, đã tắt loading
         val errorMessage = "Mất kết nối internet"
         val state = PostDetailUiState(
             isLoading = false, // Quan trọng: Phải tắt loading
@@ -92,10 +87,8 @@ class PostDetailScreenTest {
             post = null
         )
 
-        // When
         setContentWithState(state)
 
-        // Then
         composeTestRule.onNodeWithTag(PostDetailTestTags.LOADING).assertDoesNotExist()
         composeTestRule.onNodeWithTag(PostDetailTestTags.ERROR_TEXT)
             .assertIsDisplayed()
@@ -107,33 +100,25 @@ class PostDetailScreenTest {
 
     @Test
     fun state_Success_ShowsFullPostContent() {
-        // Given: State thành công
         val state = PostDetailUiState(
-            isLoading = false, // Quan trọng: Phải tắt loading
+            isLoading = false,
             post = mockPostFull,
             tags = mockTags,
             comments = mockComments
         )
 
-        // When
         setContentWithState(state)
 
-        // Then
-        // 1. Kiểm tra list chính
         composeTestRule.onNodeWithTag(PostDetailTestTags.POST_CONTENT).assertIsDisplayed()
 
-        // 2. Kiểm tra thông tin Header
         composeTestRule.onNodeWithText("Người dùng Test").assertIsDisplayed()
         composeTestRule.onNodeWithText("Vừa xong").assertIsDisplayed()
 
-        // 3. Kiểm tra nội dung body
         composeTestRule.onNodeWithText("Nội dung bài viết mẫu để test UI. Hôm nay trời rất đẹp!").assertIsDisplayed()
 
-        // 4. Kiểm tra Tags có hiện
         composeTestRule.onNodeWithText("#Travel").assertIsDisplayed()
         composeTestRule.onNodeWithText("#Vietnam").assertIsDisplayed()
 
-        // 5. Kiểm tra số lượng like/comment
         composeTestRule.onNodeWithText("100", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("50", substring = true).assertIsDisplayed()
     }
@@ -141,22 +126,19 @@ class PostDetailScreenTest {
     @Test
     fun state_Success_ShowsCommentsList() {
         val state = PostDetailUiState(
-            isLoading = false, // Quan trọng
+            isLoading = false,
             post = mockPostFull,
             comments = mockComments
         )
 
         setContentWithState(state)
 
-        // Kiểm tra comment xuất hiện
         composeTestRule.onNodeWithText("Commenter A").assertIsDisplayed()
         composeTestRule.onNodeWithText("Bài viết hay quá!").assertIsDisplayed()
 
-        // Đếm số lượng comment item
         composeTestRule.onAllNodesWithTag(PostDetailTestTags.COMMENT_ITEM).assertCountEquals(2)
     }
 
-    // Kiểm tra tương tác
     @Test
     fun action_ClickRetry_TriggersCallback() {
         var isRetryClicked = false
@@ -220,10 +202,8 @@ class PostDetailScreenTest {
     }
 
 
-    // LOGIC UI (ENABLE/DISABLE/STATE CHANGE)
     @Test
     fun logic_LikeButton_ChangeIconDescription_WhenLiked() {
-        // Case: Chưa Like
         val unlikedState = PostDetailUiState(
             isLoading = false,
             post = mockPostFull,
@@ -237,7 +217,6 @@ class PostDetailScreenTest {
 
     @Test
     fun logic_LikeButton_ShowsUnlike_WhenLiked() {
-        // Case: Đã Like
         val likedState = PostDetailUiState(
             isLoading = false,
             post = mockPostFull,
@@ -250,7 +229,6 @@ class PostDetailScreenTest {
 
     @Test
     fun logic_SendButton_Disabled_WhenTextEmpty() {
-        // Case: Không có chữ -> Disable
         val state = PostDetailUiState(
             isLoading = false,
             post = mockPostFull,
@@ -265,7 +243,6 @@ class PostDetailScreenTest {
 
     @Test
     fun logic_SendButton_Enabled_WhenTextExists() {
-        // Case: Có chữ -> Enable
         val state = PostDetailUiState(
             isLoading = false,
             post = mockPostFull,
@@ -280,20 +257,17 @@ class PostDetailScreenTest {
 
     @Test
     fun logic_SendButton_ShowsLoading_WhenSubmitting() {
-        // Case: Có chữ + Đang gửi -> Disable + Hiện Loading
         val state = PostDetailUiState(
-            isLoading = false, // QUAN TRỌNG: Phải set false để hiện giao diện
+            isLoading = false,
             post = mockPostFull,
-            commentText = "ABC", // Giả lập đã nhập chữ
-            isSubmittingComment = true // Đang gửi
+            commentText = "ABC",
+            isSubmittingComment = true
         )
 
         setContentWithState(state)
 
-        // 1. Nút Send phải hiện hữu nhưng bị disable
         composeTestRule.onNodeWithTag(PostDetailTestTags.SEND_BUTTON).assertIsNotEnabled()
 
-        // 2. Icon Send (mũi tên) KHÔNG được hiện
         composeTestRule.onNodeWithContentDescription("Gửi").assertDoesNotExist()
     }
 
@@ -313,7 +287,6 @@ class PostDetailScreenTest {
         assert(isSent)
     }
 
-    // helper function
     private fun setContentWithState(
         state: PostDetailUiState,
         currentUserAvatar: String = "avatar_url",
@@ -337,9 +310,42 @@ class PostDetailScreenTest {
                 onNavigateBack = {},
                 onTagPress = {},
                 onReplyCommentClick = {},
-                onReplyCommentCancel = {}
-
+                onReplyCommentCancel = {},
+                onExpandCommentClick = {}
             )
         }
+    }
+
+    @Test
+    fun showsErrorSnackbar_whenSensitiveContentDetected() {
+
+        val sensitiveErrorState = PostDetailUiState(
+            isLoading = false,
+            post = mockPostFull,
+            error = "Bình luận chứa nội dung nhạy cảm"
+        )
+
+
+        composeTestRule.setContent {
+            PostDetailContent(
+                uiState = sensitiveErrorState,
+                currentUserAvatar = "",
+                onNavigateBack = {},
+                onClickUserName = {},
+                onRetry = {},
+                onLikeClick = {},
+                onReplyCommentClick = {},
+                onReplyCommentCancel = {},
+                onDeleteComment = {},
+                onCommentTextChange = {},
+                onSendComment = {},
+                onExpandCommentClick = {}
+            )
+        }
+
+
+        composeTestRule
+            .onNodeWithText("Bình luận chứa nội dung nhạy cảm")
+            .assertIsDisplayed()
     }
 }

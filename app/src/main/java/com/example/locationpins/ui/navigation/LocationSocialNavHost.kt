@@ -122,9 +122,6 @@ fun LocationSocialNavHost(
             }
         }
 
-        // ... các composable khác giữ nguyên ...
-
-// Bước 1: Màn hình chính của Gallery (Danh sách Pin)
         composable(route = TopLevelDestination.GALLERY.route) {
             GalleryScreen(
                 onPinClick = { pinId ->
@@ -135,7 +132,6 @@ fun LocationSocialNavHost(
             )
         }
 
-// Bước 2: Bước tiếp theo trong Pipeline (Danh sách bài đăng của Pin đó)
         composable(
             route = "gallery_posts/{pinId}",
             arguments = listOf(

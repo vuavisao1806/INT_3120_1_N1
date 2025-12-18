@@ -99,7 +99,6 @@ class PostDetailViewModel(
                     )
                 }
             } catch (e: Exception) {
-                // revert lại trạng thái nếu lỗi
                 _uiState.update { it.copy(isLiked = isCurrentlyLiked) }
             }
         }
@@ -216,9 +215,9 @@ class PostDetailViewModel(
         _uiState.update { state ->
             val currentIds = state.expandedCommentIds
             val newIds = if (currentIds.contains(commentId)) {
-                currentIds - commentId // Đóng lại
+                currentIds - commentId
             } else {
-                currentIds + commentId // Mở ra
+                currentIds + commentId
             }
             state.copy(expandedCommentIds = newIds)
         }

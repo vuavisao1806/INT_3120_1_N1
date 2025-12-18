@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag // Thêm import này
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +58,6 @@ fun PostDetailScreen(
     onClickUserName: (Int) -> Unit,
     navController: NavHostController,
 ) {
-    // ViewModel khởi tạo ở đây (Stateful)
     val viewModel = remember {
         PostDetailViewModel(
             postRepository = PostRepository(),
@@ -72,11 +71,9 @@ fun PostDetailScreen(
 
     val uiState by viewModel.uiState.collectAsState()
 
-    // Lấy avatar an toàn để truyền xuống dưới (Tránh crash khi test nếu chưa login)
     val currentUserAvatar = CurrentUser.currentUser?.avatarUrl ?: ""
 
 
-    // Gọi đến hàm Stateless để hiển thị
     PostDetailContent(
         onNavigateBack = onNavigateBack,
         uiState = uiState,
@@ -101,10 +98,6 @@ fun PostDetailScreen(
     )
 }
 
-/**
- * Hàm này là Stateless (Không chứa ViewModel).
- * Dùng hàm này để viết UI Test bằng cách truyền Fake Data vào uiState.
- */
 @Composable
 fun PostDetailContent(
     onNavigateBack: () -> Unit,
@@ -121,20 +114,16 @@ fun PostDetailContent(
     onTagPress: (String) -> Unit = {},
     onExpandCommentClick: (Int) -> Unit
 ) {
-    // 1. Khởi tạo SnackbarHostState
     val snackbarHostState = remember { SnackbarHostState() }
     val threadRows = remember(uiState.comments, uiState.expandedCommentIds) {
         buildThreadRows(uiState.comments, uiState.expandedCommentIds)
     }
-    // 2. Lắng nghe lỗi từ uiState để hiển thị Snackbar
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorMessage ->
             snackbarHostState.showSnackbar(
                 message = errorMessage,
                 duration = SnackbarDuration.Short
             )
-            // Sau khi hiện xong có thể gọi một hàm xóa error trong ViewModel
-            // để tránh hiện lại khi recompose (Tùy chọn)
         }
     }
     Scaffold(
@@ -168,7 +157,7 @@ fun PostDetailContent(
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .testTag(PostDetailTestTags.LOADING) // Thêm tag
+                                .testTag(PostDetailTestTags.LOADING)
                         )
                     }
 
@@ -183,12 +172,12 @@ fun PostDetailContent(
                                 text = uiState.error,
                                 color = Color.Red,
                                 fontSize = 16.sp,
-                                modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
+                                modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT)
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(
                                 onClick = onRetry,
-                                modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
+                                modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON)
                             ) {
                                 Text("Thử lại")
                             }
@@ -201,7 +190,7 @@ fun PostDetailContent(
                                 .fillMaxSize()
                                 .background(Color(0xFFF5F5F5))
                                 .padding(bottom = 64.dp)
-                                .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
+                                .testTag(PostDetailTestTags.POST_CONTENT)
                         ) {
                             // Post Header
                             item {
@@ -246,16 +235,14 @@ fun PostDetailContent(
                             }
 
                             // Comments List
-                            // Trong LazyColumn -> items:
                             items(items = threadRows, key = { it.comment.commentId }) { row ->
-                                // Kiểm tra xem comment hiện tại có "con" hay không
                                 val hasChildren = uiState.comments.any { it.childOfCommentId == row.comment.commentId }
                                 CommentItem(
                                     comment = row.comment,
                                     level = row.level,
                                     isExpanded = uiState.expandedCommentIds.contains(row.comment.commentId),
                                     hasChildren = hasChildren,
-                                    onExpandClick = { onExpandCommentClick(row.comment.commentId) }, // Truyền xuống item
+                                    onExpandClick = { onExpandCommentClick(row.comment.commentId) },
                                     onReplyCommentClick = onReplyCommentClick,
                                     onDeleteClick = { onDeleteComment(row.comment.commentId) },
                                     onClickUser = onClickUserName
@@ -267,7 +254,7 @@ fun PostDetailContent(
                         BottomCommentInput(
                             commentText = uiState.commentText,
                             parentComment = uiState.onParentComment,
-                            userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
+                            userAvatarUrl = currentUserAvatar,
                             onCommentChange = onCommentTextChange,
                             onReplyCommentCancel = onReplyCommentCancel,
                             onSendClick = onSendComment,
@@ -275,7 +262,6 @@ fun PostDetailContent(
                             modifier = Modifier.align(Alignment.BottomCenter)
                         )
 
-                        // Show error snackbar if needed
                         uiState.error?.let { error ->
                             LaunchedEffect(error) {
                             }
