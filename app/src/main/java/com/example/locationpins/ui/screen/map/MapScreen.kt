@@ -73,11 +73,12 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
+    viewModel: MapViewModel = viewModel(),
     onPinPress: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
-    val viewModel: MapViewModel = viewModel()
+
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
@@ -213,14 +214,33 @@ fun MapScreen(
 
                     // Icons (Cần thêm lại vào Style mới)
                     val redBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red)
-                    val redClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red_cluster)
-                    val greenBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green)
-                    val greenClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green_cluster)
+                    val redClusterBitmap =
+                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red_cluster)
+                    val greenBitmap =
+                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green)
+                    val greenClusterBitmap =
+                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green_cluster)
 
-                    try { style.addImage("pin-red", redBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-red", redBitmap) } }
-                    try { style.addImage("pin-red-cluster", redClusterBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-red-cluster", redClusterBitmap) } }
-                    try { style.addImage("pin-green", greenBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-green", greenBitmap) } }
-                    try { style.addImage("pin-green-cluster", greenClusterBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-green-cluster", greenClusterBitmap) } }
+                    try {
+                        style.addImage("pin-red", redBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-red", redBitmap) }
+                    }
+                    try {
+                        style.addImage("pin-red-cluster", redClusterBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-red-cluster", redClusterBitmap) }
+                    }
+                    try {
+                        style.addImage("pin-green", greenBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-green", greenBitmap) }
+                    }
+                    try {
+                        style.addImage("pin-green-cluster", greenClusterBitmap)
+                    } catch (_: Throwable) {
+                        runCatching { style.addImage("pin-green-cluster", greenClusterBitmap) }
+                    }
 
 
                     // RED source + layers
@@ -238,9 +258,39 @@ fun MapScreen(
                             clusterMinPoints(2)
                         }
                     )
-                    style.addLayer(symbolLayer(redClusterIconLayerId, redSourceId) { filter(Expression.has("point_count")); iconImage("pin-red-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(true); iconSize(0.08) })
-                    style.addLayer(symbolLayer(redClusterTextLayerId, redSourceId) { filter(Expression.has("point_count")); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor("#000000"); textHaloColor("#FFFFFF"); textHaloWidth(0.0); textAnchor(TextAnchor.CENTER); textJustify(TextJustify.CENTER); textTranslate(listOf(8.0, -36.8)); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(true) })
-                    style.addLayer(symbolLayer(redUnclusteredLayerId, redSourceId) { filter(Expression.all(Expression.has("pinId"), Expression.neq(Expression.get("cluster"), Expression.literal(true)))); iconImage("pin-red"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(0.1) })
+                    style.addLayer(symbolLayer(redClusterIconLayerId, redSourceId) {
+                        filter(
+                            Expression.has("point_count")
+                        ); iconImage("pin-red-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(
+                        true
+                    ); iconSize(0.08)
+                    })
+                    style.addLayer(symbolLayer(redClusterTextLayerId, redSourceId) {
+                        filter(
+                            Expression.has("point_count")
+                        ); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor(
+                        "#000000"
+                    ); textHaloColor("#FFFFFF"); textHaloWidth(0.0); textAnchor(TextAnchor.CENTER); textJustify(
+                        TextJustify.CENTER
+                    ); textTranslate(
+                        listOf(
+                            8.0,
+                            -36.8
+                        )
+                    ); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(
+                        true
+                    )
+                    })
+                    style.addLayer(symbolLayer(redUnclusteredLayerId, redSourceId) {
+                        filter(
+                            Expression.all(
+                                Expression.has("pinId"),
+                                Expression.neq(Expression.get("cluster"), Expression.literal(true))
+                            )
+                        ); iconImage("pin-red"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(
+                        0.1
+                    )
+                    })
 
                     // GREEN source + layers
                     val greenSourceId = "green-pins-source"
@@ -257,15 +307,46 @@ fun MapScreen(
                             clusterMinPoints(2)
                         }
                     )
-                    style.addLayer(symbolLayer(greenClusterIconLayerId, greenSourceId) { filter(Expression.has("point_count")); iconImage("pin-green-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(true); iconSize(0.08) })
-                    style.addLayer(symbolLayer(greenClusterTextLayerId, greenSourceId) { filter(Expression.has("point_count")); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor("#2F9E44"); textHaloColor("#FFFFFF"); textHaloWidth(4.0); textAnchor(TextAnchor.CENTER); textJustify(TextJustify.CENTER); textTranslate(listOf(8.0, -36.8)); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(true) })
-                    style.addLayer(symbolLayer(greenUnclusteredLayerId, greenSourceId) { filter(Expression.all(Expression.has("pinId"), Expression.neq(Expression.get("cluster"), Expression.literal(true)))); iconImage("pin-green"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(0.1) })
+                    style.addLayer(symbolLayer(greenClusterIconLayerId, greenSourceId) {
+                        filter(
+                            Expression.has("point_count")
+                        ); iconImage("pin-green-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(
+                        true
+                    ); iconSize(0.08)
+                    })
+                    style.addLayer(symbolLayer(greenClusterTextLayerId, greenSourceId) {
+                        filter(
+                            Expression.has("point_count")
+                        ); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor(
+                        "#2F9E44"
+                    ); textHaloColor("#FFFFFF"); textHaloWidth(4.0); textAnchor(TextAnchor.CENTER); textJustify(
+                        TextJustify.CENTER
+                    ); textTranslate(
+                        listOf(
+                            8.0,
+                            -36.8
+                        )
+                    ); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(
+                        true
+                    )
+                    })
+                    style.addLayer(symbolLayer(greenUnclusteredLayerId, greenSourceId) {
+                        filter(
+                            Expression.all(
+                                Expression.has("pinId"),
+                                Expression.neq(Expression.get("cluster"), Expression.literal(true))
+                            )
+                        ); iconImage("pin-green"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(
+                        0.1
+                    )
+                    })
                 }
 
                 // --- B4: Set lại Click Handler (vì nó bị xóa khi style thay đổi) ---
                 mapView.gestures.addOnMapClickListener { point ->
                     val screenPoint = mapboxMap.pixelForCoordinate(point)
-                    val clusterLayerIds = listOf("red-clusters-icon-layer", "green-clusters-icon-layer")
+                    val clusterLayerIds =
+                        listOf("red-clusters-icon-layer", "green-clusters-icon-layer")
                     val pinLayerIds = listOf("red-unclustered-layer", "green-unclustered-layer")
 
                     // 1) Ưu tiên click cluster trước
@@ -458,7 +539,11 @@ private fun MapSearchBar(
                         strokeWidth = 2.dp
                     )
                     Spacer(Modifier.width(12.dp))
-                    Text("Đang tìm kiếm...", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Text(
+                        "Đang tìm kiếm...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
                 }
             }
         }

@@ -28,9 +28,10 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 fun NewsFeedScreen(
     onPostPress: (Post) -> Unit = {},
     onTagPress: (String) -> Unit = {},
-    initialTag: String? = null,  // Tag ban đầu (nếu navigate từ màn khác)
+    initialTag: String? = null,  // Tag ban đầu (nếu navigate từ màn khác),
+    viewModel: NewsFeedViewModel = viewModel()
 ) {
-    val viewModel: NewsFeedViewModel = viewModel()
+
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
 
