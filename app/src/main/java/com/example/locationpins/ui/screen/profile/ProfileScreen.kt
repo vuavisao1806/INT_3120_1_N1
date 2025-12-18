@@ -596,7 +596,7 @@ fun PreviewSelf() {
             onPressPost = {},
             onInvitesClick = {},
             onEditClick = {},
-            badges = TODO(),
+            badges = emptyList(),
             currentPosts = emptyList()
         )
     }
