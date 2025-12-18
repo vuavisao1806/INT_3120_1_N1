@@ -156,7 +156,7 @@ fun MapScreen(
 
                     // --- B2: Thêm lại Vùng cho phép (Allowed Area) ---
                     val allowedCenter = LocationManager.location.value
-                    val allowedRadiusMeters = 100000.0
+                    val allowedRadiusMeters = MapConfig.RADIUS_METERS
 
                     if (allowedCenter != null) {
                         val lon = allowedCenter.longitude
@@ -385,8 +385,7 @@ fun MapScreen(
                 },
                 onPinFound = { pinId ->
                     showDiscoveryGame = false
-
-                    // TODO: Navigate to gallery screen với pinId
+                    onPinPress(pinId)
                 },
 
                 )
