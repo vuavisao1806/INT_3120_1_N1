@@ -211,4 +211,16 @@ class PostDetailViewModel(
     fun retry() {
         loadPostDetails()
     }
+
+    fun toggleExpandComment(commentId: Int) {
+        _uiState.update { state ->
+            val currentIds = state.expandedCommentIds
+            val newIds = if (currentIds.contains(commentId)) {
+                currentIds - commentId // Đóng lại
+            } else {
+                currentIds + commentId // Mở ra
+            }
+            state.copy(expandedCommentIds = newIds)
+        }
+    }
 }
