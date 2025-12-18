@@ -3,6 +3,7 @@ package com.example.locationpins.ui.screen.postDetail
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.repository.CommentRepository
 import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.data.repository.ReactionRepository
@@ -104,6 +105,14 @@ class PostDetailViewModel(
         }
     }
 
+    fun onReplyCommentClick(comment: CommentDto) {
+        _uiState.update { it.copy(onParentComment = comment) }
+    }
+
+    fun onReplyCommentCancel() {
+        _uiState.update { it.copy(onParentComment = null) }
+    }
+
     fun onSendComment() {
         if (_uiState.value.isSubmittingComment) return
 
@@ -127,10 +136,20 @@ class PostDetailViewModel(
                 }
                 _uiState.update { it.copy(isSubmittingComment = true, error = null) }
 
+                var childOfCommentId: Int? = null
+                val onParentComment = _uiState.value.onParentComment
+                if (onParentComment != null) {
+                    if (onParentComment.childOfCommentId == null) {
+                        childOfCommentId = onParentComment.commentId
+                    } else {
+                        childOfCommentId = onParentComment.childOfCommentId
+                    }
+                }
                 commentRepository.createComment(
                     postId = postId,
                     userId = currentUserId,
-                    content = text
+                    content = text,
+                    childOfCommentID = childOfCommentId
                 )
 
                 val updatedComments = commentRepository.getPostComments(postId)
@@ -140,6 +159,7 @@ class PostDetailViewModel(
                     it.copy(
                         commentText = "",
                         comments = updatedComments,
+                        onParentComment = null,
                         isSubmittingComment = false,
                         post = currentPost.copy(
                             commentCount = currentPost.commentCount + 1

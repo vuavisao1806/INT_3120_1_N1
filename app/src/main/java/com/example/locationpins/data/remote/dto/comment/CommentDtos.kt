@@ -12,7 +12,10 @@ data class CreateCommentRequest(
     val userId: Int,
 
     @SerialName("content")
-    val content: String
+    val content: String,
+
+    @SerialName("child_of_comment_id")
+    val childOfCommentId: Int?
 )
 
 @Serializable
@@ -37,6 +40,9 @@ data class CommentDto(
 
     @SerialName("post_id")
     val postId: Int,
+
+    @SerialName("child_of_comment_id")
+    val childOfCommentId: Int?,
 
     @SerialName("user_id")
     val userId: Int,

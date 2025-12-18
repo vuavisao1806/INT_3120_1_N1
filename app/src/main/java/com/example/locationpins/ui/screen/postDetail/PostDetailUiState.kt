@@ -8,6 +8,7 @@ data class PostDetailUiState(
     val comments: List<CommentDto> = emptyList(),
     val tags: List<TagDto> = emptyList(),
     val isLiked: Boolean = false,
+    val onParentComment: CommentDto? = null,
     val commentText: String = "",
     val isSubmittingComment: Boolean = false,
     val isLoading: Boolean = true,

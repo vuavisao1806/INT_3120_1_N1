@@ -85,6 +85,8 @@ fun PostDetailScreen(
         onClickUserName = onClickUserName,
         onRetry = { viewModel.retry() },
         onLikeClick = { viewModel.onLikeClick() },
+        onReplyCommentClick = { viewModel.onReplyCommentClick(it) },
+        onReplyCommentCancel = { viewModel.onReplyCommentCancel() },
         onDeleteComment = { viewModel.onDeleteComment(it) },
         onCommentTextChange = { viewModel.onCommentTextChange(it) },
         onSendComment = { viewModel.onSendComment() },
@@ -109,11 +111,14 @@ fun PostDetailContent(
     onClickUserName: (Int) -> Unit,
     onRetry: () -> Unit,
     onLikeClick: () -> Unit,
+    onReplyCommentClick: (CommentDto) -> Unit,
+    onReplyCommentCancel: () -> Unit,
     onDeleteComment: (Int) -> Unit,
     onCommentTextChange: (String) -> Unit,
     onSendComment: () -> Unit,
     onTagPress: (String) -> Unit = {},
 ) {
+    val threadRows = remember(uiState.comments) { buildThreadRows(uiState.comments) }
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -131,6 +136,7 @@ fun PostDetailContent(
             Text(
                 text = "Bài viết chi tiết",
                 style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 8.dp)
             )
         }
@@ -152,7 +158,7 @@ fun PostDetailContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = uiState.error ?: "Đã xảy ra lỗi",
+                            text = uiState.error,
                             color = Color.Red,
                             fontSize = 16.sp,
                             modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
@@ -177,16 +183,16 @@ fun PostDetailContent(
                     ) {
                         // Post Header
                         item {
-                            PostHeader(uiState.post!!, onClickUserName = onClickUserName)
+                            PostHeader(uiState.post, onClickUserName = onClickUserName)
                         }
 
                         // Post Content
                         item {
-                            PostContent(uiState.post!!.body)
+                            PostContent(uiState.post.body)
                         }
 
                         // Post Image
-                        uiState.post!!.imageUrl.let { imageUrl ->
+                        uiState.post.imageUrl.let { imageUrl ->
                             item {
                                 PostImage(imageUrl)
                             }
@@ -205,8 +211,8 @@ fun PostDetailContent(
                         // Like & Comment Count
                         item {
                             InteractionStats(
-                                likes = uiState.post!!.reactionCount,
-                                comments = uiState.post!!.commentCount,
+                                likes = uiState.post.reactionCount,
+                                comments = uiState.post.commentCount,
                                 isLiked = uiState.isLiked,
                                 onLikeClick = onLikeClick
                             )
@@ -219,12 +225,14 @@ fun PostDetailContent(
 
                         // Comments List
                         items(
-                            items = uiState.comments,
-                            key = { comment -> comment.commentId }
-                        ) { comment ->
+                            items = threadRows,
+                            key = { it.comment.commentId }
+                        ) { row ->
                             CommentItem(
-                                comment = comment,
-                                onDeleteClick = { onDeleteComment(comment.commentId) },
+                                comment = row.comment,
+                                level = row.level,
+                                onReplyCommentClick = onReplyCommentClick,
+                                onDeleteClick = { onDeleteComment(row.comment.commentId) },
                                 onClickUser = onClickUserName
                             )
                         }
@@ -233,8 +241,10 @@ fun PostDetailContent(
                     // Bottom Comment Input Box
                     BottomCommentInput(
                         commentText = uiState.commentText,
+                        parentComment = uiState.onParentComment,
                         userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
                         onCommentChange = onCommentTextChange,
+                        onReplyCommentCancel = onReplyCommentCancel,
                         onSendClick = onSendComment,
                         isSubmitting = uiState.isSubmittingComment,
                         modifier = Modifier.align(Alignment.BottomCenter)
@@ -243,7 +253,6 @@ fun PostDetailContent(
                     // Show error snackbar if needed
                     uiState.error?.let { error ->
                         LaunchedEffect(error) {
-                            // You can show a snackbar here if you have SnackbarHost
                         }
                     }
                 }
@@ -455,19 +464,23 @@ fun CommentsSectionHeader() {
 @Composable
 fun CommentItem(
     comment: CommentDto,
+    level: Int,
+    onReplyCommentClick: (CommentDto) -> Unit,
     onDeleteClick: () -> Unit,
     onClickUser: (Int) -> Unit
 ) {
+    val indent = if (level == 1) 36.dp else 0.dp
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+//            .padding(start = indent)
             .testTag(PostDetailTestTags.COMMENT_ITEM), // Thêm tag cho comment
         color = Color.White
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(start = 12.dp + indent, end = 12.dp, top = 8.dp, bottom = 8.dp)
         ) {
             AsyncImage(
                 model = comment.avatarUrl,
@@ -513,6 +526,13 @@ fun CommentItem(
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
+
+                    Text(
+                        text = "Trả lời",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.clickable { onReplyCommentClick(comment) }
+                    )
                 }
             }
         }
@@ -522,90 +542,136 @@ fun CommentItem(
 @Composable
 fun BottomCommentInput(
     commentText: String,
+    parentComment: CommentDto?,
     userAvatarUrl: String, // Nhận URL từ tham số để dễ test
     onCommentChange: (String) -> Unit,
     onSendClick: () -> Unit,
+    onReplyCommentCancel: () -> Unit,
     isSubmitting: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar
-            AsyncImage(
-                model = userAvatarUrl, // Dùng biến truyền vào
-                contentDescription = null,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Text Input
-            TextField(
-                value = commentText,
-                onValueChange = onCommentChange,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(PostDetailTestTags.COMMENT_INPUT), // Tag ô nhập
-                placeholder = {
-                    Text(
-                        text = "Viết bình luận...",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFF0F0F0),
-                    unfocusedContainerColor = Color(0xFFF0F0F0),
-                    disabledContainerColor = Color(0xFFF0F0F0),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
-                ),
-                shape = RoundedCornerShape(20.dp),
-                singleLine = false,
-                maxLines = 4,
-                enabled = !isSubmitting
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Send Button
-            IconButton(
-                onClick = {
-                    if (commentText.isNotBlank()) {
-                        onSendClick()
-                    }
-                },
-                enabled = commentText.isNotBlank() && !isSubmitting,
-                modifier = Modifier.testTag(PostDetailTestTags.SEND_BUTTON) // Tag nút gửi
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (parentComment != null) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = Color(0xFF1976D2)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Gửi",
-                        tint = if (commentText.isNotBlank()) Color(0xFF1976D2) else Color.Gray,
-                        modifier = Modifier.size(24.dp)
-                    )
+                Text(
+                    text = "Đang trả lời ${parentComment.userName}",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "Hủy",
+                    fontSize = 12.sp,
+                    color = Color(0xFF1976D2),
+                    modifier = Modifier.clickable { onReplyCommentCancel() }
+                )
+            }
+        }
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 8.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar
+                AsyncImage(
+                    model = userAvatarUrl, // Dùng biến truyền vào
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Text Input
+                TextField(
+                    value = commentText,
+                    onValueChange = onCommentChange,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag(PostDetailTestTags.COMMENT_INPUT), // Tag ô nhập
+                    placeholder = {
+                        Text(
+                            text = "Viết bình luận...",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF0F0F0),
+                        unfocusedContainerColor = Color(0xFFF0F0F0),
+                        disabledContainerColor = Color(0xFFF0F0F0),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    singleLine = false,
+                    maxLines = 4,
+                    enabled = !isSubmitting
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Send Button
+                IconButton(
+                    onClick = {
+                        if (commentText.isNotBlank()) {
+                            onSendClick()
+                        }
+                    },
+                    enabled = commentText.isNotBlank() && !isSubmitting,
+                    modifier = Modifier.testTag(PostDetailTestTags.SEND_BUTTON) // Tag nút gửi
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF1976D2)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Gửi",
+                            tint = if (commentText.isNotBlank()) Color(0xFF1976D2) else Color.Gray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+private data class ThreadRow(val comment: CommentDto, val level: Int) // level 0/1
+
+private fun buildThreadRows(comments: List<CommentDto>): List<ThreadRow> {
+    val parents = comments.filter { it.childOfCommentId == null }
+    val childrenByParent = LinkedHashMap<Int, MutableList<CommentDto>>()
+
+    comments.forEach { comment ->
+        val parentCommentId = comment.childOfCommentId
+        if (parentCommentId != null) {
+            childrenByParent.getOrPut(parentCommentId) { mutableListOf() }.add(comment)
+        }
+    }
+
+    val out = mutableListOf<ThreadRow>()
+    for (p in parents) {
+        out += ThreadRow(p, 0)
+        childrenByParent[p.commentId]?.forEach { child ->
+            out += ThreadRow(child, 1)
+        }
+    }
+    return out
 }

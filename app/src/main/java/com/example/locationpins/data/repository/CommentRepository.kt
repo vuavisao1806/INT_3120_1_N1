@@ -14,13 +14,15 @@ class CommentRepository {
     suspend fun createComment(
         postId: Int,
         userId: Int,
-        content: String
+        content: String,
+        childOfCommentID: Int?
     ) {
         api.createComment(
             CreateCommentRequest(
                 postId = postId,
                 userId = userId,
-                content = content
+                content = content,
+                childOfCommentId = childOfCommentID
             )
         )
     }

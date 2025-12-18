@@ -74,6 +74,7 @@ class CreateCommentRequest(BaseModel):
     post_id: int
     user_id: int
     content: str
+    child_of_comment_id: int | None = None
 
 @router.post("/comment")
 def create_comment(body: CreateCommentRequest):
@@ -84,11 +85,11 @@ def create_comment(body: CreateCommentRequest):
                 # 1. Insert comment
                 cur.execute(
                     """
-                    INSERT INTO comments (post_id, user_id, content)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO comments (post_id, user_id, content, child_of_comment_id)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING comment_id, created_at;
                     """,
-                    (body.post_id, body.user_id, body.content)
+                    (body.post_id, body.user_id, body.content, body.child_of_comment_id,)
                 )
 
                 # 2. Update comment_count
@@ -389,6 +390,7 @@ def get_comments_of_post(body: GetPostCommentsRequest):
                     c.user_id,
                     c.content,
                     c.created_at,
+                    c.child_of_comment_id,
                     u.user_name,      
                     u.avatar_url   
                 FROM comments c
