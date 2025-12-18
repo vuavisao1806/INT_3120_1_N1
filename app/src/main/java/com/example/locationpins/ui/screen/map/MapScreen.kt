@@ -73,9 +73,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    viewModel: MapViewModel = viewModel(),
     onPinPress: (Int) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: MapViewModel = viewModel()
 ) {
     val navController = rememberNavController()
 
@@ -84,15 +84,13 @@ fun MapScreen(
 
     var showDiscoveryGame by remember { mutableStateOf(false) }
 
-    // 1) init LocationManager đúng 1 lần
     LaunchedEffect(Unit) {
         LocationManager.init(context)
     }
 
-    // 2) Xin quyền + nếu granted => báo cho LocationManager bắt đầu update
     RequestLocationPermission(
         onGranted = { LocationManager.onPermissionGranted() },
-        onDenied = { /* optional: show message */ }
+        onDenied = {}
     )
 
     val mapViewportState = rememberMapViewportState {
@@ -111,7 +109,6 @@ fun MapScreen(
                 .build()
         )
     }
-    // Khi ViewModel set cameraCoordinate (search chọn địa điểm), UI move camera
     LaunchedEffect(uiState.cameraCoordinate) {
         val coord = uiState.cameraCoordinate ?: return@LaunchedEffect
         mapViewportState.setCameraOptions {
@@ -127,7 +124,6 @@ fun MapScreen(
             modifier = Modifier.matchParentSize(),
             mapViewportState = mapViewportState,
         ) {
-            // CHỈ BẬT PUCK XANH (KHÔNG LISTENER)
             DisposableMapEffect(Unit) { mapView ->
                 val locationComponent = mapView.location
                 locationComponent.updateSettings {
@@ -139,10 +135,6 @@ fun MapScreen(
                 onDispose { }
             }
 
-            // ==========================================================
-            // FIX BUG STYLE CHANGE: Tải Style, Allowed Area, và Clustering Layers
-            // Khối MapEffect này chạy lại MỖI KHI Style, Vị trí hoặc List Pin thay đổi.
-            // ==========================================================
             MapEffect(
                 uiState.currentStyleUri,
                 uiState.userLocation,
@@ -152,10 +144,8 @@ fun MapScreen(
                 val mapboxMap = mapView.getMapboxMap()
                 val ctx = mapView.context
 
-                // B1: Tải Style mới. Thêm toàn bộ logic layers vào callback { style -> ... }
                 mapboxMap.loadStyleUri(uiState.currentStyleUri) { style ->
 
-                    // --- B2: Thêm lại Vùng cho phép (Allowed Area) ---
                     val allowedCenter = LocationManager.location.value
                     val allowedRadiusMeters = MapConfig.RADIUS_METERS
 
@@ -187,11 +177,9 @@ fun MapScreen(
                         )
                     }
 
-                    // --- B3: Thêm lại logic Clustering và Pins ---
                     val redPins = uiState.redPinList
                     val greenPins = uiState.greenPinList
 
-                    // Data -> FeatureCollection
                     val redFeatures = redPins.map { pin ->
                         Feature.fromGeometry(
                             Point.fromLngLat(pin.longitude, pin.latitude)
@@ -212,38 +200,17 @@ fun MapScreen(
                     val redFC = FeatureCollection.fromFeatures(redFeatures)
                     val greenFC = FeatureCollection.fromFeatures(greenFeatures)
 
-                    // Icons (Cần thêm lại vào Style mới)
                     val redBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red)
-                    val redClusterBitmap =
-                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red_cluster)
-                    val greenBitmap =
-                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green)
-                    val greenClusterBitmap =
-                        BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green_cluster)
+                    val redClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_red_cluster)
+                    val greenBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green)
+                    val greenClusterBitmap = BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_green_cluster)
 
-                    try {
-                        style.addImage("pin-red", redBitmap)
-                    } catch (_: Throwable) {
-                        runCatching { style.addImage("pin-red", redBitmap) }
-                    }
-                    try {
-                        style.addImage("pin-red-cluster", redClusterBitmap)
-                    } catch (_: Throwable) {
-                        runCatching { style.addImage("pin-red-cluster", redClusterBitmap) }
-                    }
-                    try {
-                        style.addImage("pin-green", greenBitmap)
-                    } catch (_: Throwable) {
-                        runCatching { style.addImage("pin-green", greenBitmap) }
-                    }
-                    try {
-                        style.addImage("pin-green-cluster", greenClusterBitmap)
-                    } catch (_: Throwable) {
-                        runCatching { style.addImage("pin-green-cluster", greenClusterBitmap) }
-                    }
+                    try { style.addImage("pin-red", redBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-red", redBitmap) } }
+                    try { style.addImage("pin-red-cluster", redClusterBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-red-cluster", redClusterBitmap) } }
+                    try { style.addImage("pin-green", greenBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-green", greenBitmap) } }
+                    try { style.addImage("pin-green-cluster", greenClusterBitmap) } catch (_: Throwable) { runCatching { style.addImage("pin-green-cluster", greenClusterBitmap) } }
 
 
-                    // RED source + layers
                     val redSourceId = "red-pins-source"
                     val redUnclusteredLayerId = "red-unclustered-layer"
                     val redClusterIconLayerId = "red-clusters-icon-layer"
@@ -258,39 +225,9 @@ fun MapScreen(
                             clusterMinPoints(2)
                         }
                     )
-                    style.addLayer(symbolLayer(redClusterIconLayerId, redSourceId) {
-                        filter(
-                            Expression.has("point_count")
-                        ); iconImage("pin-red-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(
-                        true
-                    ); iconSize(0.08)
-                    })
-                    style.addLayer(symbolLayer(redClusterTextLayerId, redSourceId) {
-                        filter(
-                            Expression.has("point_count")
-                        ); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor(
-                        "#000000"
-                    ); textHaloColor("#FFFFFF"); textHaloWidth(0.0); textAnchor(TextAnchor.CENTER); textJustify(
-                        TextJustify.CENTER
-                    ); textTranslate(
-                        listOf(
-                            8.0,
-                            -36.8
-                        )
-                    ); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(
-                        true
-                    )
-                    })
-                    style.addLayer(symbolLayer(redUnclusteredLayerId, redSourceId) {
-                        filter(
-                            Expression.all(
-                                Expression.has("pinId"),
-                                Expression.neq(Expression.get("cluster"), Expression.literal(true))
-                            )
-                        ); iconImage("pin-red"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(
-                        0.1
-                    )
-                    })
+                    style.addLayer(symbolLayer(redClusterIconLayerId, redSourceId) { filter(Expression.has("point_count")); iconImage("pin-red-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(true); iconSize(0.08) })
+                    style.addLayer(symbolLayer(redClusterTextLayerId, redSourceId) { filter(Expression.has("point_count")); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor("#000000"); textHaloColor("#FFFFFF"); textHaloWidth(0.0); textAnchor(TextAnchor.CENTER); textJustify(TextJustify.CENTER); textTranslate(listOf(8.0, -36.8)); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(true) })
+                    style.addLayer(symbolLayer(redUnclusteredLayerId, redSourceId) { filter(Expression.all(Expression.has("pinId"), Expression.neq(Expression.get("cluster"), Expression.literal(true)))); iconImage("pin-red"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(0.1) })
 
                     // GREEN source + layers
                     val greenSourceId = "green-pins-source"
@@ -307,49 +244,16 @@ fun MapScreen(
                             clusterMinPoints(2)
                         }
                     )
-                    style.addLayer(symbolLayer(greenClusterIconLayerId, greenSourceId) {
-                        filter(
-                            Expression.has("point_count")
-                        ); iconImage("pin-green-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(
-                        true
-                    ); iconSize(0.08)
-                    })
-                    style.addLayer(symbolLayer(greenClusterTextLayerId, greenSourceId) {
-                        filter(
-                            Expression.has("point_count")
-                        ); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor(
-                        "#2F9E44"
-                    ); textHaloColor("#FFFFFF"); textHaloWidth(4.0); textAnchor(TextAnchor.CENTER); textJustify(
-                        TextJustify.CENTER
-                    ); textTranslate(
-                        listOf(
-                            8.0,
-                            -36.8
-                        )
-                    ); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(
-                        true
-                    )
-                    })
-                    style.addLayer(symbolLayer(greenUnclusteredLayerId, greenSourceId) {
-                        filter(
-                            Expression.all(
-                                Expression.has("pinId"),
-                                Expression.neq(Expression.get("cluster"), Expression.literal(true))
-                            )
-                        ); iconImage("pin-green"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(
-                        0.1
-                    )
-                    })
+                    style.addLayer(symbolLayer(greenClusterIconLayerId, greenSourceId) { filter(Expression.has("point_count")); iconImage("pin-green-cluster"); iconAnchor(IconAnchor.BOTTOM); iconAllowOverlap(true); iconSize(0.08) })
+                    style.addLayer(symbolLayer(greenClusterTextLayerId, greenSourceId) { filter(Expression.has("point_count")); textField(Expression.get("point_count_abbreviated")); textSize(12.0); textColor("#2F9E44"); textHaloColor("#FFFFFF"); textHaloWidth(4.0); textAnchor(TextAnchor.CENTER); textJustify(TextJustify.CENTER); textTranslate(listOf(8.0, -36.8)); textTranslateAnchor(TextTranslateAnchor.VIEWPORT); textIgnorePlacement(true); textAllowOverlap(true) })
+                    style.addLayer(symbolLayer(greenUnclusteredLayerId, greenSourceId) { filter(Expression.all(Expression.has("pinId"), Expression.neq(Expression.get("cluster"), Expression.literal(true)))); iconImage("pin-green"); iconAllowOverlap(true); iconAnchor(IconAnchor.BOTTOM); iconSize(0.1) })
                 }
 
-                // --- B4: Set lại Click Handler (vì nó bị xóa khi style thay đổi) ---
                 mapView.gestures.addOnMapClickListener { point ->
                     val screenPoint = mapboxMap.pixelForCoordinate(point)
-                    val clusterLayerIds =
-                        listOf("red-clusters-icon-layer", "green-clusters-icon-layer")
+                    val clusterLayerIds = listOf("red-clusters-icon-layer", "green-clusters-icon-layer")
                     val pinLayerIds = listOf("red-unclustered-layer", "green-unclustered-layer")
 
-                    // 1) Ưu tiên click cluster trước
                     mapboxMap.queryRenderedFeatures(
                         RenderedQueryGeometry(screenPoint),
                         RenderedQueryOptions(clusterLayerIds, null)
@@ -385,7 +289,6 @@ fun MapScreen(
                             }
                         }
 
-                        // 2) Nếu không trúng cluster thì check pin đơn lẻ
                         mapboxMap.queryRenderedFeatures(
                             RenderedQueryGeometry(screenPoint),
                             RenderedQueryOptions(pinLayerIds, null)
@@ -400,7 +303,6 @@ fun MapScreen(
 
                             val type = f.getStringProperty("type")
 
-                            // TODO: chuyển màn hình khi click pin đơn lẻ
                             onPinPress(pinId.toInt())
                             Log.d("MapDebug", "Clicked pinId=$pinId type=$type")
                         }
@@ -410,7 +312,6 @@ fun MapScreen(
             }
         }
 
-        // SEARCH UI
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -434,11 +335,9 @@ fun MapScreen(
             }
         }
 
-        // CONTROLS
         MapControls(
             onClickStyle = { viewModel.onShowBottomSheet() },
             onClickMyLocation = {
-                // Camera follow puck (hiện tại)
                 followUser(mapViewportState)
             },
             onClickDiscovery = {
@@ -447,7 +346,6 @@ fun MapScreen(
 
         )
 
-        // BOTTOM SHEET
         if (uiState.showBottomSheet) {
             MapStyleBottomSheet(
                 currentStyleUri = uiState.currentStyleUri,
@@ -539,11 +437,7 @@ private fun MapSearchBar(
                         strokeWidth = 2.dp
                     )
                     Spacer(Modifier.width(12.dp))
-                    Text(
-                        "Đang tìm kiếm...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
+                    Text("Đang tìm kiếm...", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 }
             }
         }
@@ -692,7 +586,6 @@ private fun BoxScope.MapControls(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Pin Discovery FAB
         FloatingActionButton(
             onClick = onClickDiscovery,
             containerColor = Color(0xFFFF9800),
@@ -793,7 +686,6 @@ private fun RequestLocationPermission(
         if (granted) onGranted() else onDenied()
     }
 
-    // Xin quyền đúng 1 lần khi vào screen
     LaunchedEffect(Unit) {
         launcher.launch(permissions)
     }

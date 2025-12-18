@@ -46,10 +46,8 @@ class MapViewModel(
     private var pollingJob: Job? = null
 
     init {
-        // ✅ Lắng nghe vị trí từ LocationManager (nguồn duy nhất cho logic app)
         observeUserLocation()
 
-        // ✅ Load pin định kỳ
         startPeriodicPinLoading(userId = CurrentUser.currentUser!!.userId)
     }
 
@@ -236,5 +234,5 @@ class MapViewModel(
 
 object MapConfig{
     val TAG = "MapViewModel"
-    val RADIUS_METERS = 1000.0
+    val RADIUS_METERS = 50.0
 }
