@@ -31,13 +31,11 @@ import com.example.locationpins.utils.formatCount
 @Composable
 fun GalleryScreen(
     viewModel: GalleryViewModel = viewModel(),
-    onPinClick: (Int) -> Unit, // Thêm tham số này để nhận sự kiện từ NavHost
+    onPinClick: (Int) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    // Xóa bỏ currentStep và selectedPinId vì NavHost đã quản lý qua Route
 
     Scaffold(
         topBar = {
@@ -51,7 +49,6 @@ fun GalleryScreen(
                 uiState.isLoadingPin -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 uiState.error != null -> ErrorView(message = uiState.error!!, onRetry = { viewModel.loadPinsWithPosts() })
                 else -> {
-                    // Pipeline bắt đầu từ đây: chỉ hiển thị danh sách Pin
                     PinListView(
                         pinSummaries = uiState.pinSummaries,
                         onPinClick = onPinClick // Truyền pinId ngược lại cho NavHost điều hướng
@@ -190,7 +187,6 @@ fun PostListView(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Tự động load bài viết khi vào màn hình
     LaunchedEffect(pinId) {
         viewModel.loadPostsForPin(pinId)
     }
@@ -216,14 +212,12 @@ fun PostListView(
                 .padding(paddingValues)
         ) {
             when {
-                // Trạng thái đang tải bài viết (Sử dụng isLoading từ ViewModel)
                 uiState.isLoadingPost -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
-                // Trạng thái lỗi khi tải bài viết
                 uiState.error != null -> {
                     ErrorView(
                         message = uiState.error ?: "Đã xảy ra lỗi khi tải bài viết",
@@ -232,7 +226,6 @@ fun PostListView(
                     )
                 }
 
-                // Khi tải xong (Dù có bài hay không vẫn vào đây)
                 else -> {
                     val pinSummary = uiState.pinSummaries.find { it.pinId == pinId }
                     val posts = uiState.currentPinPosts
@@ -258,7 +251,6 @@ fun PostListView(
                             }
                         }
 
-                        // Kiểm tra nếu danh sách bài đăng thực sự trống
                         if (posts.isEmpty()) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -271,7 +263,6 @@ fun PostListView(
                                 )
                             }
                         } else {
-                            // Danh sách Grid (Giữ nguyên UI gốc)
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(3),
                                 modifier = Modifier.fillMaxSize(),

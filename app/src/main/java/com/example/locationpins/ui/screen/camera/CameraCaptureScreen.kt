@@ -68,10 +68,9 @@ fun CameraCaptureScreen(
     modifier: Modifier = Modifier
 ) {
 
-    // 1. Xin quyền Location ngay khi mở màn hình
     RequestLocationPermission(
         onGranted = { LocationManager.onPermissionGranted() },
-        onDenied = { /* Có thể hiện thông báo nếu cần */ }
+        onDenied = {}
     )
 
     val context = LocalContext.current
@@ -126,7 +125,6 @@ fun CameraCaptureScreen(
         }
     }
 
-    // --- HÀM XỬ LÝ CHỤP ẢNH (Tách ra để tái sử dụng) ---
     val captureImage = {
         val photoFile = File(
             context.cacheDir,
@@ -140,7 +138,7 @@ fun CameraCaptureScreen(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraCapture", "Lỗi chụp ảnh: ${exc.message}", exc)
-                    isLoadingLocationOnCapture = false // Tắt loading nếu lỗi
+                    isLoadingLocationOnCapture = false
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
@@ -213,7 +211,6 @@ fun CameraCaptureScreen(
                         bitmap.recycle()
                         squareBitmap.recycle()
 
-                        // Xong xuôi thì tắt loading và trả kết quả
                         isLoadingLocationOnCapture = false
                         onImageCaptured(squareFile.toUri())
 
@@ -228,13 +225,12 @@ fun CameraCaptureScreen(
         )
     }
 
-    // --- UI CHÍNH ---
+    // UI CHÍNH
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 1. Camera preview
         AndroidView(
             factory = { previewView },
             modifier = Modifier
@@ -242,7 +238,6 @@ fun CameraCaptureScreen(
                 .onSizeChanged { size -> previewSize = size }
         )
 
-        // 2. Overlay khung vuông
         Canvas(modifier = Modifier.fillMaxSize()) {
             val screenWidth = size.width
             val screenHeight = size.height
@@ -268,7 +263,6 @@ fun CameraCaptureScreen(
             )
         }
 
-        // 3. Hiển thị thông tin GPS ở trên cùng
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -297,7 +291,6 @@ fun CameraCaptureScreen(
             }
         }
 
-        // 4. Loading indicator LỚN ở giữa màn hình (chỉ hiện khi người dùng bấm chụp mà phải chờ GPS)
         if (isLoadingLocationOnCapture) {
             Box(
                 modifier = Modifier
@@ -313,7 +306,6 @@ fun CameraCaptureScreen(
             }
         }
 
-        // 5. Nút đóng (X)
         IconButton(
             onClick = onCancel,
             modifier = Modifier
@@ -323,7 +315,6 @@ fun CameraCaptureScreen(
             Icon(Icons.Default.Close, "Đóng", tint = Color.White, modifier = Modifier.size(32.dp))
         }
 
-        // 6. Các nút điều khiển dưới đáy
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

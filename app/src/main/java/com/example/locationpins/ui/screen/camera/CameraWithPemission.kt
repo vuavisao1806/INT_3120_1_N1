@@ -82,7 +82,6 @@ fun CameraWithPermission(
         }
 
         else -> {
-            // Đang chờ kết quả xin quyền lần đầu -> có thể để trống
         }
     }
 }

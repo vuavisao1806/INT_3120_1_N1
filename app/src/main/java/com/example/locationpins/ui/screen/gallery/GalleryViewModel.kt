@@ -60,20 +60,16 @@ class GalleryViewModel(
             _uiState.update { it.copy(isLoadingPin = true, error = null) }
 
             try {
-                // 1. Lấy tất cả pins của user
                 val pins = postRepository.getPreviewPins(CurrentUser.currentUser!!.userId)
 
-                // 2. Với mỗi pin, lấy tất cả posts và đếm
                 val pinSummaries = pins.mapNotNull { pin ->
                     try {
-                        // Lấy min image của pin để làm cover image
                         PinSummary(
                             pinId = pin.pinId,
                             coverImageUrl = pin.pinImage,
                             postCount = pin.quantity
                         )
                     } catch (e: Exception) {
-                        // Pin không có post nào, bỏ qua
                         null
                     }
                 }

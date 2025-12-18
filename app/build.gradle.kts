@@ -86,12 +86,14 @@ dependencies {
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.rules)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation("io.mockk:mockk-android:1.13.12")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation("io.mockk:mockk-android:1.13.12")
