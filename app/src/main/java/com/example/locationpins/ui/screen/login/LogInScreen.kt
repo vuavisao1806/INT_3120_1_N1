@@ -255,7 +255,7 @@ fun Header(greeting: String, content: String, iconSize: Dp = 100.dp) {
     ) {
 
         Image(
-            painter = painterResource(id = R.drawable.pin_red),
+            painter = painterResource(id = R.drawable.login_icon),
             contentDescription = "Pin đỏ",
             modifier = Modifier.size(iconSize)
         )

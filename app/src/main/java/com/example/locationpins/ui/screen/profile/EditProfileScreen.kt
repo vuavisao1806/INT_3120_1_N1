@@ -126,8 +126,8 @@ fun EditProfileScreen(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(imageToShow)
                         .crossfade(true)
-                        .placeholder(com.example.locationpins.R.drawable.ic_launcher_background) // Thay bằng ảnh default của bạn
-                        .error(com.example.locationpins.R.drawable.ic_launcher_background)
+                        .placeholder(com.example.locationpins.R.drawable.empty_avatar) // Thay bằng ảnh default của bạn
+                        .error(com.example.locationpins.R.drawable.empty_avatar)
                         .build(),
                     contentDescription = "Avatar",
                     contentScale = ContentScale.Crop,

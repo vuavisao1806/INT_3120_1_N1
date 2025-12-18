@@ -65,8 +65,8 @@ fun ContactRequestItem(
                 .data(request.avatarUrl)
                 .crossfade(true)
                 .build(),
-            error = painterResource(R.drawable.ic_launcher_background),
-            placeholder = painterResource(R.drawable.ic_launcher_background),
+            error = painterResource(R.drawable.login_icon),
+            placeholder = painterResource(R.drawable.login_icon),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
