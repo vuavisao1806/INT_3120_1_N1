@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -79,6 +80,7 @@ fun PostDetailScreen(
 
     // Gọi đến hàm Stateless để hiển thị
     PostDetailContent(
+        onNavigateBack = onNavigateBack,
         uiState = uiState,
         currentUserAvatar = currentUserAvatar,
         onClickUserName = onClickUserName,
@@ -102,6 +104,7 @@ fun PostDetailScreen(
  */
 @Composable
 fun PostDetailContent(
+    onNavigateBack: () -> Unit,
     uiState: PostDetailUiState,
     currentUserAvatar: String,
     onClickUserName: (Int) -> Unit,
@@ -112,121 +115,143 @@ fun PostDetailContent(
     onSendComment: () -> Unit,
     onTagPress: (String) -> Unit = {},
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .testTag(PostDetailTestTags.LOADING) // Thêm tag
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Quay lại",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
-
-            uiState.error != null && uiState.post == null -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = uiState.error ?: "Đã xảy ra lỗi",
-                        color = Color.Red,
-                        fontSize = 16.sp,
-                        modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
+            Text(
+                text = "Bài viết chi tiết",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .testTag(PostDetailTestTags.LOADING) // Thêm tag
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onRetry,
-                        modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
-                    ) {
-                        Text("Thử lại")
-                    }
                 }
-            }
 
-            uiState.post != null -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF5F5F5))
-                        .padding(bottom = 64.dp)
-                        .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
-                ) {
-                    // Post Header
-                    item {
-                        PostHeader(uiState.post!!, onClickUserName = onClickUserName)
-                    }
-
-                    // Post Content
-                    item {
-                        PostContent(uiState.post!!.body)
-                    }
-
-                    // Post Image
-                    uiState.post!!.imageUrl.let { imageUrl ->
-                        item {
-                            PostImage(imageUrl)
+                uiState.error != null && uiState.post == null -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = uiState.error ?: "Đã xảy ra lỗi",
+                            color = Color.Red,
+                            fontSize = 16.sp,
+                            modifier = Modifier.testTag(PostDetailTestTags.ERROR_TEXT) // Thêm tag
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onRetry,
+                            modifier = Modifier.testTag(PostDetailTestTags.RETRY_BUTTON) // Thêm tag
+                        ) {
+                            Text("Thử lại")
                         }
                     }
+                }
 
-                    // Tags
-                    if (uiState.tags.isNotEmpty()) {
+                uiState.post != null -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFF5F5F5))
+                            .padding(bottom = 64.dp)
+                            .testTag(PostDetailTestTags.POST_CONTENT) // Thêm tag
+                    ) {
+                        // Post Header
                         item {
-                            TagsRow(
-                                uiState.tags,
-                                onTagPress = onTagPress
+                            PostHeader(uiState.post!!, onClickUserName = onClickUserName)
+                        }
+
+                        // Post Content
+                        item {
+                            PostContent(uiState.post!!.body)
+                        }
+
+                        // Post Image
+                        uiState.post!!.imageUrl.let { imageUrl ->
+                            item {
+                                PostImage(imageUrl)
+                            }
+                        }
+
+                        // Tags
+                        if (uiState.tags.isNotEmpty()) {
+                            item {
+                                TagsRow(
+                                    uiState.tags,
+                                    onTagPress = onTagPress
+                                )
+                            }
+                        }
+
+                        // Like & Comment Count
+                        item {
+                            InteractionStats(
+                                likes = uiState.post!!.reactionCount,
+                                comments = uiState.post!!.commentCount,
+                                isLiked = uiState.isLiked,
+                                onLikeClick = onLikeClick
+                            )
+                        }
+
+                        // Comments Section Header
+                        item {
+                            CommentsSectionHeader()
+                        }
+
+                        // Comments List
+                        items(
+                            items = uiState.comments,
+                            key = { comment -> comment.commentId }
+                        ) { comment ->
+                            CommentItem(
+                                comment = comment,
+                                onDeleteClick = { onDeleteComment(comment.commentId) },
+                                onClickUser = onClickUserName
                             )
                         }
                     }
 
-                    // Like & Comment Count
-                    item {
-                        InteractionStats(
-                            likes = uiState.post!!.reactionCount,
-                            comments = uiState.post!!.commentCount,
-                            isLiked = uiState.isLiked,
-                            onLikeClick = onLikeClick
-                        )
-                    }
+                    // Bottom Comment Input Box
+                    BottomCommentInput(
+                        commentText = uiState.commentText,
+                        userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
+                        onCommentChange = onCommentTextChange,
+                        onSendClick = onSendComment,
+                        isSubmitting = uiState.isSubmittingComment,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
 
-                    // Comments Section Header
-                    item {
-                        CommentsSectionHeader()
-                    }
-
-                    // Comments List
-                    items(
-                        items = uiState.comments,
-                        key = { comment -> comment.commentId }
-                    ) { comment ->
-                        CommentItem(
-                            comment = comment,
-                            onDeleteClick = { onDeleteComment(comment.commentId) },
-                            onClickUser = onClickUserName
-                        )
-                    }
-                }
-
-                // Bottom Comment Input Box
-                BottomCommentInput(
-                    commentText = uiState.commentText,
-                    userAvatarUrl = currentUserAvatar, // Truyền tham số thay vì gọi trực tiếp singleton
-                    onCommentChange = onCommentTextChange,
-                    onSendClick = onSendComment,
-                    isSubmitting = uiState.isSubmittingComment,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
-
-                // Show error snackbar if needed
-                uiState.error?.let { error ->
-                    LaunchedEffect(error) {
-                        // You can show a snackbar here if you have SnackbarHost
+                    // Show error snackbar if needed
+                    uiState.error?.let { error ->
+                        LaunchedEffect(error) {
+                            // You can show a snackbar here if you have SnackbarHost
+                        }
                     }
                 }
             }
         }
     }
+
 }
 
 @Composable

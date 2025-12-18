@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.remote.dto.pins.PinDto
 import com.example.locationpins.data.repository.PinRepository
+import com.example.locationpins.data.repository.PostRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.mapbox.geojson.Point
 import com.mapbox.search.ApiType
@@ -24,7 +25,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MapViewModel(
-    private val pinRepo: PinRepository = PinRepository()
+    private val pinRepo: PinRepository = PinRepository(),
+
 ) : ViewModel() {
 
     companion object {
@@ -188,7 +190,7 @@ class MapViewModel(
     private fun loadPins(userId: Int) {
         viewModelScope.launch {
             try {
-                val currentLocation = _uiState.value.userLocation
+                val currentLocation = LocationManager.location.value
 
                 val ownedPins = try {
                     pinRepo.getPinsByUserId(userId)
@@ -200,8 +202,8 @@ class MapViewModel(
                 val radiusPins: List<PinDto> = if (currentLocation != null) {
                     try {
                         pinRepo.getPinsInRadius(
-                            centerLat = currentLocation.latitude(),
-                            centerLng = currentLocation.longitude(),
+                            centerLat = currentLocation.latitude,
+                            centerLng = currentLocation.longitude,
                             radiusMeters = RADIUS_METERS
                         )
                     } catch (e: Exception) {

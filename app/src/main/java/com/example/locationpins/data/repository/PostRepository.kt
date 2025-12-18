@@ -64,15 +64,10 @@ class PostRepository {
 
     suspend fun getPostByPinIdRequestFromMapScreen(
         pinId: Int,
-        limit: Int = 20,
-        offset: Int = 0
     ): List<PostDto> {
-        Log.d("MapDebuggg123", "Clicked pinId=$pinId")
         return api.getPostByPinIdRequestFromMapScreen(
             GetPostByPinIdRequestFromMapScreenRequest(
                 pinId = pinId,
-                limit = limit,
-                offset = offset
             )
         )
     }

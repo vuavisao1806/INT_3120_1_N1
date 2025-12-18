@@ -15,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -24,94 +23,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.locationpins.ui.component.PostPreviewForGrid
 import com.example.locationpins.utils.formatCount
 
-enum class GalleryStep {
-    PinList,
-    PostList
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
     viewModel: GalleryViewModel = viewModel(),
+    onPinClick: (Int) -> Unit, // Thêm tham số này để nhận sự kiện từ NavHost
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onPostPress: (PostSummary) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var currentStep by remember { mutableStateOf(GalleryStep.PinList) }
-    var selectedPinId by remember { mutableStateOf<Int?>(null) }
+
+    // Xóa bỏ currentStep và selectedPinId vì NavHost đã quản lý qua Route
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        if (currentStep == GalleryStep.PinList) "Gallery" else "Ghim",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                navigationIcon = {
-                    if (currentStep == GalleryStep.PostList) {
-                        IconButton(onClick = {
-                            currentStep = GalleryStep.PinList
-                            selectedPinId = null
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Quay lại"
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                title = { Text("Gallery", fontWeight = FontWeight.SemiBold) },
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(modifier = modifier.fillMaxSize().padding(paddingValues)) {
             when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                uiState.error != null -> {
-                    ErrorView(
-                        message = uiState.error ?: "Đã xảy ra lỗi",
-                        onRetry = { viewModel.loadPinsWithPosts() },
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
+                uiState.isLoadingPin -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                uiState.error != null -> ErrorView(message = uiState.error!!, onRetry = { viewModel.loadPinsWithPosts() })
                 else -> {
-                    when (currentStep) {
-                        GalleryStep.PinList -> {
-                            PinListView(
-                                pinSummaries = uiState.pinSummaries,
-                                onPinClick = { pinId ->
-                                    selectedPinId = pinId
-                                    viewModel.loadPostsForPin(pinId)
-                                    currentStep = GalleryStep.PostList
-                                }
-                            )
-                        }
-
-                        GalleryStep.PostList -> {
-                            PostListView(
-                                posts = uiState.currentPinPosts,
-                                pinSummary = uiState.pinSummaries.find { it.pinId == selectedPinId },
-                                onPostPress = onPostPress
-                            )
-                        }
-                    }
+                    // Pipeline bắt đầu từ đây: chỉ hiển thị danh sách Pin
+                    PinListView(
+                        pinSummaries = uiState.pinSummaries,
+                        onPinClick = onPinClick // Truyền pinId ngược lại cho NavHost điều hướng
+                    )
                 }
             }
         }
@@ -187,7 +131,7 @@ private fun PinListView(
 }
 
 @Composable
-private fun PinGridItem(
+fun PinGridItem(
     pinSummary: PinSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -235,61 +179,118 @@ private fun PinGridItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostListView(
-    posts: List<PostSummary>,
-    pinSummary: PinSummary?,
+    pinId: Int,
+    onBackClick: () -> Unit,
     onPostPress: (PostSummary) -> Unit,
+    viewModel: GalleryViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        // Header
-        if (pinSummary != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            ) {
-                Text(
-                    text = "Ghim",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${posts.size} bài đăng",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
-        }
+    val uiState by viewModel.uiState.collectAsState()
 
-        if (posts.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Không có bài đăng nào",
-                    fontSize = 16.sp,
-                    color = Color.Gray
-                )
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(
-                    items = posts,
-                    key = { it.postId }
-                ) { post ->
-                    PostGridItemWithStats(
-                        post = post,
-                        onClick = { onPostPress(post) }
+    // Tự động load bài viết khi vào màn hình
+    LaunchedEffect(pinId) {
+        viewModel.loadPostsForPin(pinId)
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Ghim", fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when {
+                // Trạng thái đang tải bài viết (Sử dụng isLoading từ ViewModel)
+                uiState.isLoadingPost -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                }
+
+                // Trạng thái lỗi khi tải bài viết
+                uiState.error != null -> {
+                    ErrorView(
+                        message = uiState.error ?: "Đã xảy ra lỗi khi tải bài viết",
+                        onRetry = { viewModel.loadPostsForPin(pinId) },
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                // Khi tải xong (Dù có bài hay không vẫn vào đây)
+                else -> {
+                    val pinSummary = uiState.pinSummaries.find { it.pinId == pinId }
+                    val posts = uiState.currentPinPosts
+
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Header (Giữ nguyên UI gốc)
+                        if (pinSummary != null) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                            ) {
+                                Text(
+                                    text = "Ghim",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${posts.size} bài đăng",
+                                    fontSize = 14.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
+                        // Kiểm tra nếu danh sách bài đăng thực sự trống
+                        if (posts.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "Không có bài đăng nào",
+                                    fontSize = 16.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        } else {
+                            // Danh sách Grid (Giữ nguyên UI gốc)
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                items(
+                                    items = posts,
+                                    key = { it.postId }
+                                ) { post ->
+                                    PostGridItemWithStats(
+                                        post = post,
+                                        onClick = { onPostPress(post) }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

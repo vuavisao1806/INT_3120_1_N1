@@ -16,10 +16,11 @@ import com.example.locationpins.ui.screen.LocationSocialAppState
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen
-import com.example.locationpins.ui.screen.listpostfrommapscreen.ListPostFromMapScreen
+import com.example.locationpins.ui.screen.gallery.PostListView
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.ui.screen.login.LoginView
 import com.example.locationpins.ui.screen.map.MapScreen
+import com.example.locationpins.ui.screen.map.SelectedPinScreen
 import com.example.locationpins.ui.screen.newfeed.NewsFeedScreen
 import com.example.locationpins.ui.screen.postDetail.PostDetailScreen
 import com.example.locationpins.ui.screen.profile.EditProfileScreen
@@ -88,15 +89,15 @@ fun LocationSocialNavHost(
                 navArgument("pinId") { type = NavType.IntType } // Khai báo nhận Int
             )
         ) { backStackEntry ->
-            // Lấy ID từ trên đường dẫn xuống
             val pinId = backStackEntry.arguments?.getInt("pinId") ?: -1
-            // Gọi cái Wrapper đã viết ở Bước 1
-            ListPostFromMapScreen(
+            SelectedPinScreen(
                 pinId = pinId,
-                onPostPress = { post ->
-                    // Vẫn cho phép bấm vào bài viết để xem chi tiết
-                    navController.navigate("post_detail/${post.postId}")
+                onBackClick = {
+                    navController.popBackStack()
                 },
+                onPostPress = { post ->
+                    navController.navigate("post_detail/${post.postId}")
+                }
             )
         }
 
@@ -120,11 +121,36 @@ fun LocationSocialNavHost(
             }
         }
 
+        // ... các composable khác giữ nguyên ...
+
+// Bước 1: Màn hình chính của Gallery (Danh sách Pin)
         composable(route = TopLevelDestination.GALLERY.route) {
-            GalleryScreen(onPostPress = { post ->
-                // Navigate tới PostDetail với postId
-                navController.navigate("post_detail/${post.postId}")
-            })
+            GalleryScreen(
+                onPinClick = { pinId ->
+                    // Điều hướng sang bước tiếp theo trong pipeline
+                    navController.navigate("gallery_posts/$pinId")
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+// Bước 2: Bước tiếp theo trong Pipeline (Danh sách bài đăng của Pin đó)
+        composable(
+            route = "gallery_posts/{pinId}",
+            arguments = listOf(
+                navArgument("pinId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val pinId = backStackEntry.arguments?.getInt("pinId") ?: -1
+
+            // Sử dụng lại PostListView của bạn nhưng bọc trong một Screen để có TopBar
+            PostListView(
+                pinId = pinId,
+                onBackClick = { navController.popBackStack() },
+                onPostPress = { post ->
+                    navController.navigate("post_detail/${post.postId}")
+                }
+            )
         }
 
         composable(

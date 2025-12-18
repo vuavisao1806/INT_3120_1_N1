@@ -60,12 +60,6 @@ data class GetNewsfeedRequest(
 data class GetPostByPinIdRequestFromMapScreenRequest(
     @SerialName("pin_id")
     val pinId: Int,
-
-    @SerialName("limit")
-    val limit: Int = 20,
-
-    @SerialName("offset")
-    val offset: Int = 0
 )
 
 @Serializable
