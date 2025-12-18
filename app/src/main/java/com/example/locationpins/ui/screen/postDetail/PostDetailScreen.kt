@@ -25,9 +25,7 @@ import androidx.compose.ui.platform.testTag // Thêm import này
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
@@ -39,6 +37,7 @@ import com.example.locationpins.data.repository.SensitiveContentRepository
 import com.example.locationpins.data.repository.TagRepository
 import com.example.locationpins.ui.screen.login.CurrentUser
 import com.example.locationpins.utils.formatCount
+import com.example.locationpins.utils.formatTimeForPost
 
 // Object chứa các ID để dùng trong test
 object PostDetailTestTags {
@@ -288,7 +287,7 @@ fun PostHeader(post: PostDto, onClickUserName: (Int) -> Unit) {
                 )
 
                 Text(
-                    text = post.createdAt,
+                    text = formatTimeForPost(post.createdAt),
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
@@ -510,7 +509,7 @@ fun CommentItem(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = comment.createdAt,
+                        text = formatTimeForPost(comment.createdAt),
                         fontSize = 12.sp,
                         color = Color.Gray
                     )

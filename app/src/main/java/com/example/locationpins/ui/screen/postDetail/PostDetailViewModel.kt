@@ -122,6 +122,7 @@ class PostDetailViewModel(
                     // TODO: Thêm hiệu ứng như kiểu cái viền đỏ xung quanh ô nhập hoặc hiện cảnh báo (aler)
                     // TODO: Mr. LDHA sẽ thực hiện
                     // ToDo: nhấn nhiều làn comment bị gửi nhiều lần trùng nhau
+                    _uiState.update { it.copy(isSubmittingComment = false, error = "Bình luận chứa nội dung nhạy cảm") }
                     return@launch
                 }
                 _uiState.update { it.copy(isSubmittingComment = true, error = null) }

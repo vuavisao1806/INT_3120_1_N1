@@ -606,7 +606,7 @@ private fun FoundScreen(
                 Divider(color = Color.LightGray.copy(alpha = 0.3f))
 
                 Button(
-                    onClick = onViewPin,
+                    onClick = onViewPin, // TODO: nối onViewPin sang màn hình xem ghim từ pin
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),

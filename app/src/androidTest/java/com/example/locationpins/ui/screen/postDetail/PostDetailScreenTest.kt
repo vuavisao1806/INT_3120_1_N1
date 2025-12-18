@@ -1,29 +1,24 @@
 package com.example.locationpins.ui.screen.postDetail
 
-import android.content.ContentValues
-import android.content.Context
-import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import com.example.locationpins.data.remote.dto.comment.CommentDto
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.data.remote.dto.tag.TagDto
-import com.example.locationpins.data.repository.BadgeRepository
-import com.example.locationpins.data.repository.CreatePostRepository
-import com.example.locationpins.data.repository.PinRepository
-import com.example.locationpins.data.repository.PostRepository
-import com.example.locationpins.data.repository.SensitiveContentRepository
-import com.example.locationpins.data.repository.TagRepository
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-
-// ==========================================
-// MOCK DATA (Dữ liệu giả lập)
-// ==========================================
 
 val mockPostFull = PostDto(
     pinId = 1,
@@ -66,19 +61,11 @@ val mockComments = listOf(
     )
 )
 
-// ==========================================
-// CLASS TEST CHÍNH
-// ==========================================
-
 class PostDetailScreenTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-    // ==========================================
-    // NHÓM 1: KIỂM TRA TRẠNG THÁI HIỂN THỊ (STATE)
-    // ==========================================
-
+    // Kiểm tra trạng thái hiển thị
     @Test
     fun state_Loading_ShowsProgressIndicator() {
         // Given: State đang loading (Mặc định isLoading = true)
@@ -96,10 +83,10 @@ class PostDetailScreenTest {
     @Test
     fun state_Error_ShowsMessageAndRetryButton() {
         // Given: State bị lỗi, đã tắt loading
-        val errorMsg = "Mất kết nối internet"
+        val errorMessage = "Mất kết nối internet"
         val state = PostDetailUiState(
             isLoading = false, // Quan trọng: Phải tắt loading
-            error = errorMsg,
+            error = errorMessage,
             post = null
         )
 
@@ -110,7 +97,7 @@ class PostDetailScreenTest {
         composeTestRule.onNodeWithTag(PostDetailTestTags.LOADING).assertDoesNotExist()
         composeTestRule.onNodeWithTag(PostDetailTestTags.ERROR_TEXT)
             .assertIsDisplayed()
-            .assertTextContains(errorMsg)
+            .assertTextContains(errorMessage)
         composeTestRule.onNodeWithTag(PostDetailTestTags.RETRY_BUTTON)
             .assertIsDisplayed()
             .assertHasClickAction()
@@ -167,10 +154,7 @@ class PostDetailScreenTest {
         composeTestRule.onAllNodesWithTag(PostDetailTestTags.COMMENT_ITEM).assertCountEquals(2)
     }
 
-    // ==========================================
-    // NHÓM 2: KIỂM TRA TƯƠNG TÁC (INTERACTION)
-    // ==========================================
-
+    // Kiểm tra tương tác
     @Test
     fun action_ClickRetry_TriggersCallback() {
         var isRetryClicked = false
@@ -219,10 +203,22 @@ class PostDetailScreenTest {
         assert(currentInput == "Hello World")
     }
 
-    // ==========================================
-    // NHÓM 3: LOGIC UI (ENABLE/DISABLE/STATE CHANGE)
-    // ==========================================
+    @Test
+    fun send_sensitive_comment() {
+        var currentInput = ""
+        val state = PostDetailUiState(
+            isLoading = false,
+            post = mockPostFull
+        )
 
+        setContentWithState(state, onCommentTextChange = { currentInput = it })
+
+        composeTestRule.onNodeWithTag(PostDetailTestTags.COMMENT_INPUT)
+            .performTextInput("Hello World")
+    }
+
+
+    // LOGIC UI (ENABLE/DISABLE/STATE CHANGE)
     @Test
     fun logic_LikeButton_ChangeIconDescription_WhenLiked() {
         // Case: Chưa Like
@@ -284,10 +280,10 @@ class PostDetailScreenTest {
     fun logic_SendButton_ShowsLoading_WhenSubmitting() {
         // Case: Có chữ + Đang gửi -> Disable + Hiện Loading
         val state = PostDetailUiState(
-            isLoading = false, // <-- QUAN TRỌNG: Phải set false để hiện giao diện
+            isLoading = false, // QUAN TRỌNG: Phải set false để hiện giao diện
             post = mockPostFull,
-            commentText = "ABC", // <-- Giả lập đã nhập chữ
-            isSubmittingComment = true // <-- Đang gửi
+            commentText = "ABC", // Giả lập đã nhập chữ
+            isSubmittingComment = true // Đang gửi
         )
 
         setContentWithState(state)
@@ -297,10 +293,6 @@ class PostDetailScreenTest {
 
         // 2. Icon Send (mũi tên) KHÔNG được hiện
         composeTestRule.onNodeWithContentDescription("Gửi").assertDoesNotExist()
-
-        // 3. Nếu bạn đã thêm tag "Small_Loading" vào CircularProgressIndicator nhỏ trong file UI
-        // thì bỏ comment dòng dưới để test:
-        // composeTestRule.onNodeWithTag("Small_Loading").assertIsDisplayed()
     }
 
     @Test
@@ -319,9 +311,7 @@ class PostDetailScreenTest {
         assert(isSent)
     }
 
-    // ==========================================
-    // HELPER FUNCTION
-    // ==========================================
+    // helper function
     private fun setContentWithState(
         state: PostDetailUiState,
         currentUserAvatar: String = "avatar_url",
@@ -341,7 +331,9 @@ class PostDetailScreenTest {
                 onLikeClick = onLikeClick,
                 onDeleteComment = onDeleteComment,
                 onCommentTextChange = onCommentTextChange,
-                onSendComment = onSendComment
+                onSendComment = onSendComment,
+                onNavigateBack = {},
+                onTagPress = {}
             )
         }
     }

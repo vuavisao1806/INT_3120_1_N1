@@ -1,7 +1,9 @@
+import os
+import base64
+import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from connection import get_openai_connection
-import base64
 from fastapi import File, UploadFile
 
 router = APIRouter(
@@ -18,6 +20,8 @@ class SensitiveTextRespond(BaseModel):
 
 @router.post("/text")
 def isSensitiveText(body: CheckSensitiveTextRequest):
+    if (body.text == ""):
+        return SensitiveTextRespond(is_sensitive=False)
     connection = get_openai_connection()
     try:
         response = connection.moderations.create(
@@ -27,6 +31,19 @@ def isSensitiveText(body: CheckSensitiveTextRequest):
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"The error occurs when checking sensitive text: {error}")
     result: SensitiveTextRespond = SensitiveTextRespond(is_sensitive = bool(response.results[0].flagged))
+    if (result.is_sensitive):
+        return result
+
+    body.text = translate_to_english(body.text)
+    # print(body.text)
+    try:
+        response = connection.moderations.create(
+            model="omni-moderation-latest",
+            input=body.text,
+        )
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"The error occurs when checking sensitive text: {error}")
+    result = SensitiveTextRespond(is_sensitive = bool(response.results[0].flagged))
     return result
 
 class SensitiveTextRespond(BaseModel):
@@ -65,3 +82,14 @@ async def moderate_image(file: UploadFile = File(...)):
     
     result: SensitiveTextRespond = SensitiveTextRespond(is_sensitive = is_flagged)
     return result
+
+def translate_to_english(text: str) -> str:
+    URL = "https://translation.googleapis.com/language/translate/v2"
+    API_KEY = os.environ["TRANSLATE_API_KEY"]
+    payload = {"q": text, "target": "en", "format": "text"}
+    try:
+        r = requests.post(URL, params={"key": API_KEY}, json=payload, timeout=10)
+        r.raise_for_status()
+        return r.json()["data"]["translations"][0]["translatedText"]
+    except requests.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"Translate error: {e}")
