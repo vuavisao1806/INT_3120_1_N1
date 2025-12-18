@@ -3,6 +3,7 @@ package com.example.locationpins.ui.screen.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.locationpins.data.model.Badge
 import com.example.locationpins.data.model.User
 import com.example.locationpins.data.remote.dto.user.ShowContactRespond
 import com.example.locationpins.data.remote.dto.user.toUser
@@ -22,37 +23,29 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.example.locationpins.data.repository.BadgeRepository
 import com.example.locationpins.data.mapper.toBadges
-import com.example.locationpins.data.model.Badge
+import com.example.locationpins.data.mapper.toBadgeProgressList
 
 class ProfileViewModel(
     private val userRepository: UserRepository = UserRepository(),
     private val badgeRepository: BadgeRepository = BadgeRepository(),
     private val postRepository: PostRepository = PostRepository(),
     private val tagRepository: TagRepository = TagRepository()
-) :
-    ViewModel() {
+) : ViewModel() {
+
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-
-
-
-
     /** gọi khi màn hình nhận user + mode */
     fun setUser(userId: Int) {
-        Log.e("ProfileViewModel", "Invalid User ID: $userId. Skipping API call.")
+        Log.e("ProfileViewModel", "Loading user: $userId")
         _uiState.update { current ->
-            current.copy(
-                isLoading = true
-            )
+            current.copy(isLoading = true)
         }
         viewModelScope.launch {
-
             try {
                 val userDto = userRepository.getUser(CurrentUser.currentUser!!.userId, userId)
-
                 val currentUserId = CurrentUser.currentUser?.userId
-                Log.e("ProfileViewModel", "Current user id: $currentUserId")
+
                 if (userDto != null) {
                     val user = userDto.toUser()
 
@@ -61,28 +54,24 @@ class ProfileViewModel(
                         "FRIEND" -> ProfileMode.Friend
                         else -> ProfileMode.Stranger
                     }
-                    // Load badges
-                    val badges = try {
-                        badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
 
+                    // Load earned badges (hiển thị trên profile)
+                    val earnedBadges = try {
+                        badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
                     } catch (e: Exception) {
                         Log.e("ProfileViewModel", "Error loading badges: ${e.message}")
                         emptyList()
                     }
 
-
                     _uiState.update {
                         it.copy(
                             user = user,
                             profileMode = mode,
-                            badges = badges,
+                            badges = earnedBadges,
                             isLoading = false
                         )
                     }
-
-
                 } else {
-                    // Trường hợp API trả về 200 OK nhưng không có user (userDto null)
                     _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
@@ -91,7 +80,6 @@ class ProfileViewModel(
             }
         }
     }
-
 
     fun setUser(user: User, profileMode: ProfileMode) {
         _uiState.update { current ->
@@ -122,9 +110,7 @@ class ProfileViewModel(
 
     fun onDismissRequestDialog() {
         _uiState.update { current ->
-            current.copy(
-                showRequestContact = false,
-            )
+            current.copy(showRequestContact = false)
         }
     }
 
@@ -147,28 +133,21 @@ class ProfileViewModel(
             val response =
                 userRepository.sendContact(CurrentUser.currentUser!!.userId, followedUserId, msg)
             _uiState.update { current ->
-                current.copy(
-                    showRequestContact = false,
-                )
+                current.copy(showRequestContact = false)
             }
             if (response.isSuccess) {
                 val updatedUser = _uiState.value.user!!.copy(status = "SENT_REQUEST")
                 _uiState.update { current ->
-                    current.copy(
-                        user = updatedUser
-                    )
+                    current.copy(user = updatedUser)
                 }
             }
-
         }
     }
 
-    // Hàm mở danh sách
     fun onShowContactRequests() {
         viewModelScope.launch {
             val response = userRepository.showContactRequest(
                 CurrentUser.currentUser!!.userId
-
             )
             _uiState.update {
                 it.copy(
@@ -179,14 +158,12 @@ class ProfileViewModel(
         }
     }
 
-    // Hàm đóng danh sách
     fun onDismissContactRequests() {
         _uiState.update { it.copy(showContactRequests = false) }
     }
 
     private val TAG = "ContactViewModel"
 
-    // Hàm chấp nhận
     fun onAcceptContact() {
         viewModelScope.launch {
             Log.d(TAG, "Đang chấp nhận yêu cầu kết bạn với userId: ${_uiState.value.user!!.userId}")
@@ -219,11 +196,9 @@ class ProfileViewModel(
                     true
                 )
                 if (response.isSuccess) {
-
                     _uiState.update { currentState ->
                         val updatedList = currentState.pendingRequests.map { item ->
                             if (item.followingUserId == contact.followingUserId) {
-
                                 item.copy(status = "ACCEPTED")
                             } else {
                                 item
@@ -239,7 +214,6 @@ class ProfileViewModel(
                         )
                     }
                 } else {
-                    // Nếu thất bại trả về PENDING
                     _uiState.update { currentState ->
                         val revertedList = currentState.pendingRequests.map { item ->
                             if (item.followingUserId == contact.followingUserId) item.copy(status = "PENDING")
@@ -253,19 +227,16 @@ class ProfileViewModel(
 
             } catch (e: Exception) {
                 Log.e(TAG, "Lỗi khi chấp nhận kết bạn: ${e.message}", e)
-
             }
         }
     }
 
-    // Hàm từ chối
     fun onRejectContact() {
         viewModelScope.launch {
             Log.d(TAG, "Đang từ chối yêu cầu kết bạn với userId: ${_uiState.value.user!!.userId}")
 
             val response = userRepository.respondContact(
                 CurrentUser.currentUser!!.userId,
-
                 _uiState.value.user!!.userId,
                 false
             )
@@ -288,12 +259,10 @@ class ProfileViewModel(
 
                 val response = userRepository.respondContact(
                     CurrentUser.currentUser!!.userId,
-
                     contact.followingUserId,
                     false
                 )
                 if (response.isSuccess) {
-
                     _uiState.update { currentState ->
                         val updatedList = currentState.pendingRequests.map { item ->
                             if (item.followingUserId == contact.followingUserId) {
@@ -312,7 +281,6 @@ class ProfileViewModel(
                         )
                     }
                 } else {
-
                     _uiState.update { currentState ->
                         val revertedList = currentState.pendingRequests.map { item ->
                             if (item.followingUserId == contact.followingUserId) item.copy(status = "PENDING")
@@ -329,21 +297,23 @@ class ProfileViewModel(
         }
     }
 
-    // Kiểm tra và cấp huy hiệu mới
-    fun checkNewBadges() {
+    // ====== BADGE FEATURES ======
 
+    /**
+     * Kiểm tra và cấp huy hiệu mới (gọi khi vào profile hoặc sau các hành động)
+     */
+    fun checkNewBadges() {
         val userId = CurrentUser.currentUser?.userId ?: return
         viewModelScope.launch {
             try {
                 val result = badgeRepository.checkAndAwardBadges(userId)
 
-                // Nếu có huy hiệu mới, hiển thị dialog
                 if (result.newlyEarned.isNotEmpty()) {
                     val firstBadge = result.newlyEarned.first()
                     _uiState.update {
                         it.copy(
-                            showBadgeDialog = true,
-                            selectedBadge = Badge(
+                            showNewBadgeDialog = true,
+                            selectedNewBadge = Badge(
                                 badgeId = firstBadge.badgeId,
                                 name = firstBadge.name,
                                 description = firstBadge.description,
@@ -354,9 +324,8 @@ class ProfileViewModel(
                         )
                     }
 
-                    // Reload badges sau khi cấp
+                    // Reload badges
                     val badges = badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
-                    Log.d("Badge","Profile check"+ badges.size.toString())
                     _uiState.update { it.copy(badges = badges) }
                 }
             } catch (e: Exception) {
@@ -365,16 +334,54 @@ class ProfileViewModel(
         }
     }
 
-    fun dismissBadgeDialog() {
-        _uiState.update { it.copy(showBadgeDialog = false, selectedBadge = null) }
+    fun dismissNewBadgeDialog() {
+        _uiState.update { it.copy(showNewBadgeDialog = false, selectedNewBadge = null) }
     }
+
+    /**
+     * Hiển thị dialog chi tiết badges (khi click vào badge)
+     */
+    fun showBadgeDetailDialog(badgeIndex: Int) {
+        val userId = _uiState.value.user?.userId ?: return
+        viewModelScope.launch {
+            try {
+                // Load tất cả badges đã đạt được
+                val allEarnedBadges = badgeRepository.getEarnedBadges(userId, limit = 100).toBadges()
+
+                // Load tiến trình tất cả badges
+                val allProgress = badgeRepository.getBadgeProgress(userId).toBadgeProgressList()
+
+                _uiState.update {
+                    it.copy(
+                        showBadgeDetailDialog = true,
+                        selectedBadgeIndex = badgeIndex,
+                        allEarnedBadges = allEarnedBadges,
+                        allBadgeProgress = allProgress
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Error loading badge details: ${e.message}")
+            }
+        }
+    }
+
+    fun dismissBadgeDetailDialog() {
+        _uiState.update {
+            it.copy(
+                showBadgeDetailDialog = false,
+                selectedBadgeIndex = 0,
+                allEarnedBadges = emptyList(),
+                allBadgeProgress = emptyList()
+            )
+        }
+    }
+
     fun loadPostsForSelf(userId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
                 val posts = postRepository.getPostByUser(userId)
-                Log.d("BEFORE: ", posts.size.toString())
 
                 if (CurrentUser.favoriteTags == null) {
                     CurrentUser.favoriteTags = tagRepository.getFavoriteTagsByUserId(
@@ -383,7 +390,6 @@ class ProfileViewModel(
                     )
                 }
                 val favoriteTags = CurrentUser.favoriteTags.orEmpty()
-
                 val favoriteTagsName: Set<String> = favoriteTags.map { it.name }.toSet()
 
                 val tagsByPostId: Map<Int, List<String>> = coroutineScope {
@@ -398,7 +404,6 @@ class ProfileViewModel(
                 val favoritePosts = posts.sortedByDescending { post ->
                     tagsByPostId[post.postId].orEmpty().any { it in favoriteTagsName }
                 }
-                Log.d("BEFORE: ", favoritePosts.size.toString())
 
                 val postSummaries = favoritePosts.map { post ->
                     PostSummary(
@@ -408,6 +413,7 @@ class ProfileViewModel(
                         commentCount = post.commentCount
                     )
                 }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -425,5 +431,4 @@ class ProfileViewModel(
             }
         }
     }
-
 }

@@ -4,9 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,21 +31,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.locationpins.R
+import com.example.locationpins.data.model.Badge
 import com.example.locationpins.data.model.User
 import com.example.locationpins.ui.screen.gallery.PostGridItemWithStats
-import com.example.locationpins.ui.screen.gallery.PostListView
 import com.example.locationpins.ui.screen.gallery.PostSummary
 import com.example.locationpins.ui.screen.login.CurrentUser
-import com.example.locationpins.ui.theme.LocationSocialTheme
 import com.example.locationpins.ui.component.BadgeRow
-import com.example.locationpins.data.model.Badge
+import com.example.locationpins.ui.component.NewBadgeDialog
+import com.example.locationpins.ui.component.BadgeDetailDialog
 
 @Composable
 fun ProfileScreen(
@@ -58,86 +56,126 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    // lưu user vào viewModel
+
+    // Load user khi vào màn hình
     LaunchedEffect(userId) {
         viewModel.setUser(userId)
         viewModel.loadPostsForSelf(CurrentUser.currentUser!!.userId)
+
+        // Chỉ check badges mới nếu là profile của chính mình
+        if (userId == CurrentUser.currentUser?.userId) {
+            viewModel.checkNewBadges()
+        }
     }
+
     val user = uiState.user
     val profileMode = uiState.profileMode
-    Box(modifier = Modifier.fillMaxSize()) {
 
+    Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading) {
-            // Hiển thị loading khi đang gọi API
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
             val badges = uiState.badges
             when (profileMode) {
                 is ProfileMode.Self -> ProfileSelfView(
-                    user,
+                    user = user,
                     onInvitesClick = { viewModel.onShowContactRequests() },
                     onEditClick = onEditClick,
                     badges = badges,
+                    onBadgeClick = { badge ->
+                        val index = badges.indexOf(badge)
+                        viewModel.showBadgeDetailDialog(index)
+                    },
                     onPressPost = onPressPost,
                     currentPosts = uiState.currentPosts
                 )
 
-                is ProfileMode.Friend -> ProfileFriendView(user, badges = badges)
+                is ProfileMode.Friend -> ProfileFriendView(
+                    user = user,
+                    badges = badges,
+                    onBadgeClick = { badge ->
+                        val index = badges.indexOf(badge)
+                        viewModel.showBadgeDetailDialog(index)
+                    }
+                )
+
                 ProfileMode.Stranger -> ProfileStrangerView(
-                    user,
+                    user = user,
                     onGetContactClick = { viewModel.onGetContactClick() },
                     onAcceptClick = { viewModel.onAcceptContact() },
                     onRejectClick = { viewModel.onRejectContact() },
-                    badges = badges)
-
-
+                    badges = badges,
+                    onBadgeClick = { badge ->
+                        val index = badges.indexOf(badge)
+                        viewModel.showBadgeDetailDialog(index)
+                    }
+                )
             }
-            // Hiện form nhập yêu cầu liên hệ đối với người lạ
+
+            // Dialog form nhập yêu cầu liên hệ
             if (uiState.showRequestContact) {
                 RequestContactScreen(
-                    onDismiss = {
-                        viewModel.onDismissRequestDialog()
-                    },
+                    onDismiss = { viewModel.onDismissRequestDialog() },
                     onSend = { viewModel.onSendClick() },
                     onMessageChange = { viewModel.onMessageChange(it) },
                     message = viewModel.getMessage()
                 )
             }
 
+            // BottomSheet danh sách yêu cầu kết bạn
             if (uiState.showContactRequests) {
                 ContactRequestsSheet(
-                    requests = uiState.pendingRequests, // Lấy list từ State
+                    requests = uiState.pendingRequests,
                     onDismiss = { viewModel.onDismissContactRequests() },
-                    onAccept = {
-                        viewModel.onAcceptContact(it)
-                    },
-                    onReject = {
-                        viewModel.onRejectContact(it)
-                    },
+                    onAccept = { viewModel.onAcceptContact(it) },
+                    onReject = { viewModel.onRejectContact(it) },
                     onShowProfileClick = onProfileClick
+                )
+            }
+
+            // Dialog chúc mừng badge mới
+            if (uiState.showNewBadgeDialog && uiState.selectedNewBadge != null) {
+                NewBadgeDialog(
+                    badgeName = uiState.selectedNewBadge!!.name,
+                    badgeDescription = uiState.selectedNewBadge!!.description,
+                    badgeIcon = uiState.selectedNewBadge!!.iconName,
+                    badgeTier = uiState.selectedNewBadge!!.tier,
+                    onDismiss = { viewModel.dismissNewBadgeDialog() }
+                )
+            }
+
+            // Dialog chi tiết badges (swipe + progress mode)
+            if (uiState.showBadgeDetailDialog) {
+                BadgeDetailDialog(
+                    earnedBadges = uiState.allEarnedBadges,
+                    allProgress = uiState.allBadgeProgress,
+                    initialBadgeIndex = uiState.selectedBadgeIndex,
+                    onDismiss = { viewModel.dismissBadgeDetailDialog() }
                 )
             }
         }
     }
 }
 
+// ====== PROFILE VIEWS ======
 
-// Màn hình cho bạn bè
 @Composable
 fun ProfileFriendView(
     user: User?,
     badges: List<Badge>,
-    modifier: Modifier = Modifier) {
+    onBadgeClick: (Badge) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AvatarAndNameColumn(user)
+        AvatarAndNameColumn(user = user, badges = badges, onBadgeClick = onBadgeClick)
         InfoUserRow(user)
         ParametersRow(user)
     }
 }
-// Màn hình cho bản thân
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProfileSelfView(
@@ -145,6 +183,7 @@ fun ProfileSelfView(
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit,
     badges: List<Badge>,
+    onBadgeClick: (Badge) -> Unit,
     onPressPost: (PostSummary) -> Unit,
     currentPosts: List<PostSummary>,
     modifier: Modifier = Modifier
@@ -157,9 +196,7 @@ fun ProfileSelfView(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
-        item(
-            span = { GridItemSpan(maxLineSpan) }
-        ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -190,7 +227,7 @@ fun ProfileSelfView(
                         )
                     }
                 }
-                AvatarAndNameColumn(user, badges = badges)
+                AvatarAndNameColumn(user = user, badges = badges, onBadgeClick = onBadgeClick)
                 InfoUserRow(user)
                 ParametersRow(user)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -198,7 +235,6 @@ fun ProfileSelfView(
         }
 
         if (currentPosts.isEmpty()) {
-
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Box(
                     modifier = Modifier
@@ -213,7 +249,6 @@ fun ProfileSelfView(
                 }
             }
         } else {
-
             items(currentPosts) { post ->
                 PostGridItemWithStats(
                     post = post,
@@ -224,7 +259,6 @@ fun ProfileSelfView(
     }
 }
 
-// Màn hình cho người lạ
 @Composable
 fun ProfileStrangerView(
     user: User?,
@@ -232,13 +266,14 @@ fun ProfileStrangerView(
     onAcceptClick: () -> Unit,
     onRejectClick: () -> Unit,
     badges: List<Badge>,
+    onBadgeClick: (Badge) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AvatarAndNameColumn(user)
+        AvatarAndNameColumn(user = user, badges = badges, onBadgeClick = onBadgeClick)
         when (user!!.status) {
             "STRANGER" -> GetContactButton(onClick = onGetContactClick)
             "SENT_REQUEST" -> GetSentContact()
@@ -289,11 +324,10 @@ fun AvatarAndNameColumn(
             color = Color.Gray
         )
 
-        Log.d("Badge",badges.size.toString())
         if (badges.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             BadgeRow(
-                badges = badges.take(5), // Hiển thị tối đa 5 badges
+                badges = badges.take(5),
                 onBadgeClick = onBadgeClick
             )
         }
@@ -334,10 +368,7 @@ fun InfoLine(icon: String, text: String) {
 }
 
 @Composable
-fun GetContactButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun GetContactButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
         modifier = modifier
@@ -350,10 +381,7 @@ fun GetContactButton(
             contentColor = Color.White
         )
     ) {
-        Icon(
-            imageVector = Icons.Outlined.ChatBubbleOutline,
-            contentDescription = null
-        )
+        Icon(imageVector = Icons.Outlined.ChatBubbleOutline, contentDescription = null)
         Spacer(Modifier.width(8.dp))
         Text("Get contact")
     }
@@ -371,32 +399,23 @@ fun GetRespondRequestButton(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         Button(
             onClick = onAcceptClick,
-            modifier = Modifier
-                .weight(1f)
-                .height(56.dp),
+            modifier = Modifier.weight(1f).height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF1665D8),
                 contentColor = Color.White
             )
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Check,
-                contentDescription = null
-            )
+            Icon(imageVector = Icons.Outlined.Check, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Đồng ý", fontWeight = FontWeight.SemiBold)
         }
 
-
         Button(
             onClick = onRejectClick,
-            modifier = Modifier
-                .weight(1f)
-                .height(56.dp),
+            modifier = Modifier.weight(1f).height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFF2F2F2),
@@ -404,10 +423,7 @@ fun GetRespondRequestButton(
             ),
             elevation = null
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Close,
-                contentDescription = null
-            )
+            Icon(imageVector = Icons.Outlined.Close, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Từ chối", fontWeight = FontWeight.SemiBold)
         }
@@ -415,18 +431,13 @@ fun GetRespondRequestButton(
 }
 
 @Composable
-fun GetSentContact(
-    modifier: Modifier = Modifier
-) {
+fun GetSentContact(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .padding(horizontal = 32.dp, vertical = 8.dp)
             .fillMaxWidth()
             .height(56.dp)
-            .background(
-                color = Color(0xFFF2F2F2),
-                shape = RoundedCornerShape(16.dp)
-            ),
+            .background(color = Color(0xFFF2F2F2), shape = RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -435,47 +446,6 @@ fun GetSentContact(
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF828282)
         )
-    }
-}
-
-@Composable
-fun RequestMessageCard(message: String?) {
-    if (!message.isNullOrBlank()) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 32.dp, vertical = 4.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Lời nhắn:",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = Color(0xFFF5F7FA),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(12.dp))
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "\"$message\"",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    ),
-                    color = Color(0xFF4A4A4A),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
     }
 }
 
@@ -510,14 +480,12 @@ private fun StatItem(label: String, value: Int) {
     }
 }
 
-// Hàng chứa button danh sách liên hệ và edit (đối với bản thân)
 @Composable
 fun SelfActionRow(
     pendingInvites: Int,
     onInvitesClick: () -> Unit,
     onEditClick: () -> Unit
 ) {
-
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onInvitesClick) {
             Box {
@@ -548,7 +516,6 @@ fun SelfActionRow(
             }
         }
 
-
         IconButton(onClick = onEditClick) {
             Icon(
                 imageVector = Icons.Outlined.Edit,
@@ -556,77 +523,5 @@ fun SelfActionRow(
                 tint = Color(0xFF1665D8)
             )
         }
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewProfileScreen() {
-    LocationSocialTheme {
-        ProfileScreen(
-            1,
-            onEditClick = {},
-            onProfileClick = {},
-            onPressPost = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewSelf() {
-    LocationSocialTheme {
-        ProfileSelfView(
-            user = User(
-                userId = 1,
-                userName = "linhnguyen",
-                location = "Hồ Chí Minh, Việt Nam",
-                avatarUrl = "https://example.com/avatar/linh.png",
-                quote = "Sống là trải nghiệm.",
-                name = "Nguyễn Thị Linh",
-                quantityPin = 34,
-                quantityReact = 1280,
-                quantityComment = 256,
-                userEmail = "linh.nguyen@example.com",
-                phoneNumber = "+84 912 345 678",
-                website = "https://linhnguyen.dev",
-                quantityContact = 5
-            ),
-            onPressPost = {},
-            onInvitesClick = {},
-            onEditClick = {},
-            badges = TODO(),
-            currentPosts = emptyList()
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewStranger() {
-    LocationSocialTheme {
-        ProfileStrangerView(
-            user = User(
-                userId = 1,
-                userName = "linhnguyen",
-                location = "Hồ Chí Minh, Việt Nam",
-                avatarUrl = "https://example.com/avatar/linh.png",
-                quote = "Sống là trải nghiệm.",
-                name = "Nguyễn Thị Linh",
-                quantityPin = 34,
-                quantityReact = 1280,
-                quantityComment = 256,
-                userEmail = "linh.nguyen@example.com",
-                phoneNumber = "+84 912 345 678",
-                website = "https://linhnguyen.dev",
-                quantityContact = 5
-            ),
-            onRejectClick = {},
-            onAcceptClick = {},
-            onGetContactClick = {},
-            badges = TODO(),
-            modifier = TODO()
-        )
     }
 }
