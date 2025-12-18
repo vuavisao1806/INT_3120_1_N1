@@ -48,7 +48,8 @@ val mockComments = listOf(
         avatarUrl = "",
         content = "Bài viết hay quá!",
         createdAt = "1 phút trước",
-        postId = 1
+        postId = 1,
+        childOfCommentId = null
     ),
     CommentDto(
         commentId = 11,
@@ -57,7 +58,8 @@ val mockComments = listOf(
         avatarUrl = "",
         content = "Tuyệt vời!",
         createdAt = "2 phút trước",
-        postId = 1
+        postId = 1,
+        childOfCommentId = null
     )
 )
 
@@ -333,7 +335,10 @@ class PostDetailScreenTest {
                 onCommentTextChange = onCommentTextChange,
                 onSendComment = onSendComment,
                 onNavigateBack = {},
-                onTagPress = {}
+                onTagPress = {},
+                onReplyCommentClick = {},
+                onReplyCommentCancel = {}
+
             )
         }
     }
