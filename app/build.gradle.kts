@@ -9,6 +9,13 @@ android {
     namespace = "com.example.locationpins"
     compileSdk = 36
 
+    packaging {
+        resources {
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.locationpins"
         minSdk = 26
@@ -37,6 +44,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        resources {
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+        }
     }
 }
 
@@ -78,7 +91,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation("io.mockk:mockk-android:1.13.12")
+
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("io.mockk:mockk-android:1.13.12")
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
@@ -96,4 +112,5 @@ dependencies {
 
     // 2. Fix lỗi "Unresolved reference 'ProcessLifecycleOwner'"
     implementation("androidx.lifecycle:lifecycle-process:2.6.2")
+    testImplementation(kotlin("test"))
 }

@@ -525,3 +525,75 @@ fun SelfActionRow(
         }
     }
 }
+
+
+// @Preview(showBackground = true)
+// @Composable
+// fun PreviewProfileScreen() {
+//     LocationSocialTheme {
+//         ProfileScreen(
+//             1,
+//             onEditClick = {},
+//             onProfileClick = {},
+//             onPressPost = {}
+//         )
+//     }
+// }
+
+// @Preview(showBackground = true)
+// @Composable
+// fun PreviewSelf() {
+//     LocationSocialTheme {
+//         ProfileSelfView(
+//             user = User(
+//                 userId = 1,
+//                 userName = "linhnguyen",
+//                 location = "Hồ Chí Minh, Việt Nam",
+//                 avatarUrl = "https://example.com/avatar/linh.png",
+//                 quote = "Sống là trải nghiệm.",
+//                 name = "Nguyễn Thị Linh",
+//                 quantityPin = 34,
+//                 quantityReact = 1280,
+//                 quantityComment = 256,
+//                 userEmail = "linh.nguyen@example.com",
+//                 phoneNumber = "+84 912 345 678",
+//                 website = "https://linhnguyen.dev",
+//                 quantityContact = 5
+//             ),
+//             onPressPost = {},
+//             onInvitesClick = {},
+//             onEditClick = {},
+//             badges = emptyList(),
+//             currentPosts = emptyList()
+//         )
+//     }
+// }
+
+// @Preview(showBackground = true)
+// @Composable
+// fun PreviewStranger() {
+//     LocationSocialTheme {
+//         ProfileStrangerView(
+//             user = User(
+//                 userId = 1,
+//                 userName = "linhnguyen",
+//                 location = "Hồ Chí Minh, Việt Nam",
+//                 avatarUrl = "https://example.com/avatar/linh.png",
+//                 quote = "Sống là trải nghiệm.",
+//                 name = "Nguyễn Thị Linh",
+//                 quantityPin = 34,
+//                 quantityReact = 1280,
+//                 quantityComment = 256,
+//                 userEmail = "linh.nguyen@example.com",
+//                 phoneNumber = "+84 912 345 678",
+//                 website = "https://linhnguyen.dev",
+//                 quantityContact = 5
+//             ),
+//             onRejectClick = {},
+//             onAcceptClick = {},
+//             onGetContactClick = {},
+//             badges = TODO(),
+//             modifier = TODO()
+//         )
+//     }
+// }

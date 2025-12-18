@@ -547,7 +547,7 @@ def get_preview_pins(body: GetPostByPinIdRequest):
                 """
                 SELECT
                     *
-                FROM posts p
+                FROM posts p 
                 WHERE p.pin_id = %s;
                 """,
                 (body.pin_id,)
@@ -559,8 +559,6 @@ def get_preview_pins(body: GetPostByPinIdRequest):
         
 class GetPostByPinIdRequestFromMapScreen(BaseModel):
     pin_id: int
-    limit: int = 20  # Số bài viết tối đa mỗi lần load
-    offset: int = 0  # Để phân trang
 
 @router.post("/pinId/mapScreen")
 def get_preview_pins(body: GetPostByPinIdRequestFromMapScreen):
@@ -590,9 +588,8 @@ def get_preview_pins(body: GetPostByPinIdRequestFromMapScreen):
                     WHERE pin_id = %s
                 )
                 ORDER BY p.created_at DESC
-                LIMIT %s OFFSET %s;
                 """,
-                (body.pin_id, body.limit, body.offset)
+                (body.pin_id,) # CHỈ CẦN THÊM DẤU PHẨY NÀY LÀ XONG
             )
             posts = cur.fetchall()
             return posts

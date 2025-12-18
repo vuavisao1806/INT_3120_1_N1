@@ -45,6 +45,10 @@ class CreatePostViewModel(
 
     fun loadPostLocation() {
         val currentLocation = LocationManager.location.value
+        if (currentLocation == null) {
+            return // Actually, users must grant permission to post
+        }
+
         _uiState.update {
             it.copy(
                 centerLatitude = currentLocation!!.latitude,
@@ -156,7 +160,7 @@ class CreatePostViewModel(
                     )
                 }
 
-//                badgeRepository.checkAndAwardBadges(CurrentUser.currentUser!!.userId)
+                badgeRepository.checkAndAwardBadges(CurrentUser.currentUser!!.userId)
 
                 onSuccess()
             } catch (e: Exception) {
