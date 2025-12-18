@@ -29,10 +29,7 @@ class MapViewModel(
 
 ) : ViewModel() {
 
-    companion object {
-        private const val TAG = "MapViewModel"
-        private const val RADIUS_METERS = 100000.0
-    }
+
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
@@ -106,7 +103,7 @@ class MapViewModel(
                     _uiState.update { it.copy(suggestions = suggestions, isSearching = false) }
                 },
                 onError = { e ->
-                    Log.e(TAG, "Search failed", e)
+                    Log.e(MapConfig.TAG, "Search failed", e)
                     _uiState.update { it.copy(suggestions = emptyList(), isSearching = false) }
                 }
             )
@@ -137,7 +134,7 @@ class MapViewModel(
 
         searchEngine.select(suggestion, object : SearchSelectionCallback {
             override fun onError(e: Exception) {
-                Log.e(TAG, "Select location failed", e)
+                Log.e(MapConfig.TAG, "Select location failed", e)
             }
 
             override fun onSuggestions(
@@ -195,7 +192,7 @@ class MapViewModel(
                 val ownedPins = try {
                     pinRepo.getPinsByUserId(userId)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error loading owned pins", e)
+                    Log.e(MapConfig.TAG, "Error loading owned pins", e)
                     emptyList()
                 }
 
@@ -204,10 +201,10 @@ class MapViewModel(
                         pinRepo.getPinsInRadius(
                             centerLat = currentLocation.latitude,
                             centerLng = currentLocation.longitude,
-                            radiusMeters = RADIUS_METERS
+                            radiusMeters = MapConfig.RADIUS_METERS
                         )
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error loading radius pins", e)
+                        Log.e(MapConfig.TAG, "Error loading radius pins", e)
                         emptyList()
                     }
                 } else {
@@ -225,7 +222,7 @@ class MapViewModel(
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Critical error in loadPins", e)
+                Log.e(MapConfig.TAG, "Critical error in loadPins", e)
             }
         }
     }
@@ -235,4 +232,9 @@ class MapViewModel(
         pollingJob?.cancel()
         searchJob?.cancel()
     }
+}
+
+object MapConfig{
+    val TAG = "MapViewModel"
+    val RADIUS_METERS = 1000.0
 }
