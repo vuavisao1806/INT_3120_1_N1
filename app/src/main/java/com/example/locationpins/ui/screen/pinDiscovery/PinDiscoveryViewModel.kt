@@ -1,9 +1,11 @@
 package com.example.locationpins.ui.screen.pinDiscovery
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.locationpins.data.repository.PinRepository
+import com.example.locationpins.ui.component.CompassSensor
 import com.example.locationpins.ui.screen.map.LocationManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -12,10 +14,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.*
-import kotlin.random.Random
-import android.content.Context
-import com.example.locationpins.ui.component.CompassSensor
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 data class PinDiscoveryUiState(
     val gameState: GameState = GameState.Initial,
@@ -56,8 +58,8 @@ class PinDiscoveryViewModel(
     private var compassSensor: CompassSensor? = null
 
     companion object {
-        private const val HINT_INTERVAL_MS = 5000L // 5 seconds
-        private const val DISTANCE_CHECK_INTERVAL_MS = 3000L // 3 seconds
+        private const val HINT_INTERVAL_MS = 5000L
+        private const val DISTANCE_CHECK_INTERVAL_MS = 3000L
         private const val SUCCESS_THRESHOLD_METERS = 10f
     }
 
@@ -78,7 +80,6 @@ class PinDiscoveryViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Chỉ gọi API 1 lần để lấy pin target
                 val response = pinRepository.findRandomPin(
                     userLat = userLocation.latitude,
                     userLng = userLocation.longitude,
@@ -97,7 +98,6 @@ class PinDiscoveryViewModel(
                     )
                 }
 
-                // Bắt đầu timer hint và check distance (tất cả ở local)
                 startHintTimer()
                 startDistanceCheck()
                 startCompassUpdates()
@@ -304,7 +304,6 @@ class PinDiscoveryViewModel(
         compassUpdateJob?.cancel()
         compassUpdateJob = viewModelScope.launch {
             compassSensor?.azimuth?.collect { deviceAzimuth ->
-                // Đơn giản chỉ cập nhật góc quay la bàn
                 _uiState.update {
                     it.copy(compassRotation = -deviceAzimuth)  // Âm để kim chỉ Bắc
                 }

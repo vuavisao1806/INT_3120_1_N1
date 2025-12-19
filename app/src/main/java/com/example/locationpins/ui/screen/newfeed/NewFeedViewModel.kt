@@ -34,7 +34,7 @@ class NewsFeedViewModel(
     }
 
     /**
-     * Load posts lần đầu tiên (có thể có hoặc không có tag filter)
+     * Load posts lần đầu tiên
      */
     fun loadInitialPosts(tagName: String? = null) {
         viewModelScope.launch {
@@ -47,7 +47,7 @@ class NewsFeedViewModel(
                         userId = userId,
                         limit = _uiState.value.pageSize,
                         offset = 0,
-                        tagName = tagName  // Truyền tag filter
+                        tagName = tagName
                     )
 
                     val posts = postDtos.toPosts()
@@ -103,23 +103,14 @@ class NewsFeedViewModel(
         }
     }
 
-    /**
-     * Set tag filter và reload
-     */
     fun filterByTag(tagName: String) {
         loadInitialPosts(tagName)
     }
 
-    /**
-     * Xóa filter tag và về newfeed bình thường
-     */
     fun clearTagFilter() {
         loadInitialPosts(null)
     }
 
-    /**
-     * Refresh toàn bộ feed (giữ nguyên filter tag nếu có)
-     */
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
@@ -189,7 +180,7 @@ class NewsFeedViewModel(
     }
 
     /**
-     * Load thêm posts khi scroll đến cuối (giữ tag filter)
+     * Load thêm posts khi scroll đến cuối
      */
     fun loadMorePosts() {
         if (_uiState.value.isLoadingMore || _uiState.value.hasReachedEnd) {
@@ -200,7 +191,7 @@ class NewsFeedViewModel(
             _uiState.update { it.copy(isLoadingMore = true) }
 
             val userId = CurrentUser.currentUser!!.userId
-            val currentTag = _uiState.value.filterTag  // Giữ tag filter
+            val currentTag = _uiState.value.filterTag
 
             try {
                 val nextPage = _uiState.value.currentPage + 1
@@ -211,7 +202,7 @@ class NewsFeedViewModel(
                         userId = userId,
                         limit = _uiState.value.pageSize,
                         offset = offset,
-                        tagName = currentTag  // Giữ tag filter
+                        tagName = currentTag
                     )
 
                     val posts = postDtos.toPosts()
@@ -352,9 +343,6 @@ class NewsFeedViewModel(
         }
     }
 
-    /**
-     * Xóa thông báo lỗi
-     */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }

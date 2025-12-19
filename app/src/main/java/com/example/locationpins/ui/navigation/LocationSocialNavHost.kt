@@ -13,7 +13,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.locationpins.ui.screen.LocationSocialAppState
-import com.example.locationpins.ui.screen.badges.MyBadgesScreen
+import com.example.locationpins.ui.screen.badge.MyBadgesScreen
 import com.example.locationpins.ui.screen.camera.CameraWithPermission
 import com.example.locationpins.ui.screen.createPost.CreatePostScreen
 import com.example.locationpins.ui.screen.gallery.GalleryScreen

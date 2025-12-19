@@ -25,8 +25,8 @@ data class EditProfileUiState(
     val location: String = "",
     val email: String = "",
     val website: String = "",
-    val currentAvatarUrl: String? = null, // Url ảnh hiện tại từ server
-    val selectedImageUri: Uri? = null     // Uri ảnh mới chọn từ thư viện (nếu có)
+    val currentAvatarUrl: String? = null,
+    val selectedImageUri: Uri? = null
 )
 
 class EditViewModel(
@@ -44,19 +44,17 @@ class EditViewModel(
     fun onEmailChange(text: String) = _uiState.update { it.copy(email = text) }
     fun onWebsiteChange(text: String) = _uiState.update { it.copy(website = text) }
 
-    // Hàm khi chọn ảnh từ thư viện
     fun onImageSelected(uri: Uri?) {
         _uiState.update { it.copy(selectedImageUri = uri) }
     }
 
-    // --- Hàm khởi tạo dữ liệu ban đầu ---
     fun initialize(user: User) {
         _uiState.update {
             it.copy(
-                name = user.name ?: "",
+                name = user.name,
                 quotes = user.quote ?: "",
                 location = user.location ?: "",
-                email = user.userEmail ?: "",
+                email = user.userEmail,
                 website = user.website ?: "",
                 currentAvatarUrl = user.avatarUrl
             )

@@ -4,41 +4,39 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import io.mockk.*
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Before
 
 class PinDiscoveryScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    // Mock ViewModel
     private lateinit var viewModel: PinDiscoveryViewModel
-    // StateFlow giả để điều khiển trạng thái UI
     private val uiStateFlow = MutableStateFlow(PinDiscoveryUiState())
 
     @Before
     fun setup() {
-        // Tạo mock cho ViewModel với relaxed = true để bỏ qua các hàm void không quan trọng
         viewModel = mockk(relaxed = true)
 
-        // Gán stateFlow giả vào viewModel.uiState
         every { viewModel.uiState } returns uiStateFlow
     }
 
     @Test
     fun testInitialStateShowsDistanceSelection() {
-        // GIVEN: Trạng thái ban đầu (GameState.Initial)
         uiStateFlow.value = PinDiscoveryUiState(gameState = GameState.Initial)
 
-        // WHEN: Render màn hình
         composeTestRule.setContent {
-
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 PinDiscoveryScreen(
                     onDismiss = {},
@@ -48,11 +46,9 @@ class PinDiscoveryScreenTest {
             }
         }
 
-        // THEN: Kiểm tra các thành phần của màn hình chọn khoảng cách
         composeTestRule.onNodeWithText("Khám phá Ghim Gần Đây").assertIsDisplayed()
         composeTestRule.onNodeWithText("Chọn khoảng cách để bắt đầu cuộc phiêu lưu!").performScrollTo().assertIsDisplayed()
 
-        // Kiểm tra xem các nút khoảng cách có hiển thị không
         composeTestRule.onNodeWithText("100m").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("Bắt đầu").performScrollTo().assertIsDisplayed()
     }
@@ -101,7 +97,6 @@ class PinDiscoveryScreenTest {
 
     @Test
     fun testSearchingStateShowsCompassAndHint() {
-        // GIVEN: Trạng thái đang tìm kiếm (GameState.Searching)
         val testHint = "Đi về phía trước 50m"
         uiStateFlow.value = PinDiscoveryUiState(
             gameState = GameState.Searching,
@@ -115,8 +110,6 @@ class PinDiscoveryScreenTest {
                 viewModel = viewModel
             )
         }
-
-        // THEN: Kiểm tra hiển thị hint bubble (Card chứa hint)
 
         composeTestRule.waitUntil(timeoutMillis = 1000) {
             try {
@@ -132,7 +125,6 @@ class PinDiscoveryScreenTest {
 
     @Test
     fun testFoundStateShowsSuccessMessage() {
-        // GIVEN: Trạng thái đã tìm thấy (GameState.Found)
         uiStateFlow.value = PinDiscoveryUiState(gameState = GameState.Found)
 
         composeTestRule.setContent {
@@ -143,11 +135,9 @@ class PinDiscoveryScreenTest {
             )
         }
 
-        // THEN: Kiểm tra thông báo chúc mừng
         composeTestRule.onNodeWithText("Chúc Mừng!").assertIsDisplayed()
         composeTestRule.onNodeWithText("Bạn đã tìm thấy ghim ẩn!").assertIsDisplayed()
 
-        // Kiểm tra nút chức năng
         composeTestRule.onNodeWithText("Xem Ghim").assertIsDisplayed()
         composeTestRule.onNodeWithText("Chơi Lại").assertIsDisplayed()
     }
@@ -164,10 +154,8 @@ class PinDiscoveryScreenTest {
             )
         }
 
-        // Action: Click Chơi Lại
         composeTestRule.onNodeWithText("Chơi Lại").performClick()
 
-        // Verify: Hàm resetGame() được gọi
         verify { viewModel.resetGame() }
     }
 }

@@ -44,13 +44,11 @@ class ProfileScreenTest {
 
     @Before
     fun setup() {
-        // QUAN TRỌNG: Gán user cho Singleton để tránh lỗi NullPointerException khi LaunchedEffect chạy
         CurrentUser.currentUser = mockUser
     }
 
     @After
     fun tearDown() {
-        // Dọn dẹp sau khi test
         CurrentUser.currentUser = null
     }
 
@@ -58,10 +56,8 @@ class ProfileScreenTest {
     fun profileSelf() {
         var isShowRequestList: Boolean = false
         var isShowEditScreen: Boolean = false
-        // 1. Mock ViewModel (relaxed = true để bỏ qua các lệnh gọi hàm void)
         val mockViewModel = mockk<ProfileViewModel>(relaxed = true)
 
-        // 2. Tạo State giả định (User đã load xong)
         val successState = MutableStateFlow(
             ProfileUiState(
                 user = mockUser,
@@ -72,10 +68,8 @@ class ProfileScreenTest {
             )
         )
 
-        // 3. Ép ViewModel trả về State này ngay lập tức
         every { mockViewModel.uiState } returns successState
 
-        // 4. Render UI
         composeTestRule.setContent {
             LocationSocialTheme {
                 ProfileScreen(
@@ -88,7 +82,6 @@ class ProfileScreenTest {
             }
         }
 
-        // 5. Kiểm tra hiển thị
         composeTestRule.onNodeWithText("Nguyen Thi Linh").assertIsDisplayed()
         composeTestRule.onNodeWithText("Hanoi, Vietnam").assertIsDisplayed()
         composeTestRule.onNodeWithText("Coding is fun").assertIsDisplayed()
@@ -96,7 +89,6 @@ class ProfileScreenTest {
         composeTestRule.onNodeWithText("linh.dev").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Edit profile").performClick()
 
-        // Kiểm tra các chỉ số
         composeTestRule.onNodeWithText("12").assertIsDisplayed()
         composeTestRule.onNodeWithText("150").assertIsDisplayed()
         composeTestRule.onNodeWithText("40").assertIsDisplayed()
@@ -111,7 +103,6 @@ class ProfileScreenTest {
     fun profileStranger() {
         val mockViewModel = mockk<ProfileViewModel>(relaxed = true)
 
-        // Giả lập trạng thái Stranger (Người lạ)
         val strangerUser = mockUser.copy(status = "STRANGER")
         val strangerState = MutableStateFlow(
             ProfileUiState(
@@ -135,7 +126,6 @@ class ProfileScreenTest {
             }
         }
         composeTestRule.onNodeWithText("Nguyen Thi Linh").assertIsDisplayed()
-        // Kiểm tra nút "Get contact"
         composeTestRule.onNodeWithText("Get contact").assertIsDisplayed()
         composeTestRule.onNodeWithText("12").assertIsDisplayed()
         composeTestRule.onNodeWithText("150").assertIsDisplayed()
@@ -159,20 +149,16 @@ class ProfileScreenTest {
 
     @Test
     fun profileFriend() {
-        // 1. Mock ViewModel (relaxed = true để bỏ qua các lệnh gọi hàm void)
         val mockViewModel = mockk<ProfileViewModel>(relaxed = true)
         val friendUser = mockUser.copy(status = "FRIEND")
-        // 2. Tạo State giả định (User đã load xong)
         val successState = ProfileUiState(
             user = friendUser,
             profileMode = ProfileMode.Friend,
             isLoading = false
         )
 
-        // 3. Ép ViewModel trả về State này ngay lập tức
         every { mockViewModel.uiState } returns MutableStateFlow(successState)
 
-        // 4. Render UI
         composeTestRule.setContent {
             LocationSocialTheme {
                 ProfileScreen(
@@ -185,14 +171,12 @@ class ProfileScreenTest {
             }
         }
 
-        // 5. Kiểm tra hiển thị
         composeTestRule.onNodeWithText("Nguyen Thi Linh").assertIsDisplayed()
         composeTestRule.onNodeWithText("Hanoi, Vietnam").assertIsDisplayed()
         composeTestRule.onNodeWithText("Coding is fun").assertIsDisplayed()
         composeTestRule.onNodeWithText("linh@test.com").assertIsDisplayed()
         composeTestRule.onNodeWithText("linh.dev").assertIsDisplayed()
 
-        // Kiểm tra các chỉ số
         composeTestRule.onNodeWithText("12").assertIsDisplayed()
         composeTestRule.onNodeWithText("150").assertIsDisplayed()
         composeTestRule.onNodeWithText("40").assertIsDisplayed()
@@ -201,10 +185,8 @@ class ProfileScreenTest {
 
     @Test
     fun editProfile_displaysInitialData() {
-
         val mockViewModel = mockk<EditViewModel>(relaxed = true)
 
-        // 2. Giả lập State ban đầu (đã có dữ liệu user cũ)
         val initialState = EditProfileUiState(
             name = "Nguyen Thi Linh",
             quotes = "Coding is fun",
@@ -214,9 +196,7 @@ class ProfileScreenTest {
             isLoading = false
         )
 
-
         every { mockViewModel.uiState } returns MutableStateFlow(initialState)
-
 
         composeTestRule.setContent {
             LocationSocialTheme {
@@ -260,7 +240,6 @@ class ProfileScreenTest {
 
     @Test
     fun editProfileSaveButtonCallsSave() {
-
         val mockViewModel = mockk<EditViewModel>(relaxed = true)
 
         val normalState = EditProfileUiState(isLoading = false)
@@ -282,6 +261,4 @@ class ProfileScreenTest {
             verify { mockViewModel.onSaveClick(any()) }
         }
     }
-
-
 }

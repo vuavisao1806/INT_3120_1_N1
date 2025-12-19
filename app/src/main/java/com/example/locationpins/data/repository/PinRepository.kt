@@ -14,7 +14,7 @@ import com.example.locationpins.data.remote.dto.pins.RandomPinResponse
 
 class PinRepository {
 
-    private val api = RetrofitClient.api  // <-- dùng ApiService ở đây
+    private val api = RetrofitClient.api
 
     suspend fun getPinsByUserId(userId: Int): List<PinDto> {
         return api.getPinsByUserId(

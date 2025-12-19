@@ -18,12 +18,12 @@ class TagRepository {
         )
     }
 
-    /** 1) Upload ảnh (MultipartBody.Part có sẵn) -> lấy top K tags */
+    // Upload ảnh (MultipartBody.Part có sẵn) -> lấy top K tags
     suspend fun getGoogleLabelsTopK(filePart: MultipartBody.Part, k: Int = 3): GoogleLabelResponse {
         return api.getGoogleLabelsTopK(file = filePart, k = k)
     }
 
-    /** 2) Gửi list tag lên backend để insert/update 3 bảng */
+    // Gửi list tag lên backend để insert/update 3 bảng
     suspend fun assignTags(postId: Int, userId: Int, tags: List<String>): Unit {
         return api.assignTags(
             AssignTagsRequest(

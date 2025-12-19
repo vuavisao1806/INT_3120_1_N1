@@ -38,12 +38,9 @@ internal fun SimpleCompass(
             contentDescription = "Compass",
             modifier = Modifier
                 .fillMaxSize()
-                // Nếu rotation bạn nhận là "azimuth" (hướng điện thoại đang quay),
-                // thường bạn cần xoay NGƯỢC để kim/ảnh chỉ đúng hướng bắc.
                 .graphicsLayer { rotationZ = -rotation }
         )
 
-        // Optional: điểm nhấn ở tâm (cho cảm giác 3D)
         Box(
             modifier = Modifier
                 .size(size * 0.10f)

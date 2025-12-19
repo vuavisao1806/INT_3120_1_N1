@@ -1,11 +1,21 @@
 package com.example.locationpins.ui.screen.profile
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -18,7 +28,13 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,12 +55,12 @@ import coil.request.ImageRequest
 import com.example.locationpins.R
 import com.example.locationpins.data.model.Badge
 import com.example.locationpins.data.model.User
+import com.example.locationpins.ui.component.BadgeDetailDialog
+import com.example.locationpins.ui.component.BadgeRow
+import com.example.locationpins.ui.component.NewBadgeDialog
 import com.example.locationpins.ui.screen.gallery.PostGridItemWithStats
 import com.example.locationpins.ui.screen.gallery.PostSummary
 import com.example.locationpins.ui.screen.login.CurrentUser
-import com.example.locationpins.ui.component.BadgeRow
-import com.example.locationpins.ui.component.NewBadgeDialog
-import com.example.locationpins.ui.component.BadgeDetailDialog
 
 @Composable
 fun ProfileScreen(
@@ -57,12 +73,10 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Load user khi vào màn hình
     LaunchedEffect(userId) {
         viewModel.setUser(userId)
         viewModel.loadPostsForSelf(CurrentUser.currentUser!!.userId)
 
-        // Chỉ check badges mới nếu là profile của chính mình
         if (userId == CurrentUser.currentUser?.userId) {
             viewModel.checkNewBadges()
         }
@@ -157,7 +171,6 @@ fun ProfileScreen(
     }
 }
 
-// ====== PROFILE VIEWS ======
 
 @Composable
 fun ProfileFriendView(

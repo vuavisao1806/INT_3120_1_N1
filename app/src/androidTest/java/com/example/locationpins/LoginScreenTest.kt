@@ -23,10 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LoginScreenTest {
-    /**
-     * Rule để thiết lập môi trường test cho Compose.
-     * Nó cung cấp các hàm để setContent và tương tác với các node trên UI.
-     */
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -35,10 +31,8 @@ class LoginScreenTest {
 
     @Before
     fun setup() {
-        // Mock Repository với relaxed = true để trả về giá trị mặc định cho các hàm chưa được khai báo
         mockRepository = mockk(relaxed = true)
 
-        // Khởi tạo ViewModel với Repository giả
         viewModel = LoginViewModel(userRepository = mockRepository)
     }
 
@@ -100,8 +94,6 @@ class LoginScreenTest {
 
     /**
      * Test 3: Kiểm tra hiển thị lỗi khi bỏ trống thông tin.
-     * Logic này nằm trong hàm login() của ViewModel:
-     * if (userName.isBlank() || password.isBlank()) -> errorMessage = "Vui lòng nhập tên đăng nhập và mật khẩu"
      */
     @Test
     fun loginScreenEmpty() {
@@ -300,7 +292,6 @@ class LoginScreenTest {
      */
     @Test
     fun registerDuplicationUserName() {
-        // Setup: Giả lập API trả về lỗi trùng Username
         coEvery { mockRepository.register(any(), any(), any(), any()) } returns mockk(relaxed = true) {
             every { userNameTaken } returns true
         }

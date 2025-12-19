@@ -1,20 +1,53 @@
 package com.example.locationpins.ui.screen.pinDiscovery
 
-import android.util.Log
-import androidx.compose.animation.core.*
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,9 +125,6 @@ fun PinDiscoveryScreen(
     }
 }
 
-// ==========================================
-// DISTANCE SELECTION SCREEN (Full Screen)
-// ==========================================
 
 @Composable
 private fun DistanceSelectionScreen(
@@ -156,14 +186,14 @@ private fun DistanceSelectionScreen(
 
                 Text(
                     text = "Khám phá Ghim Gần Đây",
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
 
                 Text(
                     text = "Chọn khoảng cách để bắt đầu cuộc phiêu lưu!",
-                    fontSize = 14.sp,
+                    fontSize = 10.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center
                 )
@@ -195,8 +225,8 @@ private fun DistanceSelectionScreen(
                     onClick = onStartGame,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
+                        .height(40.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF1976D2)
                     ),
@@ -238,7 +268,7 @@ private fun DistanceOption(
             .background(backgroundColor)
             .border(2.dp, borderColor, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(
@@ -248,7 +278,7 @@ private fun DistanceOption(
         ) {
             Text(
                 text = "${distance}m",
-                fontSize = 18.sp,
+                fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) Color(0xFF1976D2) else Color.Black
             )
@@ -258,16 +288,13 @@ private fun DistanceOption(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = null,
                     tint = Color(0xFF1976D2),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
     }
 }
 
-// ==========================================
-// FLOATING COMPASS VIEW (Compact)
-// ==========================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -286,7 +313,7 @@ private fun FloatingCompassView(
         if (lastHint != null && lastHint != lastShownHint) {
             lastShownHint = lastHint
             showHintBubble = true
-            delay(4000) // Hide after 4 seconds
+            delay(4000)
             showHintBubble = false
         }
     }
@@ -296,7 +323,7 @@ private fun FloatingCompassView(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Floating compass button (top-right)
+        // Floating compass button
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -304,7 +331,7 @@ private fun FloatingCompassView(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Hint bubble (above compass)
+            // Hint bubble
             AnimatedVisibility(
                 visible = showHintBubble && lastHint != null,
                 enter = fadeIn() + expandVertically(),
@@ -354,25 +381,6 @@ private fun FloatingCompassView(
                     rotation = compassRotation,
                     size = 84.dp
                 )
-
-//                // Distance indicator
-//                if (currentDistance != null && currentDistance < 100) {
-//                    Box(
-//                        modifier = Modifier
-//                            .align(Alignment.TopEnd)
-//                            .size(24.dp)
-//                            .clip(CircleShape)
-//                            .background(Color(0xFF4CAF50)),
-//                        contentAlignment = Alignment.Center
-//                    ) {
-//                        Text(
-//                            text = "${currentDistance.toInt()}m",
-//                            fontSize = 8.sp,
-//                            color = Color.White,
-//                            fontWeight = FontWeight.Bold
-//                        )
-//                    }
-//                }
             }
         }
 
@@ -398,9 +406,6 @@ private fun FloatingCompassView(
     }
 }
 
-// ==========================================
-// EXPANDED GAME VIEW (Bottom Sheet Content)
-// ==========================================
 
 @Composable
 private fun ExpandedGameView(
@@ -418,7 +423,6 @@ private fun ExpandedGameView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -446,37 +450,6 @@ private fun ExpandedGameView(
             rotation = compassRotation,
             size = 160.dp
         )
-
-//        // Distance info
-//        if (currentDistance != null) {
-//            Card(
-//                modifier = Modifier.fillMaxWidth(),
-//                colors = CardDefaults.cardColors(
-//                    containerColor = Color(0xFFE3F2FD)
-//                ),
-//                shape = RoundedCornerShape(12.dp)
-//            ) {
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(16.dp),
-//                    horizontalArrangement = Arrangement.SpaceBetween,
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Text(
-//                        text = "Khoảng cách:",
-//                        fontSize = 14.sp,
-//                        color = Color.Gray
-//                    )
-//                    Text(
-//                        text = "${currentDistance.toInt()} mét",
-//                        fontSize = 18.sp,
-//                        fontWeight = FontWeight.Bold,
-//                        color = Color(0xFF1976D2)
-//                    )
-//                }
-//            }
-//        }
 
         // Latest hint
         if (lastHint != null) {
@@ -537,10 +510,6 @@ private fun ExpandedGameView(
         }
     }
 }
-
-// ==========================================
-// FOUND SCREEN (Full Screen)
-// ==========================================
 
 @Composable
 private fun FoundScreen(

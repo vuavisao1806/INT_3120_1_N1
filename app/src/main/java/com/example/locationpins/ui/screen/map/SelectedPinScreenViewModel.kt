@@ -22,16 +22,11 @@ class SelectedPinViewModel(
     private val _uiState = MutableStateFlow(SelectedPinUiState())
     val uiState: StateFlow<SelectedPinUiState> = _uiState.asStateFlow()
 
-    // Giả sử bạn có một Repository để lấy dữ liệu
-    // private val repository = PostRepository()
-
     fun loadPostsByPinId(pinId: Int) {
-        // Chạy coroutine trong scope của ViewModel
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                // Gọi hàm suspend từ repository
                 val result = postRepo.getPostByPinIdRequestFromMapScreen(pinId)
 
                 _uiState.update {
@@ -42,7 +37,6 @@ class SelectedPinViewModel(
                     )
                 }
             } catch (e: Exception) {
-                // Xử lý khi có lỗi mạng hoặc database
                 _uiState.update {
                     it.copy(
                         isLoading = false,

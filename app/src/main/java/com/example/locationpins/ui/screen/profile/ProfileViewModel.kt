@@ -35,7 +35,6 @@ class ProfileViewModel(
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-    /** gọi khi màn hình nhận user + mode */
     fun setUser(userId: Int) {
         Log.e("ProfileViewModel", "Loading user: $userId")
         _uiState.update { current ->
@@ -44,7 +43,6 @@ class ProfileViewModel(
         viewModelScope.launch {
             try {
                 val userDto = userRepository.getUser(CurrentUser.currentUser!!.userId, userId)
-                val currentUserId = CurrentUser.currentUser?.userId
 
                 if (userDto != null) {
                     val user = userDto.toUser()
@@ -94,7 +92,6 @@ class ProfileViewModel(
         return _uiState.value.user
     }
 
-    /** bấm nút Get contact (chỉ meaningful với Stranger) */
     fun onGetContactClick() {
         _uiState.update { current ->
             if (current.profileMode is ProfileMode.Stranger) {
@@ -297,10 +294,9 @@ class ProfileViewModel(
         }
     }
 
-    // ====== BADGE FEATURES ======
 
     /**
-     * Kiểm tra và cấp huy hiệu mới (gọi khi vào profile hoặc sau các hành động)
+     * Kiểm tra và cấp huy hiệu mới
      */
     fun checkNewBadges() {
         val userId = CurrentUser.currentUser?.userId ?: return
@@ -324,7 +320,6 @@ class ProfileViewModel(
                         )
                     }
 
-                    // Reload badges
                     val badges = badgeRepository.getEarnedBadges(userId, limit = 5).toBadges()
                     _uiState.update { it.copy(badges = badges) }
                 }
@@ -339,16 +334,14 @@ class ProfileViewModel(
     }
 
     /**
-     * Hiển thị dialog chi tiết badges (khi click vào badge)
+     * Hiển thị dialog chi tiết badges
      */
     fun showBadgeDetailDialog(badgeIndex: Int) {
         val userId = _uiState.value.user?.userId ?: return
         viewModelScope.launch {
             try {
-                // Load tất cả badges đã đạt được
                 val allEarnedBadges = badgeRepository.getEarnedBadges(userId, limit = 100).toBadges()
 
-                // Load tiến trình tất cả badges
                 val allProgress = badgeRepository.getBadgeProgress(userId).toBadgeProgressList()
 
                 _uiState.update {

@@ -22,7 +22,6 @@ class NewFeedScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    // Mock User
     private val mockUser = User(
         userId = 1,
         userName = "test_user",
@@ -50,7 +49,6 @@ class NewFeedScreenTest {
         CurrentUser.currentUser = null
     }
 
-    // --- CASE 1: LOADING ---
     @Test
     fun newFeedLoadingStateShowsProgressIndicator() {
         val mockViewModel = mockk<NewsFeedViewModel>(relaxed = true)
@@ -70,7 +68,6 @@ class NewFeedScreenTest {
         composeTestRule.onNodeWithText("Không có bài viết nào").assertDoesNotExist()
     }
 
-    // --- CASE 2: EMPTY STATE  ---
     @Test
     fun newFeedEmptyStateShowsNoPostsMessage() {
         val mockViewModel = mockk<NewsFeedViewModel>(relaxed = true)
@@ -94,7 +91,6 @@ class NewFeedScreenTest {
         composeTestRule.onNodeWithText("🔍").assertIsDisplayed()
     }
 
-    // --- CASE 3: CONTENT SHOWS POSTS (Có scroll) ---
     @Test
     fun newFeedContentStateShowsPosts() {
         val mockViewModel = mockk<NewsFeedViewModel>(relaxed = true)
@@ -147,7 +143,6 @@ class NewFeedScreenTest {
             .assertIsDisplayed()
     }
 
-    // --- CASE 4: ERROR ---
     @Test
     fun newFeedErrorStateShowsErrorMessage() {
         val mockViewModel = mockk<NewsFeedViewModel>(relaxed = true)

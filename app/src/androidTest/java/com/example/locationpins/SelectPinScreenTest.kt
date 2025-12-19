@@ -1,7 +1,9 @@
 package com.example.locationpins
 
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.locationpins.data.remote.dto.post.PostDto
 import com.example.locationpins.ui.screen.map.SelectedPinScreen
 import com.example.locationpins.ui.screen.map.SelectedPinUiState
@@ -18,10 +20,8 @@ class SelectedPinScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    // 1. Tạo StateFlow giả
     private val fakeUiState = MutableStateFlow(SelectedPinUiState())
 
-    // 2. Tạo Mock ViewModel (relaxed = true để bỏ qua các hàm không quan trọng)
     private val mockViewModel = mockk<SelectedPinViewModel>(relaxed = true) {
         every { uiState } returns fakeUiState
     }
@@ -43,8 +43,7 @@ class SelectedPinScreenTest {
     }
 
     @Test
-    fun testErrorState_andRetry() {
-        // Setup: Lỗi
+    fun testErrorStateAndRetry() {
         fakeUiState.value = SelectedPinUiState(
             isLoading = false,
             errorMessage = "Lỗi kết nối server"
@@ -69,8 +68,7 @@ class SelectedPinScreenTest {
     }
 
     @Test
-    fun testDataSuccess_DisplaysPostCounts() {
-
+    fun testDataSuccessDisplaysPostCounts() {
         val mockPosts = listOf(
             PostDto(
                 postId = 101,
@@ -116,11 +114,9 @@ class SelectedPinScreenTest {
 
 
 
-        // Check Post 1: 150 like/reaction và 25 comment
         composeTestRule.onNodeWithText("150").assertIsDisplayed()
         composeTestRule.onNodeWithText("25").assertIsDisplayed()
 
-        // Check Post 2: 10 like/reaction và 2 comment
         composeTestRule.onNodeWithText("10").assertIsDisplayed()
         composeTestRule.onNodeWithText("2").assertIsDisplayed()
     }
